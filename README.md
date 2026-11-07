@@ -19,6 +19,8 @@ Commands:
   CI step's side that collects and uploads them.
 - `qits users invite|register|list|delete` manages the platform's users on the idp: an admin
   mints a register token, the new user spends it and gets a generated password, shown once.
+- `qits remembered-devices list|revoke` shows the browsers the idp remembers for you (the ones
+  that sign back in without a password) and forgets one, ending every session it opened.
 - `qits events` prints the platform's domain events as they happen; `qits events query` prints the
   ones that already happened in a window of time.
 - `qits observe` prints what qits-observability takes in (logs, spans, metrics) as it arrives,
@@ -666,6 +668,8 @@ Installing it is not part of this version.
     qits users register --token <token> <username>
     qits users list
     qits users delete <username>
+    qits remembered-devices list
+    qits remembered-devices revoke --device <id>
     qits events [--filter=<names>]
     qits events query [--filter=<names>] [--since <time>] [--until <time>] [--limit <n>] [-o json]
     qits observe --filter <conditions> [--filter <conditions> …] [-o json]
@@ -1418,6 +1422,37 @@ secret for one person, and a tool's answer lands in an agent's transcript.
     qits users register --token <token> jan
     qits users list
     qits users delete jan
+
+### qits remembered-devices
+
+Your remembered browsers at the idp (qits-1944): the browsers that sign back in without a
+password, because you asked the sign-in page to remember them. Both commands send the caller's
+bearer, as every command does, and the idp answers only a person: the CLI session `qits login`
+stores (a token with `credential_type=cli`), or a browser session. Any other bearer, an agent's
+`QITS_TOKEN` or a service client's, gets 403, printed under `Remembered devices are a person's own`
+with the idp's own sentence. Each person sees and revokes only their own devices.
+
+`list` (`GET /idp/api/remembered-devices`) prints ID, LABEL (the browser's user agent, cut at 40
+characters), LAST USED, EXPIRES and CURRENT, most recently used first; `-o json` prints the idp's
+answer, with `createdAt` and `absoluteExpiresAt` too. CURRENT marks the browser the calling
+session was opened through, so it is never set for a CLI session.
+
+`revoke --device <id>` (`DELETE /idp/api/remembered-devices/{id}`) forgets the device and ends
+every session it opened, and prints `Revoked remembered device <id>: it signs in with a password
+again.` The id is the ID column of `list`; anything that is not an id is a usage error (exit 2).
+An unknown id, or one of somebody else's, is `You have no remembered device <id> (HTTP 404)`.
+Every refusal is exit code 1.
+
+The idp's address is found as for `qits users`: `--idp-url` (with `/idp`), else the session's idp,
+else inside the platform `https://idp.qits.<QITS_DOMAIN>/idp` (`QITS_URL_IDP` over it).
+
+The qits MCP server serves both as tools (`remembered-devices_list`, a read, and
+`remembered-devices_revoke`), like every command that needs nothing of the caller's machine; the
+idp refuses an agent's bearer there as it does here.
+
+    qits remembered-devices list
+    qits remembered-devices list -o json
+    qits remembered-devices revoke --device 6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f
 
 ### qits events
 

@@ -10,7 +10,8 @@ that session fresh), `qits projects|repositories|work|ideas|release-request` (th
 run's step logs, a retry, a cancel, a run's release reports), `qits database diagram` (a repository's entity
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
 golden master records), `qits users` (the idp's users: invite, register, list,
-delete), `qits events` (the live event
+delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
+revoke; qits-1944), `qits events` (the live event
 stream), `qits wait` (an agent's declared waits in qits-workspaces), `qits workspaces` (every action
 of the landing app's workspace pages, on the same qits-workspaces doors), `qits targets` (execution
 targets and their leases, qits-system-service's doors; epic qits-1481), `qits checkout-daemon` (a local checkout held at what a repository released, root and
@@ -323,6 +324,15 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                qits-deployments-golden-masters records their states
     agentmcp/  qits agent-mcp credentials list|set|delete, on qits-projects' agent MCP catalog
                (AgentMcpApi; epic qits-765). Its rows belong to ProjectsContract (AgentMcpContract)
+    remembered/ qits remembered-devices list and revoke (qits-1944), on the idp's
+               /idp/api/remembered-devices doors (IdpRememberedDevicesApi), addressed as users/
+               addresses the idp. A person's doors: the idp admits a CLI bearer
+               (credential_type=cli) or a browser session and 403s every other bearer; the
+               list's GET carries no role hint (get(uri, false)), since an agent is refused a read.
+               Its rows (IdpRememberedDevicesContract, part of idp/IdpContract) send
+               `Authorization: {authorization}` in `a remembered device`, pending until a pinned
+               qits-idp-golden-masters records that state with a CLI bearer as its authorization
+               param.
     users/     qits users invite, register, list and delete, on the idp's user doors (IdpUsersApi).
                register sends no bearer: the register token is the credential, and the person has
                no session yet. The idp's address is the session's, the public vhost inside

@@ -103,6 +103,7 @@ public final class FakePlatformMain {
         deployments();
         maintenance();
         users();
+        rememberedDevices();
         workspaces();
         waits();
         events();
@@ -183,6 +184,16 @@ public final class FakePlatformMain {
         platform.answer("GET", "/idp/api/users", golden("qits-idp-service", "qits-idp",
                 "an admin signed in to the CLI", "listUsers"));
         refuse("DELETE", "/idp/api/users/jan");
+    }
+
+    /**
+     * No recording at the pinned idp golden masters yet (IdpRememberedDevicesContract's rows are
+     * pending): a fixture. The real idp refuses the tapes' token on both doors; the fake shows the
+     * listing and refuses only the revoke.
+     */
+    private void rememberedDevices() {
+        platform.answer("GET", "/idp/api/remembered-devices", fixture("remembered-devices.json"));
+        refuse("DELETE", "/idp/api/remembered-devices/00000000-0000-4000-8000-000000000001");
     }
 
     // --- qits-workspaces ----------------------------------------------------------------------------

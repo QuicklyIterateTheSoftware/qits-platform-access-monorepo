@@ -4,6 +4,7 @@ import eu.wohlben.qits.cli.access.contracts.CliPact;
 import eu.wohlben.qits.cli.access.contracts.CliRow;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.wohlben.qits.cli.access.remembered.IdpRememberedDevicesContract;
 import eu.wohlben.qits.cli.access.users.IdpUsersContract;
 import eu.wohlben.qits.pact.consumer.Trigger;
 
@@ -23,8 +24,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * <b>What the commands ask the idp, and why</b> (ticket qits-1149): the token endpoint, for each of
- * the CLI's two sessions, and the user doors of {@code qits users}
- * ({@code users/IdpUsersContract}).
+ * the CLI's two sessions, the user doors of {@code qits users}
+ * ({@code users/IdpUsersContract}) and the remembered-devices doors of {@code qits remembered-devices}
+ * ({@code remembered/IdpRememberedDevicesContract}, qits-1944).
  * <ul>
  *   <li><b>A person's session</b> ({@link TokenClient}, client {@code qits-cli}): {@code qits login}
  *       exchanges the pasted code, and {@code qits session-daemon} and every platform command on a
@@ -147,6 +149,7 @@ public final class IdpContract {
     public static final CliPact CONTRACT = CliPact.of("qits-idp-service", "qits-idp")
             .client(TokenClient.class)
             .client(IdpUsersContract.CLIENT)
+            .client(IdpRememberedDevicesContract.CLIENT)
             .excluded("TokenClient#authorizeUrl", "the address the browser is sent to (GET /idp/authorize); the"
                     + " browser makes that request, never the CLI")
             .excluded("TokenClient#redirectUri", "the connect page's address, sent inside the exchange's form")
@@ -169,6 +172,7 @@ public final class IdpContract {
         rows.add(CliRow.of("qits git-credential", GIT_SESSION, "issueToken", "TokenClient#refresh", idp(GIT_REFRESH))
                 .consumes(SESSION_TOKENS));
         rows.addAll(IdpUsersContract.ROWS);
+        rows.addAll(IdpRememberedDevicesContract.ROWS);
         // The MCP service's quarkus-oidc tenant (qits-708): the discovery document read from
         // auth-server-url at startup, then the JWKS at the jwks_uri it names.
         rows.add(CliRow.framework(MCP_TENANT, SIGNING_KEY, "getOpenIdConfiguration", DISCOVERY)

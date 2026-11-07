@@ -287,6 +287,20 @@ class McpToolCatalogTest {
         assertThat(properties(tool("users_list"))).doesNotContainKey("idp-url");
     }
 
+    /**
+     * A person's remembered browsers (qits-1944) are served like any command that needs nothing of
+     * the caller's machine: the idp, not the catalog, decides who may reach them, and it refuses an
+     * agent's bearer here as it does on the CLI.
+     */
+    @Test
+    void theRememberedDevicesCommandsAreServed() {
+        assertThat(catalog.tool("remembered-devices_list")).isPresent();
+        assertThat(catalog.tool("remembered-devices_revoke")).isPresent();
+        assertThat(properties(tool("remembered-devices_list"))).doesNotContainKey("idp-url");
+        assertThat(properties(tool("remembered-devices_revoke"))).containsKey("device").doesNotContainKey("idp-url");
+        assertThat(required(tool("remembered-devices_revoke"))).containsExactly("device");
+    }
+
     @Test
     void theTargetCommandsThatPrintAnInstallLineAreNotServed() {
         Map<String, ToolCatalog.Exclusion> byCommand = new HashMap<>();
@@ -403,7 +417,7 @@ class McpToolCatalogTest {
             }
         });
         assertThat(reads).containsExactlyInAnyOrder(
-                "projects_list", "projects_delivery", "projects_desk_answer", "projects_desk_triggers", "users_list", "repositories_list", "repositories_branches", "repositories_commits",
+                "projects_list", "projects_delivery", "projects_desk_answer", "projects_desk_triggers", "users_list", "remembered-devices_list", "repositories_list", "repositories_branches", "repositories_commits",
                 "repositories_commit-changes", "repositories_commit-diff", "repositories_commit-subjects",
                 "work_list", "work_details", "ideas_list", "ideas_details", "work_dossier_list", "work_dossier_get",
                 "work_refinement_show", "work_design_list", "work_design_get",

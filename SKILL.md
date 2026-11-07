@@ -2955,6 +2955,75 @@ qits users delete jan
 - `1` The idp refused: no such user (404), it is you (409), the caller is not qits:admin (403), or it cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
+## qits remembered-devices
+
+Your remembered browsers at the idp: the browsers that sign back in without a password. list shows them, and revoke forgets one and ends every session it opened.
+
+Only your own: the idp answers a person signed in with `qits login` (or a browser), and refuses any other credential, an agent's QITS_TOKEN among them, with 403.
+
+### Notes
+
+- --output and --idp-url may come before or after the command.
+
+## qits remembered-devices list
+
+List your remembered browsers: each one's id, its label (the browser it was remembered from), when it last signed in, when it expires, and which one this is.
+
+CURRENT marks the browser the calling session was opened through; a CLI session has none.
+
+```
+qits remembered-devices list [--idp-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--idp-url <url>` | The idp's base URL, with /idp. Default: the session's idp; inside the platform https://idp.qits.<QITS_DOMAIN>/idp. |
+| `-o, --output table\|json` | table (the default): for people. json: the answer as JSON, pretty-printed. |
+
+### Examples
+
+```
+qits remembered-devices list
+qits remembered-devices list -o json
+```
+
+- -o json prints the idp's answer, with createdAt and absoluteExpiresAt too.
+- Revoke one with `qits remembered-devices revoke --device <id>`.
+
+### Exit codes
+
+- `0` Done.
+- `1` The idp refused (HTTP 403: the credential is not a person's `qits login` session), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits remembered-devices revoke
+
+Forget one remembered browser: it signs in with a password again, and every session it opened ends now.
+
+```
+qits remembered-devices revoke --device <id> [--idp-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--device <id>` | Required. The device to forget: its id, from `qits remembered-devices list`. |
+| `--idp-url <url>` | The idp's base URL, with /idp. Default: the session's idp; inside the platform https://idp.qits.<QITS_DOMAIN>/idp. |
+| `-o, --output table\|json` | table (the default): for people. json: the answer as JSON, pretty-printed. |
+
+### Examples
+
+```
+qits remembered-devices revoke --device 6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f
+```
+
+- The id is the ID column of `qits remembered-devices list`.
+
+### Exit codes
+
+- `0` Done.
+- `1` The idp refused: no such device of yours (404), the credential is not a person's `qits login` session (403), or it cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
 ## qits events
 
 Print qits-events domain events as they happen, one JSON object per line on stdout. Use it to watch the platform: builds (BuildStatusChanged), release requests (ReleaseRequestStateChanged). To wait for something, do not keep this running: declare it with `qits wait` and end your turn.
