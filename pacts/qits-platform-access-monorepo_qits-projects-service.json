@@ -21536,7 +21536,7 @@
         }
       },
       "description": "qits work dossier inline: inlineWorkDossierAsset",
-      "key": "c9d38ea6",
+      "key": "5bd83a9d",
       "pending": false,
       "providerStates": [
         {
@@ -21545,6 +21545,7 @@
             "epicId": "00000000-0000-4000-8000-000000000001",
             "projectId": "00000000-0000-4000-8000-000000000002",
             "qualifiedId": "contract-00000001-1",
+            "refinementId": "1",
             "sketchId": "00000000-0000-4000-8000-000000000003"
           }
         }

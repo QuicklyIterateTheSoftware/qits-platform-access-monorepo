@@ -14,6 +14,9 @@ import java.util.List;
                 + "--package with its newest version and whether that is this release. Prints exactly one "
                 + "line on stdout: `published <version>` or `unchanged` (no package moved; the docs store "
                 + "keeps the previous bundle).",
+                "--entities adds the entity exposure map as entities.json, beside contracts.json, and makes "
+                        + "the bundle publish on every release even when no golden-masters package moved: the "
+                        + "map can change on its own, e.g. marking an entity @Technical.",
                 "Run it after the contract packages are published: a package with no version at all is a "
                         + "refusal, not a state."},
         footerHeading = "%nExamples:%n",
@@ -48,6 +51,11 @@ public class ContractDocsCommand extends AbstractPublishCommand {
             description = "A metadata header, sent as X-Artifacts-Meta-<key>. Repeatable.")
     List<String> meta = new ArrayList<>();
 
+    @CommandLine.Option(names = "--entities", paramLabel = "<file>",
+            description = "The entity exposure map (docs/entities.json); bundled as entities.json, and the "
+                    + "bundle is then published on every release.")
+    List<String> entities = new ArrayList<>();
+
     @CommandLine.Unmatched
     List<String> unmatched = new ArrayList<>();
 
@@ -58,8 +66,10 @@ public class ContractDocsCommand extends AbstractPublishCommand {
         Path from = Path.of(PublishArgs.requiredOnce(this.from, "--from"));
         String version = PublishArgs.requiredOnce(this.version, "--version");
         List<ContractDocs.PackageRef> refs = packages.stream().map(ContractDocs.PackageRef::parse).toList();
+        String entities = PublishArgs.optionalOnce(this.entities, "--entities", null);
+        Path entitiesFile = entities == null ? null : Path.of(entities);
         String line = new ContractDocs(http(), store(env), console)
-                .publish(application, from, version, refs, meta);
+                .publish(application, from, version, refs, meta, entitiesFile);
         console.answer(line);
         return ExitCode.OK;
     }

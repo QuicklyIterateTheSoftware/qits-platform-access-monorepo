@@ -252,6 +252,46 @@ class ContractPublishTest {
     assertFalse(store.paths().contains("PUT " + DOCS));
   }
 
+  @Test
+  void contractDocsWithEntitiesPublishesEvenWhenNoPackageMoved() throws Exception {
+    newest("maven", GM, "2026.930.1");
+    newest("npm", NPM, "2026.930.1");
+    Path entities = work.resolve("entities.json");
+    Files.writeString(entities, "{\"qits-projects.Foo\":{\"technical\":true}}\n");
+
+    Harness.Run run = cli.run("contract-docs", "--application", "qits-projects", "--from", tree.toString(),
+        "--package", "maven=" + GM, "--package", "npm=" + NPM, "--version", V, "--meta",
+        "git.commit.hash=deadbeef", "--entities", entities.toString());
+
+    assertEquals(ExitCode.OK, run.code(), run.err());
+    assertEquals("published " + V + "\n", run.out());
+    StubStore.Request docs = put(DOCS);
+    List<Archives.Entry> entries = Archives.readTarGz(docs.body(), "bundle");
+    assertEquals(List.of("contracts.json", "entities.json", "golden-masters/index.json",
+        "golden-masters/states/a.json"), entries.stream().map(Archives.Entry::name).toList());
+    Archives.Entry entitiesEntry = entries.stream().filter(e -> e.name().equals("entities.json")).findFirst()
+        .orElseThrow();
+    assertArrayEquals(Files.readAllBytes(entities), entitiesEntry.bytes());
+    JsonNode contracts = new ObjectMapper().readTree(
+        entries.stream().filter(e -> e.name().equals("contracts.json")).findFirst().orElseThrow().bytes());
+    assertFalse(contracts.path("packages").get(0).path("published").asBoolean());
+    assertFalse(contracts.path("packages").get(1).path("published").asBoolean());
+  }
+
+  @Test
+  void contractDocsWithAMissingEntitiesFileIsRefused() {
+    newest("maven", GM, "2026.930.1");
+    newest("npm", NPM, "2026.930.1");
+    Path missing = work.resolve("no-such-entities.json");
+
+    Harness.Run run = cli.run("contract-docs", "--application", "qits-projects", "--from", tree.toString(),
+        "--package", "maven=" + GM, "--package", "npm=" + NPM, "--version", V, "--entities", missing.toString());
+
+    assertEquals(ExitCode.POLICY, run.code());
+    assertTrue(run.errContains(missing.toString()), run.err());
+    assertFalse(store.paths().contains("PUT " + DOCS));
+  }
+
   // --- docs submit --openapi ---------------------------------------------------------------------
 
   @Test

@@ -5112,15 +5112,18 @@ qits artifacts publish contract --kind pacts --ecosystem maven --name eu.wohlben
 
 Publish the @contracts/<application> docs bundle when at least one golden-masters package is at --version: the tree under golden-masters/, plus contracts.json listing every --package with its newest version and whether that is this release. Prints exactly one line on stdout: `published <version>` or `unchanged` (no package moved; the docs store keeps the previous bundle).
 
+--entities adds the entity exposure map as entities.json, beside contracts.json, and makes the bundle publish on every release even when no golden-masters package moved: the map can change on its own, e.g. marking an entity @Technical.
+
 Run it after the contract packages are published: a package with no version at all is a refusal, not a state.
 
 ```
-qits artifacts publish contract-docs [--application <application>...] [--from <dir>...] [--meta <key=value>...] [--package <ecosystem=coordinate>...] [--version <version>...]
+qits artifacts publish contract-docs [--application <application>...] [--entities <file>...] [--from <dir>...] [--meta <key=value>...] [--package <ecosystem=coordinate>...] [--version <version>...]
 ```
 
 | Name | What it does |
 |---|---|
 | `--application <application>...` | The provider application; the site is @contracts/<application>. |
+| `--entities <file>...` | The entity exposure map (docs/entities.json); bundled as entities.json, and the bundle is then published on every release. |
 | `--from <dir>...` | The golden-masters tree. |
 | `--meta <key=value>...` | A metadata header, sent as X-Artifacts-Meta-<key>. Repeatable. |
 | `--package <ecosystem=coordinate>...` | A golden-masters package, e.g. npm=@qits/projects-golden-masters. Repeatable. |

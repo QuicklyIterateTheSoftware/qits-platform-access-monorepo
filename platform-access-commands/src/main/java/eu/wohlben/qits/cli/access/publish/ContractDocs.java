@@ -52,8 +52,21 @@ final class ContractDocs {
 
     /** {@code published <v>} or {@code unchanged}. */
     String publish(String application, Path from, String version, List<PackageRef> packages, List<String> meta) {
+        return publish(application, from, version, packages, meta, null);
+    }
+
+    /**
+     * {@code published <v>} or {@code unchanged}. {@code entities}, when given, must be a readable
+     * regular file: its bytes are added to the bundle as {@code entities.json}, and their presence
+     * alone forces a publish, because the exposure map can change with no golden master moving.
+     */
+    String publish(String application, Path from, String version, List<PackageRef> packages, List<String> meta,
+            Path entities) {
         if (packages.isEmpty()) {
             throw CliException.policy("--package is required, once per golden-masters package");
+        }
+        if (entities != null && !Files.isRegularFile(entities)) {
+            throw CliException.policy("no such file: " + entities);
         }
         ContentHashes hashes = new ContentHashes(http, store);
         ObjectNode index = JSON.createObjectNode();
@@ -61,14 +74,14 @@ final class ContractDocs {
         index.put("application", application);
         index.put("version", version);
         ArrayNode list = index.putArray("packages");
-        boolean any = false;
+        boolean anyPackageMoved = false;
         for (PackageRef ref : packages) {
             ContentHashes.Stored newest = hashes.newest(ref.ecosystem(), ref.coordinate()).orElseThrow(() ->
                     CliException.policy(ref.ecosystem() + " " + ref.coordinate() + " has no published version; "
                             + "the contract packages are published earlier in this step, so this is a bug, not "
                             + "a state"));
             boolean published = newest.version().equals(version);
-            any |= published;
+            anyPackageMoved |= published;
             ObjectNode entry = list.addObject();
             entry.put("ecosystem", ref.ecosystem());
             entry.put("coordinate", ref.coordinate());
@@ -77,7 +90,7 @@ final class ContractDocs {
             console.info(ref.ecosystem() + " " + ref.coordinate() + " is at " + newest.version()
                     + (published ? " (this release)" : ""));
         }
-        if (!any) {
+        if (!anyPackageMoved && entities == null) {
             console.info("no golden-masters package was published at " + version
                     + "; the docs store keeps the previous @contracts/" + application + " bundle");
             return "unchanged";
@@ -90,6 +103,13 @@ final class ContractDocs {
             files.add(new Archives.Entry("contracts.json", contracts));
         } catch (IOException e) {
             throw new IllegalStateException("writing contracts.json failed", e);
+        }
+        if (entities != null) {
+            try {
+                files.add(new Archives.Entry("entities.json", Files.readAllBytes(entities)));
+            } catch (IOException e) {
+                throw CliException.transport("cannot read " + entities + ": " + e.getMessage(), e);
+            }
         }
         Path archive = temporary(Archives.writeTarGz(files));
         try {
