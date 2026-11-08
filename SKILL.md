@@ -2116,7 +2116,7 @@ qits release-request regenerate --kind <kind> [--output table|json] [--project <
 
 | Name | What it does |
 |---|---|
-| `--kind <kind>` | Required. What to generate: entity-diagram, screenshot-baselines, cli-tapes, dependency-bump, estate-pins, golden-recordings-maven or golden-recordings-npm. |
+| `--kind <kind>` | Required. What to generate: entity-diagram, entity-exposure, screenshot-baselines, cli-tapes, dependency-bump, estate-pins, golden-recordings-maven or golden-recordings-npm. |
 | `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
 | `--project <project>` | The project: its id, slug or name. |
 | `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
