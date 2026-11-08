@@ -3074,7 +3074,7 @@
           "content": {
             "closedAt": null,
             "createdAt": "2026-01-01T00:00:00Z",
-            "expiresAt": null,
+            "expiresAt": "2026-01-01T00:00:00Z",
             "id": "00000000-0000-4000-8000-000000000100",
             "label": "CI run 00000000 to end",
             "matchedEventId": null,
@@ -3094,6 +3094,15 @@
         "matchingRules": {
           "body": {
             "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.expiresAt": {
               "combine": "AND",
               "matchers": [
                 {
@@ -3489,7 +3498,7 @@
           "content": {
             "closedAt": null,
             "createdAt": "2026-01-01T00:00:00Z",
-            "expiresAt": null,
+            "expiresAt": "2026-01-01T00:00:00Z",
             "id": "00000000-0000-4000-8000-000000000100",
             "label": "release request 00000000 to end",
             "matchedEventId": null,
@@ -3509,6 +3518,15 @@
         "matchingRules": {
           "body": {
             "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.expiresAt": {
               "combine": "AND",
               "matchers": [
                 {

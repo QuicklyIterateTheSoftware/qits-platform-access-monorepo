@@ -65,7 +65,8 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "the timeout.",
                 "- Never poll in a background loop (sleep, watch, `qits events`) for something a wait can say.",
                 "- While a wait is open, the platform shows the holder as waiting on its label, not as blocked.",
-                "- A wait closes when it fires, times out or is cancelled. Declare a new one to wait again.",
+                "- A wait closes when it fires, times out, is cancelled, or breaks: the platform decided it can "
+                        + "never fire (BROKEN, with a reason). Declare a new one to wait again.",
                 "- Waits take qits:admin, qits:admin-agent, qits:desk-admin, qits:system or qits:agent. Every "
                         + "agent, admin-agent included, declares, lists and cancels its own waits only; "
                         + "qits:desk-admin acts on the agents of its own project and names one with --agent; "
@@ -89,7 +90,7 @@ public class WaitCommand extends PlatformCommand {
 
     static final String AGENT_VARIABLE = "QITS_AGENT_ID";
     static final String DESK_VARIABLE = "QITS_DESK_PROJECT";
-    static final Set<String> STATES = Set.of("OPEN", "MATCHED", "TIMED_OUT", "CANCELLED");
+    static final Set<String> STATES = Set.of("OPEN", "MATCHED", "TIMED_OUT", "BROKEN", "CANCELLED");
     private static final Pattern EVENT = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
     private static final Pattern WHOLE_ID =
             Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
@@ -136,7 +137,8 @@ public class WaitCommand extends PlatformCommand {
 
         @CommandLine.Option(names = "--timeout", paramLabel = "<duration>",
                 description = "Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, "
-                        + "1d or ISO-8601 (PT2H). Default: no timeout.")
+                        + "1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the "
+                        + "most any wait may run is 24h, and the platform refuses a longer one.")
         String timeout;
 
         @CommandLine.Option(names = "--label", paramLabel = "<text>",
@@ -307,6 +309,9 @@ public class WaitCommand extends PlatformCommand {
         }
         if (!text(wait, "matchedEventId").isEmpty()) {
             rows.add(List.of("matched", SafeText.line(text(wait, "matchedEventId"))));
+        }
+        if (!text(wait, "brokenReason").isEmpty()) {
+            rows.add(List.of("broken", Table.cell(SafeText.line(text(wait, "brokenReason")), 200)));
         }
         if (!text(wait, "closedAt").isEmpty()) {
             rows.add(List.of("closed", Table.time(text(wait, "closedAt"))));
@@ -479,8 +484,8 @@ public class WaitCommand extends PlatformCommand {
     // --- list and cancel ---
 
     @CommandLine.Command(name = "list", mixinStandardHelpOptions = true,
-            description = {"The holder's waits: id, state, event, label, when it was declared and when it times "
-                    + "out."},
+            description = {"The holder's waits: id, state, event, label, when it was declared, when it times out "
+                    + "and, for a BROKEN wait, why."},
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits wait list", "  qits wait list --state OPEN -o json"},
             exitCodeListHeading = HelpText.EXIT_CODES,
@@ -492,7 +497,8 @@ public class WaitCommand extends PlatformCommand {
         WaitCommand parent;
 
         @CommandLine.Option(names = "--state", paramLabel = "<STATE>",
-                description = "Only the waits in this state: OPEN, MATCHED, TIMED_OUT or CANCELLED. Default: all.")
+                description = "Only the waits in this state: OPEN, MATCHED, TIMED_OUT, BROKEN or CANCELLED. "
+                        + "Default: all.")
         String state;
 
         @Override
@@ -500,8 +506,8 @@ public class WaitCommand extends PlatformCommand {
             boolean json = json(parent.output);
             String wanted = state == null || state.isBlank() ? null : state.strip().toUpperCase(Locale.ROOT);
             if (wanted != null && !STATES.contains(wanted)) {
-                throw new CliFailure("--state must be OPEN, MATCHED, TIMED_OUT or CANCELLED, not '" + state.strip()
-                        + "'.", CliFailure.USAGE);
+                throw new CliFailure("--state must be OPEN, MATCHED, TIMED_OUT, BROKEN or CANCELLED, not '"
+                        + state.strip() + "'.", CliFailure.USAGE);
             }
             WaitsApi.Holder holder = parent.holder(context);
             JsonNode answer = parent.api(context).list(holder, wanted);
@@ -519,9 +525,11 @@ public class WaitCommand extends PlatformCommand {
                 rows.add(List.of(SafeText.line(text(wait, "id")), SafeText.line(text(wait, "state")),
                         Table.cell(SafeText.line(text(wait.path("selection"), "event")), 40),
                         Table.cell(SafeText.line(text(wait, "label")), 50),
-                        Table.time(text(wait, "createdAt")), Table.time(text(wait, "expiresAt"))));
+                        Table.time(text(wait, "createdAt")), Table.time(text(wait, "expiresAt")),
+                        Table.cell(SafeText.line(text(wait, "brokenReason")), 50)));
             }
-            Table.print(context.out(), "", List.of("ID", "STATE", "EVENT", "LABEL", "CREATED", "EXPIRES"), rows);
+            Table.print(context.out(), "", List.of("ID", "STATE", "EVENT", "LABEL", "CREATED", "EXPIRES", "REASON"),
+                    rows);
             return 0;
         }
 

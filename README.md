@@ -682,7 +682,7 @@ Installing it is not part of this version.
     qits wait release-request <id> [--timeout <duration>] [--label <text>]
     qits wait work <qualified id> --status <STATUS> [--timeout <duration>] [--label <text>]
     qits wait ci-run <run id> [--timeout <duration>] [--label <text>]
-    qits wait list [--state OPEN|MATCHED|TIMED_OUT|CANCELLED]
+    qits wait list [--state OPEN|MATCHED|TIMED_OUT|BROKEN|CANCELLED]
     qits wait cancel <wait id>
     qits workspaces list --repository <id|name> [--project <project>] | show <n> | active-process <n> | items | history <work>
     qits workspaces start|stop|recreate <n>
@@ -1735,7 +1735,9 @@ CLI holds its own copy (`waits/WhenGrammar`) because the binary does not depend 
 checks it before anything goes out. The wire form has lowercase ops, string values, and absent as
 `{"op":"exists","value":false}`.
 
-`--timeout` takes `30m`, `2h`, `1h30m`, `1d` or ISO-8601 (`PT2H`); it is sent as ISO-8601.
+`--timeout` takes `30m`, `2h`, `1h30m`, `1d` or ISO-8601 (`PT2H`); it is sent as ISO-8601. Every wait
+now carries an `expiresAt`, never null: the platform's own ceiling for an unstated timeout is 8h,
+and the most any wait may run is 24h, which it refuses to extend.
 
 The presets fill in the event and the groups:
 
@@ -1798,7 +1800,10 @@ once:
 An event that lands between the read and the declaration is caught by qits-workspaces' look-back.
 
 `qits wait list [--state <STATE>]` shows the holder's waits, and `qits wait cancel <wait id>` ends
-one.
+one. A wait is OPEN until it closes MATCHED, TIMED_OUT, BROKEN or CANCELLED: BROKEN is the platform
+deciding a wait can never fire (qits-1961), with a `brokenReason`; `list` adds a REASON column for
+it and the single-wait view (`qits wait cancel`, and every preset's own declaration) a `broken`
+line, both empty otherwise.
 
 ### qits workspaces
 

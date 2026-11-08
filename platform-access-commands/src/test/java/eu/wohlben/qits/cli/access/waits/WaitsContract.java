@@ -39,7 +39,13 @@ public final class WaitsContract {
     /**
      * One wait as {@code printWait} prints it, but for {@code selection.when}: its groups are arrays
      * of arrays, which qits-pact-consumer cannot express as a matcher yet, so the pact leaves them
-     * unbound and the row does not read them.
+     * unbound and the row does not read them. {@code brokenReason} (qits-1961) is left out for the
+     * same reason, a different way: every state the golden masters record it in holds it {@code
+     * null}, so consuming it would bind the field to exactly {@code null} rather than a string
+     * (qits-pact-consumer only widens a leaf to "type or null" when it merges an array whose
+     * elements disagree on nullness; a single object has no such merge). Nothing here enforces that
+     * a printed field be consumed, so this is a choice, not a workaround: add it once a BROKEN wait
+     * is recorded somewhere.
      */
     static final List<String> WAIT = List.of("id", "state", "label", "selection.event", "createdAt", "expiresAt",
             "matchedEventId", "closedAt");

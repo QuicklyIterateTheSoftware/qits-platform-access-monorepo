@@ -3331,7 +3331,7 @@ qits wait [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [-
 | `--event <Name>` | Required, unless a preset is named. The event's name, as the bus carries it: BuildFailed, EntityTransitioned. |
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
-| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: no timeout. |
+| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--when <conditions>...` | One group of conditions, for example 'runId=<id> status=SUCCESS'. Give it again for another group, up to 8: that is OR, not AND, so an event fitting either fires the wait. Conditions that must all hold go in the one quoted --when. Without one, every event of the name fits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
@@ -3340,7 +3340,7 @@ qits wait [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [-
 - Declare the wait, then end your turn. You get a new turn that names what fired: the event, or the timeout.
 - Never poll in a background loop (sleep, watch, `qits events`) for something a wait can say.
 - While a wait is open, the platform shows the holder as waiting on its label, not as blocked.
-- A wait closes when it fires, times out or is cancelled. Declare a new one to wait again.
+- A wait closes when it fires, times out, is cancelled, or breaks: the platform decided it can never fire (BROKEN, with a reason). Declare a new one to wait again.
 - Waits take qits:admin, qits:admin-agent, qits:desk-admin, qits:system or qits:agent. Every agent, admin-agent included, declares, lists and cancels its own waits only; qits:desk-admin acts on the agents of its own project and names one with --agent; qits:admin and qits:system act on any agent.
 
 ```
@@ -3384,7 +3384,7 @@ qits wait branch --until joined|released|live|failed [--agent <id>] [--desk <pro
 | `--project <project>` | Only this project's deliveries: its id, slug or name. Needed when several projects know the branch. |
 | `--projects-url <url>` | The projects service's base URL, without /projects, where the deliveries and the project are read. Default: QITS_PROJECTS_URL, else derived from the idp address. |
 | `--repository <name>` | Only this repository's delivery, by name. Default: every repository that knows the branch, by their least advanced step. |
-| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: no timeout. |
+| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -3427,7 +3427,7 @@ qits wait release-request [--agent <id>] [--desk <project>] [--label <text>] [--
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
-| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: no timeout. |
+| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -3465,7 +3465,7 @@ qits wait work --status <STATUS> [--agent <id>] [--desk <project>] [--label <tex
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--projects-url <url>` | The projects service's base URL, without /projects, where the item is looked up. Default: QITS_PROJECTS_URL, else derived from the idp address. |
-| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: no timeout. |
+| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -3498,7 +3498,7 @@ qits wait ci-run [--agent <id>] [--desk <project>] [--label <text>] [--output ta
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
-| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: no timeout. |
+| `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -3517,7 +3517,7 @@ qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a
 
 ## qits wait list
 
-The holder's waits: id, state, event, label, when it was declared and when it times out.
+The holder's waits: id, state, event, label, when it was declared, when it times out and, for a BROKEN wait, why.
 
 ```
 qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state <STATE>] [--workspaces-url <url>]
@@ -3528,7 +3528,7 @@ qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state 
 | `--agent <id>` | The agent whose waits these are. Mutually exclusive with --desk. Default: QITS_AGENT_ID (on the MCP server, from the caller's token's agent claim). |
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
-| `--state <STATE>` | Only the waits in this state: OPEN, MATCHED, TIMED_OUT or CANCELLED. Default: all. |
+| `--state <STATE>` | Only the waits in this state: OPEN, MATCHED, TIMED_OUT, BROKEN or CANCELLED. Default: all. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
