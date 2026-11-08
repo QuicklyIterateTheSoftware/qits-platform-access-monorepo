@@ -95,14 +95,14 @@
         <qits.workspace-daemon-golden-masters.version>2026.1107.140355</qits.workspace-daemon-golden-masters.version>
         <qits.artifacts-golden-masters.version>2026.1107.150727</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1107.84029</qits.ci-golden-masters.version>
-        <qits.idp-golden-masters.version>2026.1107.220215</qits.idp-golden-masters.version>
+        <qits.idp-golden-masters.version>2026.1108.62139</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1031.124054</qits.events-golden-masters.version>
-        <qits.maintenance-golden-masters.version>2026.1106.221716</qits.maintenance-golden-masters.version>
+        <qits.maintenance-golden-masters.version>2026.1108.24102</qits.maintenance-golden-masters.version>
         <qits.observability-golden-masters.version>2026.1107.172205</qits.observability-golden-masters.version>
         <!-- qits-system's recordings, for the targets the VHS tapes' fake platform answers with
              (FakePlatformMain, epic qits-881); no consumer pact reads them yet. Bumped by
              qits-maintenance like the others. -->
-        <qits.system-golden-masters.version>2026.1107.162515</qits.system-golden-masters.version>
+        <qits.system-golden-masters.version>2026.1108.50219</qits.system-golden-masters.version>
         <qits.deployments-golden-masters.version>2026.1010.145913</qits.deployments-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
