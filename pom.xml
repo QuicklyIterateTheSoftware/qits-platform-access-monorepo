@@ -95,7 +95,7 @@
         <qits.workspace-daemon-golden-masters.version>2026.1107.140355</qits.workspace-daemon-golden-masters.version>
         <qits.artifacts-golden-masters.version>2026.1107.150727</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1107.84029</qits.ci-golden-masters.version>
-        <qits.idp-golden-masters.version>2026.1027.165632</qits.idp-golden-masters.version>
+        <qits.idp-golden-masters.version>2026.1107.220215</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1031.124054</qits.events-golden-masters.version>
         <qits.maintenance-golden-masters.version>2026.1106.221716</qits.maintenance-golden-masters.version>
         <qits.observability-golden-masters.version>2026.1107.172205</qits.observability-golden-masters.version>
