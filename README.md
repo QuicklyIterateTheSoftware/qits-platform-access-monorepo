@@ -1107,7 +1107,7 @@ json` is the service's answer as it came.
   names the one the request is on now) is printed in the service's own words, exit code 1.
 
 `regenerate` runs one release output again on an open request: `--kind` is `entity-diagram`,
-`screenshot-baselines`, `dependency-bump`, `estate-pins` (qits-1182), `golden-recordings-maven` or
+`entity-exposure` (qits-1958), `screenshot-baselines`, `dependency-bump`, `estate-pins` (qits-1182), `golden-recordings-maven` or
 `golden-recordings-npm` (qits-1516). QA checks the entity diagram
 and the screenshot baselines and fails when they are stale, but does not regenerate them; this is
 how a person or an agent asks for that. Without `--request` it takes the repository's one open

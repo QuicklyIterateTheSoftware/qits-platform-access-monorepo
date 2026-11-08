@@ -868,8 +868,8 @@ public class ReleaseRequestCommand implements Runnable {
     public static class RegenerateCommand extends PlatformCommand {
 
         /** The kinds the platform runs today; the service is the authority, this list is for the sentences. */
-        static final String KINDS = "entity-diagram, screenshot-baselines, cli-tapes, dependency-bump, estate-pins, "
-                + "golden-recordings-maven and golden-recordings-npm";
+        static final String KINDS = "entity-diagram, entity-exposure, screenshot-baselines, cli-tapes, "
+                + "dependency-bump, estate-pins, golden-recordings-maven and golden-recordings-npm";
 
         @CommandLine.ParentCommand
         ReleaseRequestCommand parent;
@@ -881,8 +881,8 @@ public class ReleaseRequestCommand implements Runnable {
         String request;
 
         @CommandLine.Option(names = "--kind", paramLabel = "<kind>", required = true,
-                description = "What to generate: entity-diagram, screenshot-baselines, cli-tapes, dependency-bump, "
-                        + "estate-pins, golden-recordings-maven or golden-recordings-npm.")
+                description = "What to generate: entity-diagram, entity-exposure, screenshot-baselines, cli-tapes, "
+                        + "dependency-bump, estate-pins, golden-recordings-maven or golden-recordings-npm.")
         String kind;
 
         @Override
