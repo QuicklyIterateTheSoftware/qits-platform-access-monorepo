@@ -33,7 +33,7 @@ Sleep 1s
 
 Hide
 Type "/remembered "
-Wait+Screen /(?s)\/remembered  ┐.*│ . remembered-devices +▸/
+Wait+Screen /(?s)\/remembered  ┐.*│ . remembered-devices *▸/
 Show
 Sleep 1s
 
