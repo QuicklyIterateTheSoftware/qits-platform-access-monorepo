@@ -1815,6 +1815,7 @@
             "finishedAt": "2026-01-01T00:00:00Z",
             "id": "00000000-0000-4000-8000-000000000003",
             "live": null,
+            "phase": null,
             "releaseRequestId": null,
             "releaseRequestQualifiedId": null,
             "repoId": "00000000-0000-4000-8000-000000000001",

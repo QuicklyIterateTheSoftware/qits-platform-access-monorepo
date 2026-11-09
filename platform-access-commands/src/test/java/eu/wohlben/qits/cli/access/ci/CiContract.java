@@ -52,7 +52,7 @@ public final class CiContract {
             "releaseRequestId", "createdAt", "startedAt", "finishedAt");
 
     /** One run as {@code RunView.printRun} shows it, with its steps and, while it runs, the live step. */
-    static final List<String> RUN = List.of("id", "repoName", "repoId", "status", "cancellationReason", "gating",
+    static final List<String> RUN = List.of("id", "repoName", "repoId", "status", "cancellationReason", "phase",
             "branch", "commitSha", "releaseRequestQualifiedId", "releaseRequestId", "retryOfRunId",
             "supersededByRunId", "triggerType", "triggerEventName", "configPath", "createdAt", "startedAt",
             "finishedAt", "steps[].stepIndex", "steps[].image", "steps[].status", "steps[].exitCode",
