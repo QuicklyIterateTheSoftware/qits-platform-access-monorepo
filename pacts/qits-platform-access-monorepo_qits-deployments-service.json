@@ -1,0 +1,567 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "deleteSetting"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments settings delete",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments settings delete: deleteSetting",
+      "key": "5810673e",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an application with settings in an environment",
+          "params": {
+            "application": "contract-app-00000001",
+            "environment": "contract-00000001",
+            "key": "LOG_LEVEL"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/settings/${application}/${environment}/${key}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "DELETE",
+        "path": "/deployments/api/settings/contract-app-00000001/contract-00000001/LOG_LEVEL"
+      },
+      "response": {
+        "status": 204
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "listSettings"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments settings list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments settings list: listSettings",
+      "key": "c4c17d85",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an application with settings in an environment",
+          "params": {
+            "application": "contract-app-00000001",
+            "environment": "contract-00000001",
+            "key": "LOG_LEVEL"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "query": {
+            "application": {
+              "dataType": "RAW",
+              "expression": "${application}",
+              "type": "ProviderState"
+            },
+            "environment": {
+              "dataType": "RAW",
+              "expression": "${environment}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/deployments/api/settings",
+        "query": {
+          "application": [
+            "contract-app-00000001"
+          ],
+          "environment": [
+            "contract-00000001"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "settings": [
+              {
+                "application": "contract-app-00000001",
+                "environment": "contract-00000001",
+                "key": "API_TOKEN",
+                "secret": true,
+                "updatedBy": "an-operator",
+                "value": "info"
+              },
+              {
+                "application": "contract-app-00000001",
+                "environment": "contract-00000001",
+                "key": "API_TOKEN",
+                "secret": true,
+                "updatedBy": "an-operator",
+                "value": "info"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.settings": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 2,
+                  "min": 2
+                }
+              ]
+            },
+            "$.settings[*].application": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.settings[*].environment": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.settings[*].key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.settings[*].secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.settings[*].updatedBy": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.settings[*].value": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "previewSettings"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments settings preview",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments settings preview: previewSettings",
+      "key": "be69d053",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an application whose settings changed since its deployment",
+          "params": {
+            "application": "contract-app-00000001",
+            "environment": "contract-00000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/settings/preview/${application}/${environment}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/deployments/api/settings/preview/contract-app-00000001/contract-00000001"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "added": [
+              {
+                "key": "NEW_FLAG",
+                "secret": false,
+                "value": "off"
+              }
+            ],
+            "changed": [
+              {
+                "from": "info",
+                "key": "LOG_LEVEL",
+                "secret": false,
+                "to": "debug"
+              }
+            ],
+            "removed": [
+              {
+                "key": "LEGACY_FLAG",
+                "secret": false,
+                "value": "on"
+              }
+            ],
+            "unchanged": 1
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.added": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.added[*].key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.added[*].secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.added[*].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.changed": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.changed[*].from": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.changed[*].key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.changed[*].secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.changed[*].to": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.removed": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.removed[*].key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.removed[*].secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.removed[*].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.unchanged": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "putSetting"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments settings set",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments settings set: putSetting",
+      "key": "fe771425",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an application with settings in an environment",
+          "params": {
+            "application": "contract-app-00000001",
+            "environment": "contract-00000001",
+            "key": "LOG_LEVEL"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "secret": false,
+            "value": "debug"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/settings/${application}/${environment}/${key}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "PUT",
+        "path": "/deployments/api/settings/contract-app-00000001/contract-00000001/LOG_LEVEL"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "application": "contract-app-00000001",
+            "environment": "contract-00000001",
+            "key": "LOG_LEVEL",
+            "secret": false,
+            "updatedBy": "an-operator",
+            "value": "debug"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.application": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.environment": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.key": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedBy": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-deployments-service"
+  }
+}
