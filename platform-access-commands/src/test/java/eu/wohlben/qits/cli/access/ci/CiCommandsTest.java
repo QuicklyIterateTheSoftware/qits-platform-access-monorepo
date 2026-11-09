@@ -2,6 +2,7 @@ package eu.wohlben.qits.cli.access.ci;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.wohlben.qits.cli.access.FakeIdp;
 import eu.wohlben.qits.cli.access.FakePlatform;
 import eu.wohlben.qits.cli.access.FakeTime;
@@ -22,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -261,6 +263,90 @@ class CiCommandsTest {
         assertThat(header).isPositive();
         assertThat(lines.get(header + 1)).isEqualTo("  0     qits/build-images/maven-base:latest  SUCCESS  0     1m50s");
         assertThat(lines.get(header + 2)).isEqualTo("  1     qits/build-images/ci-base:latest     FAILED   1     1m15s");
+    }
+
+    @Test
+    void aFailedStepsTailIsShownWithoutLogs() {
+        Result r = run("ci", "run", FAILED);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        List<String> lines = r.out().lines().toList();
+        int at = lines.indexOf("--- step 1  qits/build-images/ci-base:latest  FAILED, exit 1: its last 2 lines ---");
+        assertThat(at).isPositive();
+        assertThat(lines.get(at - 1)).isEmpty();
+        assertThat(lines.subList(at, at + 4)).containsExactly(
+                "--- step 1  qits/build-images/ci-base:latest  FAILED, exit 1: its last 2 lines ---",
+                "building",
+                "boom done",
+                "All of it: qits ci run " + FAILED + " --logs");
+        assertThat(r.out()).doesNotContain("compiling").doesNotContain("--- step 0")
+                .doesNotContain(String.valueOf(ESC)).doesNotContain(String.valueOf(BEL)).doesNotContain("\r");
+    }
+
+    /** qits-2011: the step's output is scanned backwards; only the last 20 lines show, trailing blanks ignored. */
+    @Test
+    void aFailedStepWithManyLinesShowsOnlyTheLastTwenty() throws Exception {
+        StringBuilder output = new StringBuilder();
+        for (int i = 1; i <= 25; i++) {
+            output.append("line").append(i).append('\n');
+        }
+        output.append("\n\n");
+        ObjectNode run = (ObjectNode) JSON.readTree("""
+                {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"release/%3$s",
+                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%3$s",
+                 "steps":[{"stepIndex":0,"image":"big-step","status":"FAILED","exitCode":1,
+                           "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","output":""}],
+                 "live":null}
+                """.formatted(FAILED, CI, REQUEST, COMMIT));
+        ((ObjectNode) run.path("steps").get(0)).put("output", output.toString());
+        platform.answer("GET", RUNS + "/" + FAILED, run.toString());
+
+        Result r = run("ci", "run", FAILED);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        List<String> lines = r.out().lines().toList();
+        int at = lines.indexOf("--- step 0  big-step  FAILED, exit 1: its last 20 lines ---");
+        assertThat(at).isPositive();
+        List<String> expectedTail = new ArrayList<>();
+        for (int i = 6; i <= 25; i++) {
+            expectedTail.add("line" + i);
+        }
+        assertThat(lines.subList(at + 1, at + 21)).isEqualTo(expectedTail);
+        assertThat(lines.get(at + 21)).isEqualTo("All of it: qits ci run " + FAILED + " --logs");
+        assertThat(r.out()).doesNotContain("line1\n").doesNotContain("line5\n");
+    }
+
+    /** A SUCCESS run, and a failed step with no output, print no tail block and no hint. */
+    @Test
+    void aSuccessfulRunOrAFailedStepWithNoOutputShowsNoTail() throws Exception {
+        platform.answer("GET", RUNS + "/" + SUCCESS, """
+                {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"main",
+                 "commitSha":"fedcba9876543210","gating":true,"status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z",
+                 "startedAt":"2026-09-12T08:00:05Z","finishedAt":"2026-09-12T09:02:05Z","releaseRequestId":null,
+                 "steps":[{"stepIndex":0,"image":"maven-base","status":"SUCCESS","exitCode":0,
+                           "startedAt":"2026-09-12T08:00:05Z","finishedAt":"2026-09-12T09:02:05Z",
+                           "output":"all good\\n"}],
+                 "live":null}
+                """.formatted(SUCCESS, CI));
+        Result success = run("ci", "run", SUCCESS);
+        assertThat(success.exit()).as(success.err()).isZero();
+        assertThat(success.out()).doesNotContain("--- step").doesNotContain("All of it:");
+
+        ObjectNode run = (ObjectNode) JSON.readTree("""
+                {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"release/%3$s",
+                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%3$s",
+                 "steps":[{"stepIndex":0,"image":"empty-step","status":"FAILED","exitCode":1,
+                           "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","output":""}],
+                 "live":null}
+                """.formatted(FAILED, CI, REQUEST, COMMIT));
+        platform.answer("GET", RUNS + "/" + FAILED, run.toString());
+
+        Result r = run("ci", "run", FAILED);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).doesNotContain("--- step").doesNotContain("All of it:");
     }
 
     @Test

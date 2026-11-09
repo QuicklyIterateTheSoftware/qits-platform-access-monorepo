@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,8 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
 final class RunView {
 
     private static final String RUNNING = "RUNNING";
+    private static final String SUCCESS = "SUCCESS";
+    private static final int TAIL_LINES = 20;
 
     private RunView() {
     }
@@ -85,6 +88,70 @@ final class RunView {
         }
         out.println("Steps:");
         Table.print(out, "  ", List.of("STEP", "IMAGE", "STATUS", "EXIT", "TOOK"), rows);
+    }
+
+    /**
+     * Without {@code --logs}, the one thing worth seeing without asking for the whole log: the end
+     * of a failed step's output. A step that finished SUCCESS, or has no output at all (still
+     * running, or the service kept none), prints nothing. A run with no failed step, or none with
+     * output, prints nothing here either, so its output is unchanged from before this existed.
+     */
+    static void printFailedTails(PrintStream out, JsonNode run) {
+        boolean any = false;
+        for (JsonNode step : steps(run)) {
+            String status = text(step, "status");
+            String output = text(step, "output");
+            if (SUCCESS.equals(status) || output.isEmpty()) {
+                continue;
+            }
+            List<String> tail = tail(output, TAIL_LINES);
+            if (tail.isEmpty()) {
+                continue;
+            }
+            any = true;
+            JsonNode exit = step.path("exitCode");
+            String label = text(step, "name").isEmpty() ? text(step, "image") : text(step, "name");
+            out.println();
+            out.println("--- step " + step.path("stepIndex").asText() + "  " + SafeText.line(label) + "  "
+                    + SafeText.line(status) + (exit.isNumber() ? ", exit " + exit.asText() : "")
+                    + ": its last " + tail.size() + (tail.size() == 1 ? " line" : " lines") + " ---");
+            tail.forEach(line -> out.println(SafeText.line(line)));
+        }
+        if (any) {
+            out.println("All of it: qits ci run " + SafeText.line(text(run, "id")) + " --logs");
+        }
+    }
+
+    /**
+     * Walks {@code output} backwards from the end, one line at a time, rather than splitting it
+     * whole: a step's output can be long, and the tail is all this needs to read. A blank line
+     * right at the end is skipped and not counted; one found once a real line has been seen is kept,
+     * the same as {@link #lines}. Empty when nothing but blank lines, or nothing at all, is left.
+     */
+    private static List<String> tail(String output, int max) {
+        List<String> collected = new ArrayList<>();
+        boolean skippingTrailingBlanks = true;
+        int right = output.length();
+        while (right > 0) {
+            int boundary = output.charAt(right - 1) == '\n' ? right - 1 : right;
+            int previous = output.lastIndexOf('\n', boundary - 1);
+            int start = previous + 1;
+            int end = boundary > start && output.charAt(boundary - 1) == '\r' ? boundary - 1 : boundary;
+            String line = output.substring(start, end);
+            right = start;
+            if (skippingTrailingBlanks) {
+                if (line.isEmpty()) {
+                    continue;
+                }
+                skippingTrailingBlanks = false;
+            }
+            collected.add(line);
+            if (collected.size() == max) {
+                break;
+            }
+        }
+        Collections.reverse(collected);
+        return collected;
     }
 
     /**

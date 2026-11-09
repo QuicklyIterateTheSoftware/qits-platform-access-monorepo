@@ -266,7 +266,9 @@ public class CiCommand implements Runnable {
                             + "list` shows it (qits-ci-service-rr-12), its uuid or the start of the uuid. They build "
                             + "the request's branch, release/<request id>.",
                     "- The service filters by repository and count only. --branch, --status and --release-request "
-                            + "are applied here, over all of the repository's runs, and --limit after them."},
+                            + "are applied here, over all of the repository's runs, and --limit after them.",
+                    "- The listing carries no step output (each step's output is null here): read it with "
+                            + "`qits ci run <run id> --logs`."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE, HelpText.REFUSED, HelpText.USAGE})
     @TuiCommand(effect = Effect.READ)
@@ -352,9 +354,10 @@ public class CiCommand implements Runnable {
 
     @CommandLine.Command(name = "run", mixinStandardHelpOptions = true,
             description = {"Show one CI run: what it built, its status, and its steps with their exit codes.",
-                    "--logs also prints each step's output, the first step first. The service keeps the end of each "
-                            + "step's output. A running step shows what it has printed so far. Terminal control "
-                            + "characters are taken out."},
+                    "Without --logs, a failed step's last lines are shown too, enough to see why it failed. "
+                            + "--logs prints every step's whole output instead, the first step first. The service "
+                            + "keeps the end of each step's output. A running step shows what it has printed so "
+                            + "far. Terminal control characters are taken out."},
             footerHeading = HelpText.EXAMPLES,
             footer = {
                     "  qits ci run 5f2c0a9e-1b7d-4c2e-9a41-3d8e6f0b2c17 --logs",
@@ -407,6 +410,8 @@ public class CiCommand implements Runnable {
             if (logs) {
                 out.println();
                 RunView.printLogs(out, run);
+            } else {
+                RunView.printFailedTails(out, run);
             }
             return 0;
         }
