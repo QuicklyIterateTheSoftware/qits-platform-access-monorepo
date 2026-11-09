@@ -87,23 +87,23 @@
              this repository the way every pin does — as a qits-maintenance bump on this property,
              gated here, where a changed answer the CLI cannot read goes red before it ships. Do not
              hand-edit it to chase a release. -->
-        <qits.projects-golden-masters.version>2026.1109.1559</qits.projects-golden-masters.version>
+        <qits.projects-golden-masters.version>2026.1109.121314</qits.projects-golden-masters.version>
         <!-- The other providers' golden masters, one per service the commands call (ticket
              qits-1149): each pact under pacts/ is written from its provider's recordings. Bumped by
              qits-maintenance like the one above. -->
         <qits.workspaces-golden-masters.version>2026.1108.230857</qits.workspaces-golden-masters.version>
         <qits.workspace-daemon-golden-masters.version>2026.1107.140355</qits.workspace-daemon-golden-masters.version>
-        <qits.artifacts-golden-masters.version>2026.1109.44929</qits.artifacts-golden-masters.version>
-        <qits.ci-golden-masters.version>2026.1107.84029</qits.ci-golden-masters.version>
+        <qits.artifacts-golden-masters.version>2026.1109.145731</qits.artifacts-golden-masters.version>
+        <qits.ci-golden-masters.version>2026.1109.132507</qits.ci-golden-masters.version>
         <qits.idp-golden-masters.version>2026.1109.13349</qits.idp-golden-masters.version>
-        <qits.events-golden-masters.version>2026.1031.124054</qits.events-golden-masters.version>
+        <qits.events-golden-masters.version>2026.1109.83116</qits.events-golden-masters.version>
         <qits.maintenance-golden-masters.version>2026.1108.232519</qits.maintenance-golden-masters.version>
         <qits.observability-golden-masters.version>2026.1107.172205</qits.observability-golden-masters.version>
         <!-- qits-system's recordings, for the targets the VHS tapes' fake platform answers with
              (FakePlatformMain, epic qits-881); no consumer pact reads them yet. Bumped by
              qits-maintenance like the others. -->
         <qits.system-golden-masters.version>2026.1108.50219</qits.system-golden-masters.version>
-        <qits.deployments-golden-masters.version>2026.1010.145913</qits.deployments-golden-masters.version>
+        <qits.deployments-golden-masters.version>2026.1109.191811</qits.deployments-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
              reads. -->
