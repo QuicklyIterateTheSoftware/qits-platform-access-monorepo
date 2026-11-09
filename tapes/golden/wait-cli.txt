@@ -530,9 +530,9 @@
 ────────────────────────────────────────────────────────────────────────────────
 $ qits wait list
 ID                                    STATE  EVENT                       LABEL
-                         CREATED                  EXPIRES
+                         CREATED                  EXPIRES                  REASON
 00000000-0000-4000-8000-0000000000b1  OPEN   ReleaseRequestStateChanged  release-request 00000000-00
-00-4000-8000-000000000…  2026-01-01 00:00:00 UTC  2026-01-01 00:00:00 UTC
+00-4000-8000-000000000…  2026-01-01 00:00:00 UTC  2026-01-01 00:00:00 UTC  -
 $
 
 
@@ -561,9 +561,9 @@ $
 ────────────────────────────────────────────────────────────────────────────────
 $ qits wait list
 ID                                    STATE  EVENT                       LABEL
-                         CREATED                  EXPIRES
+                         CREATED                  EXPIRES                  REASON
 00000000-0000-4000-8000-0000000000b1  OPEN   ReleaseRequestStateChanged  release-request 00000000-00
-00-4000-8000-000000000…  2026-01-01 00:00:00 UTC  2026-01-01 00:00:00 UTC
+00-4000-8000-000000000…  2026-01-01 00:00:00 UTC  2026-01-01 00:00:00 UTC  -
 $
 
 
