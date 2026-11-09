@@ -93,7 +93,7 @@
              qits-maintenance like the one above. -->
         <qits.workspaces-golden-masters.version>2026.1108.230857</qits.workspaces-golden-masters.version>
         <qits.workspace-daemon-golden-masters.version>2026.1107.140355</qits.workspace-daemon-golden-masters.version>
-        <qits.artifacts-golden-masters.version>2026.1107.150727</qits.artifacts-golden-masters.version>
+        <qits.artifacts-golden-masters.version>2026.1109.44929</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1107.84029</qits.ci-golden-masters.version>
         <qits.idp-golden-masters.version>2026.1109.13349</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1031.124054</qits.events-golden-masters.version>
