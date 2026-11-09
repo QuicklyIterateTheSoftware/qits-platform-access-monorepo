@@ -59,7 +59,7 @@ final class RunView {
         Table.print(out, "  ", null, List.of(
                 row("repository", repository),
                 row("status", text(run, "status") + (reason.isEmpty() ? "" : " (" + reason + ")")),
-                row("gating", run.path("gating").asBoolean() ? "yes" : "no"),
+                row("phase", text(run, "phase")),
                 row("branch", text(run, "branch")),
                 row("commit", text(run, "commitSha")),
                 row("release request", releaseRequest(run)),

@@ -81,23 +81,23 @@ class CiCommandsTest {
         platform.answer("GET", RUNS, """
                 {"runs":[
                   {"id":"%1$s","repoId":"%5$s","repoName":"qits-ci-service","branch":"release/%6$s","commitSha":"%7$s",
-                   "gating":true,"status":"RUNNING","createdAt":"2026-09-12T09:58:00Z","startedAt":"2026-09-12T09:58:30Z",
+                   "status":"RUNNING","createdAt":"2026-09-12T09:58:00Z","startedAt":"2026-09-12T09:58:30Z",
                    "finishedAt":null,"releaseRequestId":"%6$s","steps":null,"live":null},
                   {"id":"%2$s","repoId":"%5$s","repoName":"qits-ci-service","branch":"release/%6$s","commitSha":"%7$s",
-                   "gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z","startedAt":"2026-09-12T09:00:10Z",
+                   "status":"FAILED","createdAt":"2026-09-12T09:00:00Z","startedAt":"2026-09-12T09:00:10Z",
                    "finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%6$s"},
                   {"id":"%3$s","repoId":"%5$s","repoName":"qits-ci-service","branch":"main","commitSha":"fedcba9876543210",
-                   "gating":true,"status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z","startedAt":"2026-09-12T08:00:05Z",
+                   "status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z","startedAt":"2026-09-12T08:00:05Z",
                    "finishedAt":"2026-09-12T09:02:05Z","releaseRequestId":null},
                   {"id":"%4$s","repoId":"%5$s","repoName":"qits-ci-service","branch":"2026.911.1","commitSha":"aaaabbbbcccc",
-                   "gating":false,"status":"QUEUED","createdAt":"2026-09-12T09:59:00Z","startedAt":null,
+                   "status":"QUEUED","createdAt":"2026-09-12T09:59:00Z","startedAt":null,
                    "finishedAt":null,"releaseRequestId":null}]}
                 """.formatted(RUNNING, FAILED, SUCCESS, QUEUED, CI, REQUEST, COMMIT));
         // The steps out of order, and their output as a repository's code may write it: colours, a
         // title-setting sequence, a carriage return before the line break.
         platform.answer("GET", RUNS + "/" + FAILED, """
                 {"id":"%1$s","repoId":"%2$s","projectId":"qits","repoName":"qits-ci-service","branch":"release/%3$s",
-                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "commitSha":"%4$s","phase":"RELEASE_REQUEST","status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
                  "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","cancellationReason":null,
                  "supersededByRunId":null,"daemonVersion":"2026.906.161239","triggerType":"EVENT",
                  "triggerEventId":"e1","triggerEventName":"ReleaseRequestChanged","releaseRequestId":"%3$s",
@@ -209,16 +209,16 @@ class CiCommandsTest {
         platform.answer("GET", RUNS, """
                 {"runs":[
                   {"id":"%1$s","repoId":"%3$s","repoName":"qits-ci-service","branch":"release/qits-ci-service-rr-12",
-                   "commitSha":"%5$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                   "commitSha":"%5$s","status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
                    "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%4$s",
                    "releaseRequestQualifiedId":"qits-ci-service-rr-12"},
                   {"id":"%2$s","repoId":"%3$s","repoName":"qits-ci-service","branch":"main","commitSha":"fedcba9876543210",
-                   "gating":true,"status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z","startedAt":"2026-09-12T08:00:05Z",
+                   "status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z","startedAt":"2026-09-12T08:00:05Z",
                    "finishedAt":"2026-09-12T09:02:05Z","releaseRequestId":null,"releaseRequestQualifiedId":null}]}
                 """.formatted(FAILED, SUCCESS, CI, REQUEST, COMMIT));
         platform.answer("GET", RUNS + "/" + FAILED, """
                 {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"release/qits-ci-service-rr-12",
-                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "commitSha":"%4$s","status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
                  "releaseRequestId":"%3$s","releaseRequestQualifiedId":"qits-ci-service-rr-12","steps":[]}
                 """.formatted(FAILED, CI, REQUEST, COMMIT));
 
@@ -253,11 +253,13 @@ class CiCommandsTest {
         assertThat(r.out()).startsWith("Run " + FAILED + "\n")
                 .contains("  repository       qits-ci-service")
                 .contains("  status           FAILED")
+                .contains("  phase            RELEASE_REQUEST")
                 .contains("  commit           " + COMMIT)
                 .contains("  release request  " + REQUEST)
                 .contains("  trigger          EVENT ReleaseRequestChanged")
                 .contains("  took             3m05s")
-                .doesNotContain("compiling");
+                .doesNotContain("compiling")
+                .doesNotContain("gating");
         List<String> lines = r.out().lines().toList();
         int header = lines.indexOf("  STEP  IMAGE                                STATUS   EXIT  TOOK");
         assertThat(header).isPositive();
