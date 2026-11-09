@@ -2171,7 +2171,8 @@ Commands:
     qits artifacts publish sbom submit --type <npm|maven|docker|daemon> --name <n> --version <v> --file <path>
     qits artifacts publish sbom from-dockerfile --root-name <n> --root-version <v> \
                       [--dockerfile <path>]... [--build-arg NAME=value]... -o <out.json>
-    qits artifacts publish docs submit --site <name> --version <v> --archive <tgz> [--meta key=value]...
+    qits artifacts publish docs submit --site <name> --version <v> (--archive <tgz> | --openapi <file> | --dir <directory>) \
+                      [--if-changed] [--meta key=value]...
     qits artifacts publish changelog --version <v> [--meta key=value]...
     qits artifacts publish daemon submit --name <n> --version <v> --file <bin>
     qits artifacts publish exists <daemon|docs|npm|sbom> <name> <version>
@@ -2180,6 +2181,21 @@ Commands:
 
 `qits artifacts publish <command> --help` shows a command's options, examples and exit codes;
 `qits help skill` includes them all.
+
+**`docs submit`** publishes a docs bundle from exactly one source: a ready `--archive`, one
+`--openapi` document (packed as `openapi.yml`/`openapi.json`, the `@apidocs` publish), or a `--dir`
+packed here (qits-1948): every regular file under it, named relative to it so `manifest.json` sits at
+the bundle root, in a deterministic `.tar.gz` (sorted entries, fixed modes, owners and mtimes).
+Symbolic links are skipped, never followed, as the store skips them in an uploaded archive; a
+missing directory, or one with no regular file, is exit 1. `--if-changed` computes the bundle's
+content hash, `sha256:` over `<path>\0<sha256 hex of its bytes>\n` per file sorted by path (so it
+depends on paths and bytes only), and reads the site's listing (`GET /artifacts/docs/docs/<site>`):
+when the newest version records the same `content.hash` it prints `unchanged since <version>` and
+uploads nothing; otherwise (no such site, no hash recorded, a different one) it publishes with
+`X-Artifacts-Meta-content.hash` and prints `published <version>`. A listing that is not an answer
+(a 5xx, a 401, an unreadable body) is exit 2, never read as either; `--meta content.hash=` is
+refused beside `--if-changed`. Without `--if-changed` nothing is hashed and an occupied version is
+skipped with its WARN, as before.
 
 **`changelog`** is run by every release's publish step (qits-893): `qits artifacts publish changelog
 --version "$QITS_VERSION" --meta git.commit.hash="$QITS_CI_SHA" --meta

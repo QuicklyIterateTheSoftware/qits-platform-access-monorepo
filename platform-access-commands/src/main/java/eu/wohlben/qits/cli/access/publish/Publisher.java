@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The three publishes and the existence probe — and, in one place, <b>the one idempotency policy</b>
@@ -198,9 +199,81 @@ final class Publisher {
   static final String DOCS_BUNDLE_TYPE = "application/gzip";
 
   int docsSubmit(String site, String version, Path archive, List<String> meta) {
+    docsPut(site, version, archive, metadataHeaders(meta));
+    return ExitCode.OK;
+  }
+
+  /**
+   * {@code docs submit --if-changed} (qits-1948): PUT only when {@code hash}, the bundle's {@link
+   * DocsContent#hash content hash}, differs from the one recorded on the site's newest version, and
+   * record it on the new version as {@code content.hash}.
+   *
+   * <p>This is the docs store's answer to the fourth case above, for the one question a release
+   * asks of it: not "is this coordinate the same bytes" (still unanswerable), but "did the content
+   * change since the last release". The store needs no digest of its own for that — the hash is
+   * computed here, from paths and bytes, and kept as ordinary version metadata for the next run to
+   * read back. One stdout line says what happened, as {@link Decision}'s does for the packages:
+   * {@code unchanged since <version>} or {@code published <version>}.
+   *
+   * <p>It errs towards publishing, as {@link Decision} does: no such site (404), a site with no
+   * version, a newest version with no hash (published before this flag, or by hand), or a different
+   * hash are all "changed". Only the same hash is "unchanged". A listing that is not an answer is
+   * exit 2 ({@link DocsVersions}), never either. An occupied version (409) is the PUT's own case 4
+   * and stays exactly as {@link #docsSubmit} handles it; the line then still says {@code published},
+   * as {@link Decision} says it for a version already there.
+   */
+  int docsSubmitIfChanged(
+      String site, String version, Path archive, List<String> meta, String hash, DocsVersions versions) {
+    String coordinate = site + "@" + version;
+    // Validated before the listing is asked, so a bad --meta fails without a request.
+    Map<String, String> headers = metadataHeaders(meta);
+    if (headers.keySet().stream().anyMatch(k -> k.equalsIgnoreCase("X-Artifacts-Meta-" + DocsContent.HASH_KEY))) {
+      // The command refuses this first; held here too, because two hashes on one version would make
+      // the next run's decision depend on which header the store happened to keep.
+      throw CliException.policy("--meta " + DocsContent.HASH_KEY + " cannot be given with --if-changed, which "
+          + "records the hash it computes");
+    }
+    console.info("the docs bundle " + coordinate + " hashes to " + hash);
+
+    Optional<DocsVersions.Newest> newest = versions.newest(site);
+    String reason;
+    if (newest.isEmpty()) {
+      reason = "nothing is published at " + site + " yet — first publish";
+    } else if (newest.get().contentHash() == null) {
+      reason =
+          "the newest version "
+              + newest.get().version()
+              + " records no "
+              + DocsContent.HASH_KEY
+              + " (published without --if-changed) — publishing";
+    } else if (hash.equals(Sha256.normalize(newest.get().contentHash()))) {
+      console.info(
+          "the docs bundle "
+              + coordinate
+              + ": the newest version "
+              + newest.get().version()
+              + " holds the same content — nothing is uploaded");
+      console.answer("unchanged since " + newest.get().version());
+      return ExitCode.OK;
+    } else {
+      reason =
+          "the content changed since "
+              + newest.get().version()
+              + " ("
+              + newest.get().contentHash()
+              + ") — publishing";
+    }
+    console.info("the docs bundle " + coordinate + ": " + reason);
+    headers.put("X-Artifacts-Meta-" + DocsContent.HASH_KEY, hash);
+    docsPut(site, version, archive, headers);
+    console.answer("published " + version);
+    return ExitCode.OK;
+  }
+
+  /** The docs PUT and its two answers that are success: 201, and 409 probed and WARNed. */
+  private void docsPut(String site, String version, Path archive, Map<String, String> headers) {
     String url = store.docsBundle(site, version);
     String coordinate = site + "@" + version;
-    Map<String, String> headers = metadataHeaders(meta);
 
     // application/gzip: a docs bundle is a gzipped tar, so this is its true media type, and it is
     // what qits-artifacts records for putDocs (the consumer pact holds the CLI to it). The route
@@ -217,7 +290,7 @@ final class Publisher {
                 + " files, "
                 + orUnknown(Json.number(body, "totalBytes"))
                 + " bytes)");
-        return ExitCode.OK;
+        return;
       }
       case 409 -> {
         console.warn(
@@ -242,7 +315,7 @@ final class Publisher {
           console.warn(
               "and the probe answered " + probe.status() + ", so not even its shape could be read");
         }
-        return ExitCode.OK;
+        return;
       }
       default -> throw refusal("the docs publish for " + coordinate, url, response);
     }

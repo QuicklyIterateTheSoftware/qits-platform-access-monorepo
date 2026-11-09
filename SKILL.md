@@ -5212,17 +5212,23 @@ Publish a documentation bundle at (site, version).
 
 --openapi publishes one OpenAPI document instead of an archive: it is packed as the bundle's only entry, openapi.yml (or openapi.json for a .json file). That is the platform's @apidocs publish.
 
+--dir packs a directory instead: every regular file under it, named relative to it, so its own files sit at the bundle root. Symbolic links are skipped, never followed, as the store skips them in an archive. The pack is deterministic: sorted entries, fixed modes, owners and mtimes.
+
+With --if-changed the bundle is published only when its content hash differs from the one recorded on the site's newest version, and the hash is recorded on the new version as content.hash. The hash covers each file's path and bytes, never its order or mtime. No such site, or a newest version with no hash, counts as changed. It prints one line on stdout: `published <version>` or `unchanged since <version>`.
+
 The store explodes the archive into per-file blobs and keeps no archive digest, so an occupied version cannot be verified: it is skipped, with a WARN naming the degradation, rather than reported as a plain success.
 
 ```
-qits artifacts publish docs submit [--archive <tgz>...] [--meta <key=value>...] [--openapi <file>...] [--site <name>...] [--version <version>...]
+qits artifacts publish docs submit [--archive <tgz>...] [--dir <directory>...] [--if-changed] [--meta <key=value>...] [--openapi <file>...] [--site <name>...] [--version <version>...]
 ```
 
 | Name | What it does |
 |---|---|
-| `--archive <tgz>...` | The gzipped tar archive to publish. Exclusive with --openapi. |
+| `--archive <tgz>...` | The gzipped tar archive to publish. Exclusive with --openapi and --dir. |
+| `--dir <directory>...` | A directory to pack as the bundle, its files at the bundle root. Exclusive with --archive and --openapi. |
+| `--if-changed` | Publish only when the content differs from the site's newest version, and record its hash as content.hash. |
 | `--meta <key=value>...` | A metadata header, sent as X-Artifacts-Meta-<key>. Repeatable. |
-| `--openapi <file>...` | An OpenAPI document (.yml, .yaml or .json) to publish as the whole bundle. Exclusive with --archive. |
+| `--openapi <file>...` | An OpenAPI document (.yml, .yaml or .json) to publish as the whole bundle. Exclusive with --archive and --dir. |
 | `--site <name>...` | The docs site's name. |
 | `--version <version>...` | The version. |
 
@@ -5231,13 +5237,14 @@ qits artifacts publish docs submit [--archive <tgz>...] [--meta <key=value>...] 
 ```
 qits artifacts publish docs submit --site @apidocs/qits-ci --version 2026.906.1 --archive apidocs.tgz --meta git.commit.hash=deadbeef
 qits artifacts publish docs submit --site @apidocs/qits-projects --version 2026.1002.1 --openapi docs/openapi.yml
+qits artifacts publish docs submit --site @routes/qits-landing --version 2026.1109.1 --dir src/testing/browser/freezes --if-changed
 ```
 
 ### Exit codes
 
-- `0` Published, or already published (see above: not verified in that case).
-- `1` Refused: bad arguments, or a 4xx that is not the store's "already there".
-- `2` Could not ask: the store unreachable, an I/O failure, or a 5xx.
+- `0` Published, already published (see above: not verified in that case), or unchanged.
+- `1` Refused: bad arguments, a missing or empty --dir, or a 4xx that is not the store's "already there".
+- `2` Could not ask: the store unreachable, an I/O failure, a 5xx, or (with --if-changed) a listing that is not an answer; never read as unchanged.
 
 ## qits artifacts publish changelog
 
