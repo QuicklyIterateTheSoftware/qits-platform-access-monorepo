@@ -1688,6 +1688,49 @@
         "references": {
           "qits-call": {
             "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits artifacts publish docs submit",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits artifacts publish docs submit: listDocsVersions",
+      "key": "82f90949",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "no docs bundle published for the coordinate",
+          "params": {
+            "path": "index.html",
+            "site": "contract-docs-site",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/contract-docs-site"
+      },
+      "response": {
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
             "operationId": "putDocs"
           },
           "qits-trigger": {

@@ -60,6 +60,8 @@ public final class ArtifactsContract {
     static final String TWO_DAEMONS = "a daemon with two versions";
     static final String NO_DOCS = "no docs bundle published for the coordinate";
     static final String A_DOCS_SITE = "a published docs site";
+    /** A site whose newest version records {@code content.hash}: what {@code docs submit --if-changed} reads. */
+    static final String A_HASHED_DOCS_SITE = "a docs site published with a content hash";
     static final String A_HASH = "a content hash recorded for the coordinate";
     static final String CHANGELOGS = "a repository with published changelogs";
     static final String NO_CHANGELOG = "a repository with no changelog";
@@ -192,6 +194,22 @@ public final class ArtifactsContract {
         assertThat(Json.string(body, "publishedAt")).isNotBlank();
     };
 
+    /**
+     * {@code docs submit --if-changed}: the site's newest version and the {@code content.hash} it
+     * records, which is the state's {@code hash}; a site nothing published is absent, not an error.
+     */
+    private static CliRow.Call newestDocs(boolean present) {
+        return (url, recorded) -> {
+            Map<String, String> p = recorded.params();
+            var newest = new DocsVersions(http(), store(url)).newest(p.get("site"));
+            assertThat(newest.isPresent()).isEqualTo(present);
+            newest.ifPresent(n -> {
+                assertThat(n.version()).isNotBlank();
+                assertThat(n.contentHash()).isEqualTo(p.get("hash"));
+            });
+        };
+    }
+
     private static CliRow.Call exists(String type, String nameParam, int exit) {
         return (url, recorded) -> {
             Map<String, String> p = recorded.params();
@@ -305,6 +323,7 @@ public final class ArtifactsContract {
     public static final CliPact CONTRACT = BASE
             .client(Publisher.class, "sbomSubmit", "daemonSubmit", "docsSubmit", "exists")
             .client(ContentHashes.class, "version", "newest")
+            .client(DocsVersions.class, "newest")
             .client(ChangelogCommand.class, "unpublished")
             .client(MavenPublisher.class, "publish", "publishContract")
             .client(resolver(), "resolveModel")
@@ -340,6 +359,13 @@ public final class ArtifactsContract {
             rows.add(row(command, A_DOCS_SITE, "getDocsVersion", "Publisher#docsSubmit", DOCS_PROBE)
                     .consumes("fileCount", "totalBytes", "publishedAt"));
         }
+        // docs submit --if-changed: the newest version's content hash, before the PUT above (qits-1948).
+        // `metadata` is read whole: its one key the command reads, content.hash, has a dot in it,
+        // which a consumed path cannot spell.
+        rows.add(row("docs submit", NO_DOCS, "listDocsVersions", "DocsVersions#newest", newestDocs(false)));
+        rows.add(row("docs submit", A_HASHED_DOCS_SITE, "listDocsVersions", "DocsVersions#newest", newestDocs(true))
+                .consumes("versions[].version", "versions[].metadata")
+                .request("GET /artifacts/docs/docs/{site}"));
         rows.add(row("changelog", CHANGELOGS, "listDocsVersions", "ChangelogCommand#unpublished", CHANGELOG_LISTING)
                 .consumes("versions[].version"));
         rows.add(row("changelog", NO_CHANGELOG, "listDocsVersions", "ChangelogCommand#unpublished",
