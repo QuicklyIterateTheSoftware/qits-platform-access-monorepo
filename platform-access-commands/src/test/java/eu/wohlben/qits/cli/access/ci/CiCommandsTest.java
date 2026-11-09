@@ -295,7 +295,7 @@ class CiCommandsTest {
         output.append("\n\n");
         ObjectNode run = (ObjectNode) JSON.readTree("""
                 {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"release/%3$s",
-                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "commitSha":"%4$s","status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
                  "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%3$s",
                  "steps":[{"stepIndex":0,"image":"big-step","status":"FAILED","exitCode":1,
                            "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","output":""}],
@@ -324,7 +324,7 @@ class CiCommandsTest {
     void aSuccessfulRunOrAFailedStepWithNoOutputShowsNoTail() throws Exception {
         platform.answer("GET", RUNS + "/" + SUCCESS, """
                 {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"main",
-                 "commitSha":"fedcba9876543210","gating":true,"status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z",
+                 "commitSha":"fedcba9876543210","status":"SUCCESS","createdAt":"2026-09-12T08:00:00Z",
                  "startedAt":"2026-09-12T08:00:05Z","finishedAt":"2026-09-12T09:02:05Z","releaseRequestId":null,
                  "steps":[{"stepIndex":0,"image":"maven-base","status":"SUCCESS","exitCode":0,
                            "startedAt":"2026-09-12T08:00:05Z","finishedAt":"2026-09-12T09:02:05Z",
@@ -337,7 +337,7 @@ class CiCommandsTest {
 
         ObjectNode run = (ObjectNode) JSON.readTree("""
                 {"id":"%1$s","repoId":"%2$s","repoName":"qits-ci-service","branch":"release/%3$s",
-                 "commitSha":"%4$s","gating":true,"status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
+                 "commitSha":"%4$s","status":"FAILED","createdAt":"2026-09-12T09:00:00Z",
                  "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","releaseRequestId":"%3$s",
                  "steps":[{"stepIndex":0,"image":"empty-step","status":"FAILED","exitCode":1,
                            "startedAt":"2026-09-12T09:00:10Z","finishedAt":"2026-09-12T09:03:15Z","output":""}],
