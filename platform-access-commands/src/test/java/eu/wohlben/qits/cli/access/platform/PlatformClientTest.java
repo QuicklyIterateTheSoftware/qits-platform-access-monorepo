@@ -2,12 +2,27 @@ package eu.wohlben.qits.cli.access.platform;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PlatformClientTest {
 
@@ -54,5 +69,70 @@ class PlatformClientTest {
         assertThat(PlatformClient.refusal("GET", URL, 403, headers(Map.of()), "").status()).isEqualTo(403);
         assertThat(PlatformClient.refusal("GET", URL, 302, headers(Map.of("Location", List.of("https://idp/login"))), "").getMessage())
                 .contains("HTTP 302").contains("a redirect to https://idp/login");
+    }
+
+    /** A platform host, which nothing resolves: only the companion can have answered for it. */
+    private static final URI PRIVATE = URI.create("https://projects.qits.example.test/projects/api/projects");
+
+    private static void companionAt(ServerSocket server) {
+        CompanionProxy.replaceForTests(new CompanionProxy(
+                InetSocketAddress.createUnresolved("127.0.0.1", server.getLocalPort()), ".qits.example.test",
+                Set.of(), new PrintStream(PrintStream.nullOutputStream()), companion -> true));
+    }
+
+    /**
+     * The tiny CONNECT server: reads one request head and refuses the tunnel, which is enough to see
+     * what the client asked for without a TLS server behind it.
+     */
+    private static CompletableFuture<List<String>> oneConnect(ServerSocket server) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Socket socket = server.accept()) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII));
+                List<String> head = new ArrayList<>();
+                for (String line = in.readLine(); line != null && !line.isEmpty(); line = in.readLine()) {
+                    head.add(line);
+                }
+                OutputStream out = socket.getOutputStream();
+                out.write("HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+                return head;
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    @Test
+    void aPlatformCallGoesThroughTheCompanionAsAConnect() throws Exception {
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            CompletableFuture<List<String>> head = oneConnect(server);
+            companionAt(server);
+            try {
+                assertThatThrownBy(() -> new PlatformClient(() -> "the-bearer").get(PRIVATE))
+                        .isInstanceOf(CliFailure.class)
+                        .hasMessageContaining("Cannot reach " + PRIVATE);
+            } finally {
+                CompanionProxy.replaceForTests(null);
+            }
+            List<String> request = head.get(10, TimeUnit.SECONDS);
+            assertThat(request.getFirst()).isEqualTo("CONNECT projects.qits.example.test:443 HTTP/1.1");
+            // The bearer goes inside the tunnel, never to the companion.
+            assertThat(String.join("\n", request)).doesNotContain("the-bearer");
+        }
+    }
+
+    @Test
+    void theNetworkAccessCommandsClientNeverUsesTheCompanion() throws Exception {
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            companionAt(server);
+            try {
+                assertThatThrownBy(() -> PlatformClient.direct(() -> "the-bearer").get(PRIVATE))
+                        .isInstanceOf(CliFailure.class);
+            } finally {
+                CompanionProxy.replaceForTests(null);
+            }
+            server.setSoTimeout(300);
+            assertThatThrownBy(server::accept).isInstanceOf(SocketTimeoutException.class);
+        }
     }
 }

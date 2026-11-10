@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
+import eu.wohlben.qits.cli.access.platform.CompanionProxy;
 import eu.wohlben.qits.cli.access.platform.PlatformClient;
 
 import java.io.IOException;
@@ -86,6 +87,7 @@ public final class IdpUsersApi {
         try (HttpClient http = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(CONNECT_TIMEOUT)
+                .proxy(CompanionProxy.selector())
                 .build()) {
             response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException e) {

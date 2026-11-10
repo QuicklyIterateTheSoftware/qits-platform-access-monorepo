@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
+import eu.wohlben.qits.cli.access.platform.CompanionProxy;
 import eu.wohlben.qits.cli.access.platform.PlatformCommand;
 import eu.wohlben.qits.cli.access.publish.PublishCredential;
 import eu.wohlben.qits.cli.access.publish.Store;
@@ -242,7 +243,7 @@ public class BumpMessageCommand extends PlatformCommand {
         }
         HttpResponse<String> response;
         try (HttpClient http = HttpClient.newBuilder().connectTimeout(TIMEOUT)
-                .followRedirects(HttpClient.Redirect.NORMAL).build()) {
+                .followRedirects(HttpClient.Redirect.NORMAL).proxy(CompanionProxy.selector()).build()) {
             response = http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         } catch (IOException unreachable) {
             throw new CliFailure("Cannot reach " + url + ": " + unreachable.getMessage(), COULD_NOT_ASK);

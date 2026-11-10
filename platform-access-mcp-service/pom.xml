@@ -146,8 +146,9 @@
             <properties>
                 <quarkus.native.enabled>true</quarkus.native.enabled>
                 <!-- Pkce holds a SecureRandom in a static field and is in the commands jar this
-                     service carries. Seeded at build time, every image would carry the same seed. -->
-                <quarkus.native.additional-build-args>--initialize-at-run-time=eu.wohlben.qits.cli.access.login.Pkce</quarkus.native.additional-build-args>
+                     service carries. Seeded at build time, every image would carry the same seed. CompanionProxy
+                     (epic qits-1977) holds a selector built from the environment on first use. -->
+                <quarkus.native.additional-build-args>--initialize-at-run-time=eu.wohlben.qits.cli.access.login.Pkce,--initialize-at-run-time=eu.wohlben.qits.cli.access.platform.CompanionProxy</quarkus.native.additional-build-args>
                 <!-- The runner the ITs start; `-Dnative.image.path=<runner>` points them at another
                      one, a released runner for instance. -->
                 <native.image.path>${project.build.directory}/qits-platform-access-mcp-service</native.image.path>

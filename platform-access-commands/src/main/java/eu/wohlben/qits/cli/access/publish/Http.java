@@ -1,5 +1,7 @@
 package eu.wohlben.qits.cli.access.publish;
 
+import eu.wohlben.qits.cli.access.platform.CompanionProxy;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,6 +66,7 @@ final class Http {
         HttpClient.newBuilder()
             .connectTimeout(CONNECT_TIMEOUT)
             .followRedirects(HttpClient.Redirect.NORMAL)
+            .proxy(CompanionProxy.selector())
             .build(),
         credential);
   }
