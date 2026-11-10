@@ -110,11 +110,13 @@ class FictionalCommandTest {
      * in {@code run outside CI?} it is continuous integration, not the command. {@code start},
      * {@code stop} and {@code history} joined with {@code qits workspaces} (qits-1261): the screen's
      * {@code ⌃C stop}, {@code cannot start} and its run history are English, not those commands.
+     * {@code up} joined with {@code qits network-access} (epic qits-1977): the key hint {@code up/dn}
+     * is the arrow key, not that command.
      */
     private static final Set<String> ORDINARY = Set.of(
             "qits", "tui", "run", "runs", "list", "new", "update", "create", "details", "comment",
             "plan", "submit", "join", "help", "exists", "docs", "daemon", "skill", "show", "ci", "move",
-            "sources", "start", "stop", "history");
+            "sources", "start", "stop", "history", "up");
 
     private static final Pattern LITERAL = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"");
     private static final Pattern WORD = Pattern.compile("[A-Za-z][A-Za-z0-9-]*");

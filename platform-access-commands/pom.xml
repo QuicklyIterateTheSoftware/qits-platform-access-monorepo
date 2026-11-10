@@ -195,6 +195,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>eu.wohlben.qits</groupId>
+            <artifactId>qits-network-access-golden-masters</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <!-- JpaMappingConformanceTest builds Hibernate's own Metadata over the fixture entities and
                  holds `qits database diagram`'s reconstruction against it. TEST SCOPE ONLY: Hibernate
                  never reaches the commands jar, the binary or its SBOM. The version is quarkus-bom's,

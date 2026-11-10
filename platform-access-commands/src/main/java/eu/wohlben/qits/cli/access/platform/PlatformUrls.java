@@ -53,6 +53,11 @@ public final class PlatformUrls {
         return resolve("system", "--system-url", "QITS_SYSTEM_URL", flag, env, idpUrl);
     }
 
+    /** qits-network-access: the peers and the companion under {@code /network-access/api} (epic qits-1977). */
+    public static String networkAccess(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
+        return resolve("network-access", "--network-access-url", "QITS_NETWORK_ACCESS_URL", flag, env, idpUrl);
+    }
+
     /**
      * qits-artifacts, which answers on the host {@code registry}: {@code
      * https://registry.qits.<QITS_DOMAIN>}. {@code QITS_ARTIFACTS_URL} is the variable install.sh reads

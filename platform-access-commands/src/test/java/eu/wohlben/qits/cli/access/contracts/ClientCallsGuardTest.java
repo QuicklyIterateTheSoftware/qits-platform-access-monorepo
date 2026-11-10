@@ -72,7 +72,9 @@ class ClientCallsGuardTest {
                     + "(epic qits-1481's targets module is not released); add its CliPact once it has",
             "RegistryDiscovery", "qits registry-login --configure (qits-1675): two list reads, qits-artifacts' and "
                     + "qits-mirror's GET .../api/repositories; any failure falls back to the default registries. "
-                    + "qits-mirror has no contract with the CLI yet; add rows once it has");
+                    + "qits-mirror has no contract with the CLI yet; add rows once it has",
+            "CompanionHealth", "qits network-access up and status (epic qits-1977): GET /healthz of the "
+                    + "network-access companion on this machine's loopback, never a platform service");
 
     @Test
     void everyClassThatSendsIsAClientOrNamed() throws Exception {

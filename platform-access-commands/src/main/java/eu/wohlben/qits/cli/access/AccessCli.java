@@ -8,6 +8,7 @@ import eu.wohlben.qits.cli.access.checkout.CheckoutDaemonCommand;
 import eu.wohlben.qits.cli.access.ci.CiCommand;
 import eu.wohlben.qits.cli.access.contracts.ContractsCommand;
 import eu.wohlben.qits.cli.access.maintenance.MaintenanceCommand;
+import eu.wohlben.qits.cli.access.networkaccess.NetworkAccessCommand;
 import eu.wohlben.qits.cli.access.daemon.SessionDaemonCommand;
 import eu.wohlben.qits.cli.access.database.DatabaseCommand;
 import eu.wohlben.qits.cli.access.deployments.DeploymentsCommand;
@@ -54,6 +55,7 @@ import picocli.CommandLine;
                 RememberedDevicesCommand.class,
                 EventsCommand.class,
                 ObserveCommand.class, WaitCommand.class, WorkspacesCommand.class, TargetsCommand.class, GitLoginCommand.class, GitCredentialCommand.class, RegistryLoginCommand.class,
+                NetworkAccessCommand.class,
                 ArtifactsCommand.class, ChangelogGroup.class, AgentsCommand.class, AgentMcpCommand.class, UpdateCommand.class,
                 HelpCommand.class},
         description = {

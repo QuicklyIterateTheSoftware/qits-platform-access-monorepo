@@ -4921,6 +4921,106 @@ qits registry-login
 - `1` A file cannot be read or written, or the session cannot be refreshed.
 - `2` Used wrongly, not signed in, not set up, or not on a workstation.
 
+## qits network-access
+
+Reach the platform's private apps from this workstation: `up` runs the network-access companion in Docker, a WireGuard tunnel to the private edge with a proxy on 127.0.0.1:47813, and from then on every qits command dials the platform's hosts through it.
+
+The companion's state is the Docker volume qits-network-access-companion (its private key never leaves it) and $XDG_CONFIG_HOME/qits/access.json (the peer and the proxy).
+
+### Notes
+
+- A workstation command, signed in as a person: with QITS_TOKEN or inside the platform it refuses, because host containers reach the private edge over the overlay.
+- Registering a device takes qits:admin.
+- QITS_NETWORK_ACCESS_PROXY=<url> names the companion's address instead of access.json's, and QITS_NETWORK_ACCESS_PROXY=off sends every call direct.
+- Only https and wss calls to hosts under the platform's domain go through the companion; loopback and every QITS_URL_* address go direct. When the companion does not answer, calls go direct with one warning.
+
+## qits network-access up
+
+Run the network-access companion and send this workstation's platform calls through it. Pulls the image the platform names, makes the companion's key, registers it as a device of yours (once: a later `up` reuses it), hands it its tunnel and starts it, published on 127.0.0.1:47813 only.
+
+Running it again is how the companion is upgraded to the image the platform names now.
+
+```
+qits network-access up [--name <label>] [--network-access-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `--name <label>` | The device's name, a DNS label. Default: this machine's short host name. |
+| `--network-access-url <url>` | The network-access service's base URL, without /network-access. Default: QITS_NETWORK_ACCESS_URL, else the session's idp address with `idp` swapped for `network-access`. |
+
+### Examples
+
+```
+qits network-access up
+qits network-access up --name laptop
+```
+
+- Needs Docker, and a Docker login for the platform's registry to pull the image.
+- Registering the device takes qits:admin.
+
+### Exit codes
+
+- `0` The companion is up and healthy.
+- `1` The platform refused, docker failed, or the companion did not become healthy in 20 s.
+- `2` Used wrongly, not signed in, or not on a workstation.
+- `3` Docker is missing or not running, or the registry refused the pull.
+
+## qits network-access down
+
+Stop the network-access companion: platform calls go direct again. The device and the companion's key stay, so the next `up` reuses them.
+
+--revoke also revokes the device at the platform and deletes the key's volume and access.json.
+
+```
+qits network-access down [--network-access-url <url>] [--revoke]
+```
+
+| Name | What it does |
+|---|---|
+| `--network-access-url <url>` | The network-access service's base URL, without /network-access. Default: QITS_NETWORK_ACCESS_URL, else the session's idp address with `idp` swapped for `network-access`. |
+| `--revoke` | Also revoke the device and delete its key. |
+
+### Examples
+
+```
+qits network-access down
+qits network-access down --revoke
+```
+
+- Revoking takes qits:admin.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused the revoke, or docker or a file failed.
+- `2` Used wrongly, not signed in, or not on a workstation.
+- `3` Docker is missing or not running.
+
+## qits network-access status
+
+Show the device from access.json, the companion container's state and its health check.
+
+```
+qits network-access status [--network-access-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `--network-access-url <url>` | The network-access service's base URL, without /network-access. Default: QITS_NETWORK_ACCESS_URL, else the session's idp address with `idp` swapped for `network-access`. |
+
+### Examples
+
+```
+qits network-access status
+```
+
+### Exit codes
+
+- `0` The companion is up and healthy.
+- `1` It is down, not set up, or not healthy.
+- `2` Used wrongly, or not on a workstation.
+
 ## qits artifacts
 
 The platform's artifacts store. `qits artifacts publish` is a CI release step's publish client: a maven module, an npm package, a contract package, an sbom, a docs bundle or a daemon binary. `qits artifacts fetch` writes published artifacts to a local directory: the consumer pacts a provider's deployed consumers were built against.

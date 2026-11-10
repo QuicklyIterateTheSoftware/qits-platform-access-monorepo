@@ -104,6 +104,10 @@
              qits-maintenance like the others. -->
         <qits.system-golden-masters.version>2026.1108.50219</qits.system-golden-masters.version>
         <qits.deployments-golden-masters.version>2026.1109.191811</qits.deployments-golden-masters.version>
+        <!-- qits-network-access's recordings, for `qits network-access` (epic qits-1977). The first pin
+             is 2026.1110.191501, whose getCompanion answers the entrypoint and user the CLI runs the
+             companion with. Bumped by qits-maintenance like the others. -->
+        <qits.network-access-golden-masters.version>2026.1110.191501</qits.network-access-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
              reads. -->
@@ -191,6 +195,11 @@
                 <groupId>eu.wohlben.qits</groupId>
                 <artifactId>qits-deployments-golden-masters</artifactId>
                 <version>${qits.deployments-golden-masters.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.wohlben.qits</groupId>
+                <artifactId>qits-network-access-golden-masters</artifactId>
+                <version>${qits.network-access-golden-masters.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.wohlben.qits</groupId>

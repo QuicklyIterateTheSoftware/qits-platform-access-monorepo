@@ -1,0 +1,571 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-network-access-service",
+            "operationId": "revokePeer"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits network-access down",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits network-access down: revokePeer",
+      "key": "551925f5",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a device peer behind an announced private edge",
+          "params": {
+            "peerId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/network-access/api/peers/${peerId}/revoke",
+            "type": "ProviderState"
+          }
+        },
+        "method": "POST",
+        "path": "/network-access/api/peers/00000000-0000-4000-8000-000000000001/revoke"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "status": "REVOKED"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-network-access-service",
+            "operationId": "createPeer"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits network-access up",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits network-access up: createPeer",
+      "key": "1c91fe25",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an announced private edge",
+          "params": {
+            "publicKey": "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc="
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "name": "laptop",
+            "publicKey": "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc="
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/network-access/api/peers"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "name": "laptop",
+            "publicKey": "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc=",
+            "status": "ACTIVE",
+            "tunnelIp": "100.96.0.10"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.publicKey": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.tunnelIp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-network-access-service",
+            "operationId": "getCompanion"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits network-access up",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits network-access up: getCompanion",
+      "key": "b705f2ad",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an announced private edge",
+          "params": {
+            "publicKey": "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc="
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/network-access/api/companion"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "entrypoint": "/work/companion/qits-access-companion",
+            "image": "registry.qits.wohlben.eu/qits/qits-network-access",
+            "user": "65532:65532",
+            "version": "2026.1110.120000"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.entrypoint": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.image": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.user": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-network-access-service",
+            "operationId": "getPeer"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits network-access up",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits network-access up: getPeer",
+      "key": "40b0a02a",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a device peer behind an announced private edge",
+          "params": {
+            "peerId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/network-access/api/peers/${peerId}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/network-access/api/peers/00000000-0000-4000-8000-000000000001"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "name": "laptop",
+            "publicKey": "AAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc=",
+            "status": "ACTIVE",
+            "tunnelIp": "100.96.0.10"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.publicKey": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.tunnelIp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-network-access-service",
+            "operationId": "getPeerTunnel"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits network-access up",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits network-access up: getPeerTunnel",
+      "key": "d4b1542",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a device peer behind an announced private edge",
+          "params": {
+            "peerId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/network-access/api/peers/${peerId}/tunnel",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/network-access/api/peers/00000000-0000-4000-8000-000000000001/tunnel"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "edge": {
+              "dnsAddress": "100.96.0.1",
+              "domain": "wohlben.eu",
+              "listenPort": 47812,
+              "mtu": 1380,
+              "publicAddress": "46.224.171.33",
+              "publicKey": "AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAc=",
+              "tunnelCidr": "100.96.0.0/24"
+            },
+            "peerId": "00000000-0000-4000-8000-000000000001",
+            "tunnelIp": "100.96.0.10"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.edge.dnsAddress": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.edge.domain": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.edge.listenPort": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.edge.mtu": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.edge.publicAddress": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.edge.publicKey": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.edge.tunnelCidr": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.peerId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.tunnelIp": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-network-access-service"
+  }
+}
