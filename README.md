@@ -2049,6 +2049,45 @@ session-daemon` replaces it each time it refreshes the session. No long-lived se
   to stop.
 - A workstation command: inside the platform or with `QITS_TOKEN` it refuses (exit 2).
 
+## The private edge from this workstation
+
+    qits network-access up [--name <label>]
+    qits network-access down [--revoke]
+    qits network-access status
+
+Some apps answer only behind the platform's private edge. `qits network-access up` (epic
+qits-1977) runs the network-access companion in Docker: a userspace WireGuard tunnel to the edge
+with an HTTP CONNECT proxy in front, from the image `GET /network-access/api/companion` names
+(`image`, `version`, and the `entrypoint` and `user` every `docker run` of it takes). It makes the
+companion's key in the volume `qits-network-access-companion` (the private key never leaves it),
+registers the public key as a device peer of the signed-in person (`POST /peers`, qits:admin; a
+later `up` keeps a peer that is still ACTIVE with that key), pipes `GET /peers/{id}/tunnel` to the
+companion's `configure`, and starts it as `qits-network-access-companion` with `--restart
+unless-stopped`, **published on `127.0.0.1:47813` only**: its proxy is unauthenticated, so it must
+never be reachable from another machine. After `/healthz` answers 200 (it waits 20 s) it writes
+`$XDG_CONFIG_HOME/qits/access.json` (`peerId`, `proxy`, `image`, `version`; no secret). Running
+`up` again upgrades the companion. Docker always runs as a subprocess with an argv list.
+
+From then on every command dials the platform's hosts through it (`CompanionProxy`, the
+`ProxySelector` of every `HttpClient` the commands build): https and wss to a host under the
+session's `.qits.<domain>` go through the companion as CONNECT, so `qits events` and the
+WebSockets follow too. Loopback, the hosts of `QITS_URL_*` overrides, plain http and every other
+host go direct. `QITS_NETWORK_ACCESS_PROXY=<url>` names the companion instead of access.json, and
+`QITS_NETWORK_ACCESS_PROXY=off` turns it off. When the companion does not answer a TCP connect,
+calls go direct and the process says so once on stderr ("the network-access companion does not
+answer; run `qits network-access up`"): the public apps keep working. `qits network-access` itself
+always dials direct, since it sets up the companion it would otherwise depend on. Git
+subprocesses are out of scope: the git host stays public.
+
+- `down` removes the container and drops `proxy` from access.json, keeping the peer, so the next
+  `up` reuses the device the key is registered as. `down --revoke` revokes it (`POST
+  /peers/{id}/revoke`), removes the volume and deletes access.json.
+- `status` prints the peer, the container state (`docker inspect`) and the `/healthz` answer;
+  exit 0 only when healthy.
+- Exit 3 means Docker is missing or not running, or the registry refused the pull (log Docker in
+  to the registry first). A workstation command: inside the platform or with `QITS_TOKEN` it
+  refuses (exit 2), because host containers reach the private edge over the overlay.
+
 ## qits agents
 
 The platform's agents, one verb per thing that can be done to one (epic qits-1667), and what an
