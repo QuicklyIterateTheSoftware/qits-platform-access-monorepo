@@ -34,7 +34,9 @@ class TapesCoverageTest {
                     + "status line, run by Claude Code rather than typed",
             "database", "a CI step's entity diagram, generated from a repository's compiled classes",
             "contracts", "a CI step's golden-master coverage, read from a repository's own files",
-            "help", "the help, which every tape's commands already show; `help guide` is the platform's guide text");
+            "help", "the help, which every tape's commands already show; `help guide` is the platform's guide text",
+            "network-access", "runs Docker on a workstation (the companion container), and the tapes' kit has no "
+                    + "docker; NetworkAccessCommandsTest drives it against a recording fake docker instead");
 
     /** Integrations with a CLI tape only, and why there is no screen to show. */
     static final Map<String, String> CLI_ONLY = Map.of(

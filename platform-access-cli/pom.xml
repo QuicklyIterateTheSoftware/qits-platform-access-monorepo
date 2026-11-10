@@ -163,8 +163,12 @@
 
                      org.jline.nativ is never called — the exec provider shells /bin/stty — but its
                      initializer unpacks libjlinenative.so into /tmp. Run at build time it fails the
-                     build; run at run time it is never reached. -->
-                <quarkus.native.additional-build-args>--initialize-at-run-time=eu.wohlben.qits.cli.access.login.Pkce,--initialize-at-run-time=org.jline.nativ</quarkus.native.additional-build-args>
+                     build; run at run time it is never reached.
+
+                     CompanionProxy (epic qits-1977) holds the process's proxy selector, built from
+                     the environment and access.json on first use: it must never be built, or read,
+                     on the build machine. -->
+                <quarkus.native.additional-build-args>--initialize-at-run-time=eu.wohlben.qits.cli.access.login.Pkce,--initialize-at-run-time=eu.wohlben.qits.cli.access.platform.CompanionProxy,--initialize-at-run-time=org.jline.nativ</quarkus.native.additional-build-args>
             </properties>
         </profile>
     </profiles>

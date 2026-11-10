@@ -51,9 +51,25 @@ public final class PlatformClient {
     private static final Pattern AUTH_PARAM = Pattern.compile("(error|error_description)=\"([^\"]*)\"");
 
     private final Credential credential;
+    /** Never through the network-access companion: see {@link #direct}. */
+    private final boolean bypassCompanion;
 
     public PlatformClient(Credential credential) {
+        this(credential, false);
+    }
+
+    private PlatformClient(Credential credential, boolean bypassCompanion) {
         this.credential = credential;
+        this.bypassCompanion = bypassCompanion;
+    }
+
+    /**
+     * A client that never dials through the network-access companion ({@link CompanionProxy}): what
+     * {@code qits network-access} sets the companion up with, which must not depend on the companion
+     * it is about to replace. The network-access service is a public app.
+     */
+    public static PlatformClient direct(Credential credential) {
+        return new PlatformClient(credential, true);
     }
 
     /**
@@ -160,7 +176,7 @@ public final class PlatformClient {
                 .header("Accept", "application/json")
                 .header("Authorization", bearer())
                 .build();
-        try (HttpClient http = newClient()) {
+        try (HttpClient http = newClient(bypassCompanion)) {
             HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
             int status = response.statusCode();
             try (PushbackInputStream body = new PushbackInputStream(response.body())) {
@@ -211,7 +227,7 @@ public final class PlatformClient {
                 .header("Authorization", bearer())
                 .GET()
                 .build();
-        try (HttpClient http = newClient()) {
+        try (HttpClient http = newClient(bypassCompanion)) {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             int status = response.statusCode();
             if (status < 200 || status >= 300) {
@@ -235,7 +251,7 @@ public final class PlatformClient {
                 .header("Authorization", bearer())
                 .method("HEAD", HttpRequest.BodyPublishers.noBody())
                 .build();
-        try (HttpClient http = newClient()) {
+        try (HttpClient http = newClient(bypassCompanion)) {
             HttpResponse<Void> response = http.send(request, HttpResponse.BodyHandlers.discarding());
             int status = response.statusCode();
             if (status < 200 || status >= 300) {
@@ -261,7 +277,7 @@ public final class PlatformClient {
                 .header("Authorization", bearer())
                 .GET()
                 .build();
-        try (HttpClient http = newClient()) {
+        try (HttpClient http = newClient(bypassCompanion)) {
             HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
             int status = response.statusCode();
             try (InputStream body = response.body()) {
@@ -291,7 +307,7 @@ public final class PlatformClient {
                 .build();
         // A client per connection, so that stopping can abort exactly this one. No request
         // timeout: the body never ends, and a silent stream is the caller's watchdog's business.
-        HttpClient http = newClient();
+        HttpClient http = newClient(bypassCompanion);
         HttpResponse<Stream<String>> response;
         try {
             response = http.send(request, HttpResponse.BodyHandlers.ofLines());
@@ -354,7 +370,7 @@ public final class PlatformClient {
     public Socket openSocket(URI uri, WebSocket.Listener listener) throws CliFailure, InterruptedException {
         String bearer = bearer();
         // A client per connection, like openStream, so that stopping can abort exactly this one.
-        HttpClient http = newClient();
+        HttpClient http = newClient(bypassCompanion);
         CompletableFuture<WebSocket> opening;
         try {
             opening = http.newWebSocketBuilder()
@@ -535,10 +551,12 @@ public final class PlatformClient {
         return String.join("; ", messages);
     }
 
-    private static HttpClient newClient() {
+    /** The platform's hosts go through the companion when a workstation runs one ({@link CompanionProxy}). */
+    private static HttpClient newClient(boolean bypassCompanion) {
         return HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(CONNECT_TIMEOUT)
+                .proxy(bypassCompanion ? CompanionProxy.NONE : CompanionProxy.selector())
                 .build();
     }
 

@@ -52,6 +52,7 @@ contracts:
     qits-events-service: { packages: [maven] }
     qits-idp-service: { packages: [maven] }
     qits-deployments-service: { packages: [maven] }
+    qits-network-access-service: { packages: [maven] }
 
 # THE daemon ARCHETYPE'S OWN HEADER NAMES THIS REPOSITORY AS THE ONE THAT RIDES ITS OWN RECIPES, and
 # the reason is the build: there is no `docker/Dockerfile.musl-builder` here, so the archetype's

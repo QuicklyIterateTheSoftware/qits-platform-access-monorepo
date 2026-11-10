@@ -11,7 +11,8 @@ run's step logs, a retry, a cancel, a run's release reports), `qits database dia
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
 golden master records), `qits users` (the idp's users: invite, register, list,
 delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
-revoke; qits-1944), `qits events` (the live event
+revoke; qits-1944), `qits network-access` (this workstation onto the private edge through a
+Docker companion; epic qits-1977), `qits events` (the live event
 stream), `qits wait` (an agent's declared waits in qits-workspaces), `qits workspaces` (every action
 of the landing app's workspace pages, on the same qits-workspaces doors), `qits targets` (execution
 targets and their leases, qits-system-service's doors; epic qits-1481), `qits checkout-daemon` (a local checkout held at what a repository released, root and
@@ -333,6 +334,14 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                `Authorization: {authorization}` in `a remembered device`, pending until a pinned
                qits-idp-golden-masters records that state with a CLI bearer as its authorization
                param.
+    networkaccess/ qits network-access up|down|status (epic qits-1977, Interaction.LOCAL, workstation
+               only): Docker (the docker CLI as a subprocess, looked up on the command's own PATH so
+               a test puts a recording fake first), NetworkAccessApi (getCompanion, getPeer,
+               createPeer, getPeerTunnel, revokePeer, always through PlatformClient.direct),
+               CompanionHealth (the loopback /healthz probe, NOT_A_CLIENT) and AccessState
+               (access.json). The companion is published on 127.0.0.1:47813 only, and
+               NetworkAccessCommandsTest holds that exact -p argument. platform/CompanionProxy is
+               the ProxySelector every HttpClient here is built with; see the README
     users/     qits users invite, register, list and delete, on the idp's user doors (IdpUsersApi).
                register sends no bearer: the register token is the credential, and the person has
                no session yet. The idp's address is the session's, the public vhost inside
