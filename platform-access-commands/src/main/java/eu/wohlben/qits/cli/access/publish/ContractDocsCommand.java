@@ -17,6 +17,10 @@ import java.util.List;
                 "--entities adds the entity exposure map as entities.json, beside contracts.json, and makes "
                         + "the bundle publish on every release even when no golden-masters package moved: the "
                         + "map can change on its own, e.g. marking an entity @Technical.",
+                "--database adds the generated entity diagrams (every `qits database diagram` file in the "
+                        + "directory) under database/, with database/index.json naming each file's unit and "
+                        + "the entities it draws, and likewise makes the bundle publish on every release: the "
+                        + "schema can change with no golden master moving.",
                 "Run it after the contract packages are published: a package with no version at all is a "
                         + "refusal, not a state."},
         footerHeading = "%nExamples:%n",
@@ -56,6 +60,11 @@ public class ContractDocsCommand extends AbstractPublishCommand {
                     + "bundle is then published on every release.")
     List<String> entities = new ArrayList<>();
 
+    @CommandLine.Option(names = "--database", paramLabel = "<dir>",
+            description = "The entity diagrams (docs/database/); its generated *.md files are bundled under "
+                    + "database/ with an index.json, and the bundle is then published on every release.")
+    List<String> database = new ArrayList<>();
+
     @CommandLine.Unmatched
     List<String> unmatched = new ArrayList<>();
 
@@ -68,8 +77,10 @@ public class ContractDocsCommand extends AbstractPublishCommand {
         List<ContractDocs.PackageRef> refs = packages.stream().map(ContractDocs.PackageRef::parse).toList();
         String entities = PublishArgs.optionalOnce(this.entities, "--entities", null);
         Path entitiesFile = entities == null ? null : Path.of(entities);
+        String database = PublishArgs.optionalOnce(this.database, "--database", null);
+        Path databaseDir = database == null ? null : Path.of(database);
         String line = new ContractDocs(http(), store(env), console)
-                .publish(application, from, version, refs, meta, entitiesFile);
+                .publish(application, from, version, refs, meta, entitiesFile, databaseDir);
         console.answer(line);
         return ExitCode.OK;
     }

@@ -5115,15 +5115,18 @@ Publish the @contracts/<application> docs bundle when at least one golden-master
 
 --entities adds the entity exposure map as entities.json, beside contracts.json, and makes the bundle publish on every release even when no golden-masters package moved: the map can change on its own, e.g. marking an entity @Technical.
 
+--database adds the generated entity diagrams (every `qits database diagram` file in the directory) under database/, with database/index.json naming each file's unit and the entities it draws, and likewise makes the bundle publish on every release: the schema can change with no golden master moving.
+
 Run it after the contract packages are published: a package with no version at all is a refusal, not a state.
 
 ```
-qits artifacts publish contract-docs [--application <application>...] [--entities <file>...] [--from <dir>...] [--meta <key=value>...] [--package <ecosystem=coordinate>...] [--version <version>...]
+qits artifacts publish contract-docs [--application <application>...] [--database <dir>...] [--entities <file>...] [--from <dir>...] [--meta <key=value>...] [--package <ecosystem=coordinate>...] [--version <version>...]
 ```
 
 | Name | What it does |
 |---|---|
 | `--application <application>...` | The provider application; the site is @contracts/<application>. |
+| `--database <dir>...` | The entity diagrams (docs/database/); its generated *.md files are bundled under database/ with an index.json, and the bundle is then published on every release. |
 | `--entities <file>...` | The entity exposure map (docs/entities.json); bundled as entities.json, and the bundle is then published on every release. |
 | `--from <dir>...` | The golden-masters tree. |
 | `--meta <key=value>...` | A metadata header, sent as X-Artifacts-Meta-<key>. Repeatable. |
