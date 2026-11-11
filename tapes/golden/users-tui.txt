@@ -533,13 +533,13 @@
  │   login             ▸ Sign in through the browser and store the session. Run it first, and agai │
  │   session-daemon      Keep the session from `qits login` fresh for as long as this runs. Start  │
  │   checkout-daemon     Hold a local checkout at what a repository released, and keep it there. I │
+ │   checkout            A workstation clone of a wrapper, every submodule on its own main: `sync` │
  │   projects            The platform's projects: list shows them, delivery shows one's delivery d │
  │   repositories        The repositories of one project: list shows them, create stands a new one │
  │   work                Work items of every archetype - epics, tickets, features, tasks and issue │
  │   ideas               A project's ideas: short, titled notes that an epic or a ticket names as  │
  │   release-request     Release requests: the one way to release a repository. list shows them (o │
  │   ci                  The builds of qits-ci: runs lists a repository's runs, run shows one run  │
- │   deployments         The deployer, qits-deployments. `settings` reads and writes the values it │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits
@@ -564,13 +564,13 @@
  │   login             ▸ Sign in through the browser and store the session. Run it first, and agai │
  │   session-daemon      Keep the session from `qits login` fresh for as long as this runs. Start  │
  │   checkout-daemon     Hold a local checkout at what a repository released, and keep it there. I │
+ │   checkout            A workstation clone of a wrapper, every submodule on its own main: `sync` │
  │   projects            The platform's projects: list shows them, delivery shows one's delivery d │
  │   repositories        The repositories of one project: list shows them, create stands a new one │
  │   work                Work items of every archetype - epics, tickets, features, tasks and issue │
  │   ideas               A project's ideas: short, titled notes that an epic or a ticket names as  │
  │   release-request     Release requests: the one way to release a repository. list shows them (o │
  │   ci                  The builds of qits-ci: runs lists a repository's runs, run shows one run  │
- │   deployments         The deployer, qits-deployments. `settings` reads and writes the values it │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits
