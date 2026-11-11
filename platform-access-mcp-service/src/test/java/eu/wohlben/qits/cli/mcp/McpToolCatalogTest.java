@@ -173,11 +173,12 @@ class McpToolCatalogTest {
         catalog.excluded().forEach(e -> byCommand.put(e.command(), e));
         assertThat(byCommand).containsKeys("qits login", "qits git-login", "qits session-daemon",
                 "qits checkout-daemon", "qits events", "qits observe", "qits git-credential",
-                "qits help skill");
+                "qits docker-credential", "qits help skill");
         assertThat(byCommand.keySet()).anySatisfy(command -> assertThat(command).startsWith("qits artifacts publish"));
         assertThat(byCommand.get("qits login").reason()).isEqualTo("needs a browser and a person");
         assertThat(byCommand.get("qits events").reason()).isEqualTo("runs until stopped");
         assertThat(byCommand.get("qits git-credential").reason()).isEqualTo("only means something on the caller's machine");
+        assertThat(byCommand.get("qits docker-credential").reason()).isEqualTo("only means something on the caller's machine");
         assertThat(byCommand.get("qits checkout sync").reason()).isEqualTo("only means something on the caller's machine");
         byCommand.values().stream().filter(e -> e.command().startsWith("qits artifacts publish"))
                 .forEach(e -> assertThat(e.reason()).isEqualTo("CI-step only, reads local files"));
@@ -232,6 +233,7 @@ class McpToolCatalogTest {
         assertThat(catalog.tool("events")).isEmpty();
         assertThat(catalog.tool("observe")).isEmpty();
         assertThat(catalog.tool("git-credential")).isEmpty();
+        assertThat(catalog.tool("docker-credential")).isEmpty();
         assertThat(catalog.tool("login")).isEmpty();
         assertThat(catalog.tool("help_skill")).isEmpty();
         assertThat(catalog.tool("update")).as("it replaces a file on the caller's machine").isEmpty();

@@ -105,6 +105,7 @@ class InPlatformRefusalsTest {
         assertThat(refuse(Mode.IN_PLATFORM, "git-credential", "get")).isNull();
         assertThat(refuse(Mode.IN_PLATFORM, "help", "skill")).isNull();
         assertThat(refuse(Mode.WORKSTATION, "git-credential", "get")).isNull();
+        assertThat(refuse(Mode.IN_PLATFORM, "docker-credential", "get")).isNull();
     }
 
     @Test

@@ -14,8 +14,8 @@ A workspace is the token home: on a runner node, or an admin or editor workspace
 - Sign in once with `qits login`, and keep `qits session-daemon` running so the session stays fresh.
 - Release only through a release request: `qits release-request create`, or `join` to add a branch to an open one. A push releases nothing.
 - Push only branches under refs/heads/external/, after `qits git-login`. Git gets the token from `qits git-credential`.
-- On a workstation, npm and Maven get the platform's registries from `qits registry-login --configure`, kept fresh by `qits session-daemon`. Do not write registry tokens by hand.
-- qits never prints a token. The one exception is `qits git-credential get`, which Git runs. Two commands print a secret meant for one person: `qits users invite` (a register token) and `qits users register` (the new password, once).
+- On a workstation, npm, Maven and Docker get the platform's registries from `qits registry-login --configure`: npm and Maven a token kept fresh by `qits session-daemon`, Docker its helper `qits docker-credential`. Do not write registry tokens by hand.
+- qits never prints a token. The two exceptions are `qits git-credential get`, which Git runs, and `qits docker-credential get`, which Docker runs. Two commands print a secret meant for one person: `qits users invite` (a register token) and `qits users register` (the new password, once).
 - To wait for something on the platform, declare it with `qits wait` and end your turn: you get a new turn when it happens. Never poll for it in a background loop.
 - A command that says `Not signed in` or `Session ended` exits with 2: run `qits login`.
 - For how to develop on the platform, run `qits help guide`: it prints the platform's current guide for where it runs (a workstation, or an agent, desk or refinement room inside). It leads with `guide-hash: <hash>` when the service sends one; `--hash-only` prints just that line, to check cheaply whether the guide changed.
@@ -4919,20 +4919,23 @@ The example shows the workstation setup. Do not run `get` yourself: it prints a 
 
 ## qits registry-login
 
-Give npm and Maven on this workstation a login for the platform's registries: the access token of `qits login`, in a block of ~/.npmrc and two of ~/.m2/settings.xml that the CLI owns.
+Give npm, Maven and Docker on this workstation a login for the platform's registries: the access token of `qits login`, in a block of ~/.npmrc and two of ~/.m2/settings.xml that the CLI owns, and for Docker a credential helper that hands it the same token.
 
 --configure sets it up: it asks the platform which npm registries there are, writes the blocks, and records the setup in $XDG_CONFIG_HOME/qits/registries.json. From then on `qits session-daemon` writes each new token into the blocks, and refreshes at least 5 minutes before expiry. Without --configure it writes the current token once.
 
 Only the blocks change; the rest of each file stays as it is. Each file is replaced atomically with mode 0600. The Maven blocks are the mirror `qits-maven-host` for the repository `qits-maven`, and servers for both ids with an `Authorization: Bearer` header.
 
+For Docker, --configure sets credHelpers["registry.qits.<domain>"] to "qits" in ~/.docker/config.json (or $DOCKER_CONFIG/config.json), keeping every other entry, and writes docker-credential-qits beside the qits binary: a two-line script that runs `qits docker-credential`. Docker runs it for each pull and push, so no token is stored for Docker and nothing needs renewing.
+
 ```
-qits registry-login [--artifacts-url <url>] [--configure] [--dry-run] [--maven-settings <file>] [--mirror-url <url>] [--npmrc <file>] [--remove-stale]
+qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file>] [--dry-run] [--maven-settings <file>] [--mirror-url <url>] [--npmrc <file>] [--remove-stale]
 ```
 
 | Name | What it does |
 |---|---|
 | `--artifacts-url <url>` | With --configure: qits-artifacts. Default: QITS_ARTIFACTS_URL, else https://registry.qits.<domain of the session's idp>. |
 | `--configure` | Set up the blocks (again), with the registries the platform lists now. |
+| `--docker-config <file>` | With --configure: the Docker client config. Default: $DOCKER_CONFIG/config.json, else ~/.docker/config.json. |
 | `--dry-run` | Write nothing; print the changes as a redacted unified diff. |
 | `--maven-settings <file>` | With --configure: the Maven user settings. Default: ~/.m2/settings.xml. |
 | `--mirror-url <url>` | With --configure: qits-mirror. Default: QITS_MIRROR_URL, else https://mirror.qits.<domain of the session's idp>. |
@@ -4950,13 +4953,44 @@ qits registry-login
 - --dry-run writes nothing. It prints a unified diff per file, or "No changes". Every secret shows as <token>, and lines outside the blocks show only when they change.
 - --remove-stale also drops lines for the old *.dev.localhost registries, and entries outside the blocks that use the same registries or ids. Without it they stay, with a warning.
 - A workstation command: inside the platform, or with QITS_TOKEN, the container has its own registry setup.
-- To stop: delete $XDG_CONFIG_HOME/qits/registries.json and the blocks.
+- To stop: delete $XDG_CONFIG_HOME/qits/registries.json and the blocks, and the qits entry of the Docker config's credHelpers.
 
 ### Exit codes
 
 - `0` Done, or nothing to change.
 - `1` A file cannot be read or written, or the session cannot be refreshed.
 - `2` Used wrongly, not signed in, not set up, or not on a workstation.
+
+## qits docker-credential
+
+Docker's credential helper for the platform's registry. Docker runs it, through the docker-credential-qits script that `qits registry-login --configure` writes; a person does not.
+
+get reads the registry's address on stdin and, for https://registry.qits.<domain of the session's idp> (or QITS_ARTIFACTS_URL), prints the access token of `qits login` as the password of `oauth2`, refreshing the session first when it has less than 5 minutes left. store and erase do nothing: the token comes from the session. list prints {}.
+
+For any other registry, without a session, and with QITS_TOKEN or QITS_PLATFORM, get prints `credentials not found in native keychain` and exits 1, which Docker reads as no login, so it pulls without one.
+
+```
+qits docker-credential <get|store|erase|list>
+```
+
+| Name | What it does |
+|---|---|
+| `<get\|store\|erase\|list>` | What Docker asks for. |
+
+### Examples
+
+```
+qits registry-login --configure
+printf 'registry.qits.<domain>' | qits docker-credential get
+```
+
+Do not run `get` yourself: it prints a token on stdout, because that is Docker's helper protocol.
+
+### Exit codes
+
+- `0` Done. get printed the login; store, erase and list always end here.
+- `1` get has no login for that registry. A session that cannot be refreshed says why on stderr.
+- `2` No action named, or one Docker does not have.
 
 ## qits network-access
 
@@ -4993,7 +5027,7 @@ qits network-access up
 qits network-access up --name laptop
 ```
 
-- Needs Docker, and a Docker login for the platform's registry to pull the image.
+- Needs Docker. Docker gets its login for the platform's registry from `qits registry-login --configure`, which points it at `qits docker-credential`.
 - Registering the device takes qits:admin.
 
 ### Exit codes
@@ -5001,7 +5035,7 @@ qits network-access up --name laptop
 - `0` The companion is up and healthy.
 - `1` The platform refused, docker failed, or the companion did not become healthy in 20 s.
 - `2` Used wrongly, not signed in, or not on a workstation.
-- `3` Docker is missing or not running, or the registry refused the pull.
+- `3` Docker is missing or not running, or the registry refused the pull: run `qits registry-login --configure`.
 
 ## qits network-access down
 

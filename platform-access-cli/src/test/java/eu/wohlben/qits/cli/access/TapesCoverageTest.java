@@ -42,7 +42,10 @@ class TapesCoverageTest {
     static final Map<String, String> CLI_ONLY = Map.of(
             "login", "a browser sign-in: the tape shows the refusal where no browser can be",
             "git-login", "a browser sign-in for Git: the tape shows its refusals",
-            "registry-login", "writes a workstation's npm and Maven setup: the tape shows the token home's refusal",
+            "registry-login", "writes a workstation's npm, Maven and Docker setup: the tape shows the token home's "
+                    + "refusal",
+            "docker-credential", "Docker's credential helper, given what Docker gives it: the tape shows the token "
+                    + "home's not-found answers",
             "artifacts", "a CI step's publishing: the tape shows its argument checks",
             "changelog", "a CI step's commit subject: the tape runs it on local files",
             "checkout", "`checkout sync` is pure git on a workstation clone (LOCAL): the tape runs it on a "

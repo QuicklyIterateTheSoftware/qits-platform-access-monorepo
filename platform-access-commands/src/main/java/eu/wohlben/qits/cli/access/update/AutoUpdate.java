@@ -42,11 +42,11 @@ public final class AutoUpdate {
 
     /**
      * The first word of a command that never starts a check: {@code update} itself (and its
-     * background run), the two daemons, the git credential helper and {@code agents} (Claude runs
+     * background run), the two daemons, the git and Docker credential helpers and {@code agents} (Claude runs
      * the hook and the status line, and reads their stdout), and {@code help} (agents read it).
      */
     static final Set<String> PROTOCOL = Set.of("update", "session-daemon", "checkout-daemon", "git-credential",
-            "agents", "help");
+            "docker-credential", "agents", "help");
 
     private static final Set<String> HELP_OR_VERSION = Set.of("-h", "--help", "-V", "--version");
     private static final Set<String> OFF = Set.of("false", "0", "off", "no");
@@ -152,7 +152,7 @@ public final class AutoUpdate {
     }
 
     /** The running binary, when this process is one named like it; empty in a JVM. */
-    static Optional<Path> nativeBinary() {
+    public static Optional<Path> nativeBinary() {
         return Detached.self().filter(path -> path.getFileName().toString().startsWith("qits"));
     }
 }

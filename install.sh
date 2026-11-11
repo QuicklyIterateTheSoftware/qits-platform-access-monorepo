@@ -9,6 +9,9 @@
 #   3. Checks whether the install directory is on PATH.
 #   4. Points Git's credential helper at the installed binary, the way
 #      `qits git-login --configure` does.
+#   5. Writes docker-credential-qits next to the binary, the script Docker runs
+#      for the platform's registry once `qits registry-login --configure` has
+#      named it in Docker's config.
 #
 # The sign-in here differs from a device flow: the idp behind `qits login`
 # shows a code on its own page after you sign in, and you paste it back. It
@@ -394,7 +397,29 @@ else
     echo "Git is set up: $GIT_KEY -> $TARGET git-credential"
 fi
 
+# ---- 5. the Docker credential helper ----------------------------------------
+
+# Docker runs docker-credential-<name> from PATH for a credHelpers entry, so the
+# script sits beside qits. The same content `qits registry-login --configure`
+# writes (DockerShim.java): it only runs `qits docker-credential`.
+SHIM="${INSTALL_DIR}/docker-credential-qits"
+ABSOLUTE_TARGET="$(cd "$INSTALL_DIR" && pwd -P)/qits"
+QUOTED_TARGET="'$(printf '%s' "$ABSOLUTE_TARGET" | sed "s/'/'\\\\''/g")'"
+SHIM_CONTENT="$(printf '#!/bin/sh\nexec %s docker-credential "$@"' "$QUOTED_TARGET")"
+if [[ -f "$SHIM" && -x "$SHIM" && "$(cat "$SHIM")" == "$SHIM_CONTENT" ]]; then
+    echo
+    echo "$SHIM is up to date."
+else
+    TMP_SHIM="$(mktemp "${INSTALL_DIR}/.docker-credential-qits.XXXXXX")"
+    printf '%s\n' "$SHIM_CONTENT" >"$TMP_SHIM"
+    chmod 755 "$TMP_SHIM"
+    mv -f "$TMP_SHIM" "$SHIM"
+    echo
+    echo "Wrote $SHIM for Docker."
+fi
+
 echo
 echo "Next steps:"
-echo "  qits login       sign in for a platform session"
-echo "  qits git-login   sign in for Git pushes (Git already points at $TARGET)"
+echo "  qits login                        sign in for a platform session"
+echo "  qits git-login                    sign in for Git pushes (Git already points at $TARGET)"
+echo "  qits registry-login --configure   npm, Maven and Docker logins for the platform's registries"

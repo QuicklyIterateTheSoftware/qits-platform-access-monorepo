@@ -69,7 +69,9 @@ class NetworkAccessCommandsTest {
             last=""; for a in "$@"; do last="$a"; done
             case "$1" in
               version) exit "${FAKE_DOCKER_VERSION_EXIT:-0}" ;;
-              pull) if [ -n "$FAKE_DOCKER_PULL_DENIED" ]; then
+              pull) if [ "$FAKE_DOCKER_PULL_DENIED" = "realm" ]; then
+                      echo "Error response from daemon: error from registry: client credentials required" >&2; exit 1
+                    elif [ -n "$FAKE_DOCKER_PULL_DENIED" ]; then
                       echo "Error response from daemon: unauthorized: authentication required" >&2; exit 1; fi ;;
               run) case "$last" in
                      keygen) echo "created /state/private.key" >&2; echo "$FAKE_DOCKER_KEY" ;;
@@ -284,7 +286,21 @@ class NetworkAccessCommandsTest {
         Result result = run("network-access", "up", "--name", "laptop");
 
         assertThat(result.exit()).isEqualTo(3);
-        assertThat(result.err()).contains("run `qits registry-login` first").contains("docker login registry.qits.wohlben.eu");
+        assertThat(result.err()).contains("The registry refused to pull " + REF
+                + ": run `qits registry-login --configure` so Docker gets its login from your qits session, "
+                + "then run `qits network-access up` again.");
+        assertThat(platform.requests("POST", "/network-access/api/peers")).isEmpty();
+    }
+
+    /** The edge's token realm says {@code client credentials required} when Docker sent no login. */
+    @Test
+    void thePlatformRealmsMissingCredentialsSaysToConfigure() throws Exception {
+        env.put("FAKE_DOCKER_PULL_DENIED", "realm");
+
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).isEqualTo(3);
+        assertThat(result.err()).contains("run `qits registry-login --configure` so Docker gets its login");
         assertThat(platform.requests("POST", "/network-access/api/peers")).isEmpty();
     }
 

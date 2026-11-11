@@ -19,7 +19,8 @@ targets and their leases, qits-system-service's doors; epic qits-1481), `qits ch
 submodules), `qits checkout sync` (a workstation clone of a wrapper fast-forwarded on every
 repository's own `main`, nested submodules included; pure git), `qits observe` (the live, server-filtered telemetry stream of qits-observability, over
 a WebSocket), and `qits git-login` / `qits git-credential` (Git pushes to
-`refs/heads/external/*`, sign-in stored in `$XDG_CONFIG_HOME/qits/git.json`), `qits agents` (the
+`refs/heads/external/*`, sign-in stored in `$XDG_CONFIG_HOME/qits/git.json`), `qits registry-login` /
+`qits docker-credential` (npm, Maven and Docker logins for the platform's registries; qits-2082), `qits agents` (the
 platform's agents, one verb each, on qits-workspaces' agent doors; epic qits-1667), `qits agents claude …` (what
 Claude Code runs: the work-links hook and the work-items status line), `qits update` (the binary
 replacing itself with the newest release, also started in the background), and `qits tui` (an
@@ -299,6 +300,12 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                every 30 seconds until PRESENT or --timeout passes
     git/       qits git-login and git-credential: the loopback callback, git.json, Git's helper
                protocol, the per-host Git setup
+    registry/  qits registry-login and docker-credential: the npm and Maven blocks (ManagedBlocks,
+               RegistryLogins, registries.json as RegistryState), the redacted --dry-run diff
+               (UnifiedDiff), the Docker config's credHelpers entry (DockerConfig, written in
+               docker's own tab layout), the docker-credential-qits script beside the binary
+               (DockerShim; install.sh writes the same), and Docker's helper protocol
+               (DockerCredentialCommand, qits-2082)
     artifacts/ qits artifacts: the group, with publish (in publish/ below) and fetch. `fetch
                deployed-pacts` (qits-1765, Interaction.LOCAL: it writes files) asks qits-maintenance's
                MaintenanceApi.deployedPacts which pact package each deployed consumer version was
@@ -400,9 +407,11 @@ Two packages sit outside `access/`, because neither is about one command:
   `Session`, `TokenResponse` and `Pkce` override `toString` for that reason. An error from the idp
   names its status, `error` and `error_description`, never the request form. A Jackson error on a
   session or token body is replaced, because its message can quote the body.
-  **The one exception is `qits git-credential get`**, which prints the git access token on
-  stdout because that is Git's credential helper protocol. Nothing else prints one, and stderr and
-  logs never carry one, that command's included.
+  **The two exceptions are `qits git-credential get`**, which prints the git access token on
+  stdout because that is Git's credential helper protocol, **and `qits docker-credential get`**,
+  which prints the session's access token on stdout for the platform's registry only, because that
+  is Docker's (qits-2082). Nothing else prints one, and stderr and logs never carry one, those
+  commands' included.
   Four commands print a secret that is not an access token, because handing it to one person is
   their whole job: `qits users invite` prints a register token, `qits users register` prints the
   generated password, and `qits targets create` and `qits targets rotate-token` print the install
