@@ -4960,9 +4960,11 @@ qits registry-login
 
 ## qits network-access
 
-Reach the platform's private apps from this workstation: `up` runs the network-access companion in Docker, a WireGuard tunnel to the private edge with a proxy on 127.0.0.1:47813, and from then on every qits command dials the platform's hosts through it.
+Reach the platform's private apps from this workstation: `up` runs the network-access companion in Docker, a WireGuard tunnel to the private edge with a proxy on 127.0.0.1:47813, and from then on every qits command, and a browser too, dials the platform's hosts through it.
 
 The companion's state is the Docker volume qits-network-access-companion (its private key never leaves it) and $XDG_CONFIG_HOME/qits/access.json (the peer and the proxy).
+
+A browser reaches the same tunnel through the companion's proxy auto-config file: set its proxy auto-config URL to http://127.0.0.1:47813/proxy.pac.
 
 ### Notes
 
@@ -4973,9 +4975,11 @@ The companion's state is the Docker volume qits-network-access-companion (its pr
 
 ## qits network-access up
 
-Run the network-access companion and send this workstation's platform calls through it. Pulls the image the platform names, makes the companion's key, registers it as a device of yours (once: a later `up` reuses it), hands it its tunnel and starts it, published on 127.0.0.1:47813 only.
+Run the network-access companion and send this workstation's platform calls, and a browser's, through it. Pulls the image the platform names, makes the companion's key, registers it as a device of yours (once: a later `up` reuses it), hands it its tunnel and starts it, published on 127.0.0.1:47813 only.
 
 Running it again is how the companion is upgraded to the image the platform names now.
+
+qits commands dial the companion's CONNECT proxy directly; a browser instead needs its proxy auto-config URL set to http://127.0.0.1:47813/proxy.pac, which this command prints once the companion is up.
 
 ```
 qits network-access up [--name <label>] [--network-access-url <url>]

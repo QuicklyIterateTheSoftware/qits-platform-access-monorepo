@@ -42,9 +42,11 @@ import java.util.regex.Pattern;
                 NetworkAccessCommand.StatusCommand.class},
         description = {"Reach the platform's private apps from this workstation: `up` runs the network-access "
                 + "companion in Docker, a WireGuard tunnel to the private edge with a proxy on 127.0.0.1:47813, "
-                + "and from then on every qits command dials the platform's hosts through it.",
+                + "and from then on every qits command, and a browser too, dials the platform's hosts through it.",
                 "The companion's state is the Docker volume qits-network-access-companion (its private key "
-                        + "never leaves it) and $XDG_CONFIG_HOME/qits/access.json (the peer and the proxy)."},
+                        + "never leaves it) and $XDG_CONFIG_HOME/qits/access.json (the peer and the proxy).",
+                "A browser reaches the same tunnel through the companion's proxy auto-config file: set its "
+                        + "proxy auto-config URL to http://127.0.0.1:47813/proxy.pac."},
         footerHeading = "%nNotes:%n",
         footer = {"- A workstation command, signed in as a person: with QITS_TOKEN or inside the platform it "
                 + "refuses, because host containers reach the private edge over the overlay.",
@@ -113,6 +115,20 @@ public class NetworkAccessCommand implements Runnable {
         String told = context.env().get(CompanionProxy.VARIABLE);
         return told == null || told.isBlank() || told.strip().equalsIgnoreCase("off")
                 ? CompanionProxy.DEFAULT_ADDRESS : told.strip();
+    }
+
+    /** {@code <address>/proxy.pac}: the companion's GET /proxy.pac, trimmed of a trailing slash first. */
+    static String pacUrl(String address) {
+        String trimmed = address.strip();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed + "/proxy.pac";
+    }
+
+    /** The one sentence every command prints once it knows the companion's address. */
+    static String browsersLine(String address) {
+        return "browsers: set the proxy auto-config URL to " + pacUrl(address);
     }
 
     static Optional<AccessState> state(CliContext context) throws CliFailure {
@@ -185,11 +201,14 @@ public class NetworkAccessCommand implements Runnable {
     }
 
     @CommandLine.Command(name = "up", mixinStandardHelpOptions = true,
-            description = {"Run the network-access companion and send this workstation's platform calls through "
-                    + "it. Pulls the image the platform names, makes the companion's key, registers it as a device "
-                    + "of yours (once: a later `up` reuses it), hands it its tunnel and starts it, "
-                    + "published on 127.0.0.1:47813 only.",
-                    "Running it again is how the companion is upgraded to the image the platform names now."},
+            description = {"Run the network-access companion and send this workstation's platform calls, and a "
+                    + "browser's, through it. Pulls the image the platform names, makes the companion's key, "
+                    + "registers it as a device of yours (once: a later `up` reuses it), hands it its tunnel and "
+                    + "starts it, published on 127.0.0.1:47813 only.",
+                    "Running it again is how the companion is upgraded to the image the platform names now.",
+                    "qits commands dial the companion's CONNECT proxy directly; a browser instead needs its "
+                            + "proxy auto-config URL set to http://127.0.0.1:47813/proxy.pac, which this command "
+                            + "prints once the companion is up."},
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits network-access up",
                     "  qits network-access up --name laptop",
@@ -299,6 +318,7 @@ public class NetworkAccessCommand implements Runnable {
             context.out().println("peer " + SafeText.line(peerId) + " (" + SafeText.line(peer.path("name").asText(device))
                     + "), tunnel IP " + tunnelIp);
             context.out().println("companion " + companion.reference() + " on " + address);
+            context.out().println(browsersLine(address));
             if (!healthy) {
                 throw new CliFailure("The companion did not answer healthy within " + HEALTHY_WITHIN.toSeconds()
                         + " s; platform calls stay direct. `docker logs " + CONTAINER + "` says why.",
@@ -441,9 +461,11 @@ public class NetworkAccessCommand implements Runnable {
             context.out().println("container  " + container);
             if (state.proxy() == null) {
                 context.out().println("proxy      none: platform calls go direct (run `qits network-access up`)");
+                context.out().println(browsersLine(address(context)));
                 return CliFailure.FAILED;
             }
             context.out().println("proxy      " + SafeText.line(state.proxy()));
+            context.out().println(browsersLine(SafeText.line(state.proxy())));
             Optional<CompanionHealth.Answer> health = CompanionHealth.ask(state.proxy());
             context.out().println("health     " + health.map(a -> "HTTP " + a.status() + " "
                     + SafeText.line(a.body().strip())).orElse("no answer"));

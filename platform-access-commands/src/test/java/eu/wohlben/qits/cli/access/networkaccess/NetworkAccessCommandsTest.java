@@ -194,7 +194,8 @@ class NetworkAccessCommandsTest {
         assertThat(Files.getPosixFilePermissions(home.resolve(".config/qits/access.json")))
                 .isEqualTo(PosixFilePermissions.fromString("rw-------"));
         assertThat(result.out()).contains("peer " + PEER_ID + " (laptop), tunnel IP 100.96.0.10")
-                .contains("platform calls now go through the companion");
+                .contains("platform calls now go through the companion")
+                .contains("browsers: set the proxy auto-config URL to " + platform.url() + "/proxy.pac");
     }
 
     /**
@@ -372,7 +373,8 @@ class NetworkAccessCommandsTest {
         Result up = run("network-access", "status");
         assertThat(up.exit()).as(up.out() + up.err()).isZero();
         assertThat(up.out()).contains("peer       " + PEER_ID).contains("container  running")
-                .contains("health     HTTP 200");
+                .contains("health     HTTP 200")
+                .contains("browsers: set the proxy auto-config URL to " + platform.url() + "/proxy.pac");
         assertThat(dockerCalls()).containsExactly(
                 List.of("inspect", "-f", "{{.State.Status}}", "qits-network-access-companion"));
 
@@ -382,6 +384,7 @@ class NetworkAccessCommandsTest {
         assertThat(run("network-access", "down").exit()).isZero();
         Result down = run("network-access", "status");
         assertThat(down.exit()).isEqualTo(1);
-        assertThat(down.out()).contains("platform calls go direct");
+        assertThat(down.out()).contains("platform calls go direct")
+                .contains("browsers: set the proxy auto-config URL to " + platform.url() + "/proxy.pac");
     }
 }
