@@ -1775,7 +1775,7 @@
         }
       },
       "description": "qits ideas archive: archiveIdea",
-      "key": "76f89d29",
+      "key": "2714dd00",
       "pending": false,
       "providerStates": [
         {
@@ -1784,7 +1784,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -1913,7 +1914,7 @@
         }
       },
       "description": "qits ideas create: createIdea",
-      "key": "60695dd5",
+      "key": "10859dac",
       "pending": false,
       "providerStates": [
         {
@@ -1922,7 +1923,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -2161,7 +2163,7 @@
         }
       },
       "description": "qits ideas details: getIdea",
-      "key": "c4491285",
+      "key": "7465525c",
       "pending": false,
       "providerStates": [
         {
@@ -2170,7 +2172,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -2406,7 +2409,7 @@
         }
       },
       "description": "qits ideas list: listIdeas",
-      "key": "af50a82e",
+      "key": "5f6ce805",
       "pending": false,
       "providerStates": [
         {
@@ -2415,7 +2418,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -2839,7 +2843,7 @@
         }
       },
       "description": "qits ideas spawn: getIdea",
-      "key": "32efb632",
+      "key": "e30bf609",
       "pending": false,
       "providerStates": [
         {
@@ -2848,7 +2852,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -2947,7 +2952,7 @@
         }
       },
       "description": "qits ideas unarchive: unarchiveIdea",
-      "key": "8d42e189",
+      "key": "3d5f2160",
       "pending": false,
       "providerStates": [
         {
@@ -2956,7 +2961,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -3064,7 +3070,7 @@
         }
       },
       "description": "qits ideas update: patchIdea",
-      "key": "d555c380",
+      "key": "85720357",
       "pending": false,
       "providerStates": [
         {
@@ -3073,7 +3079,8 @@
             "archivedIdeaId": "00000000-0000-4000-8000-000000000001",
             "enabledIdeaId": "00000000-0000-4000-8000-000000000002",
             "ideaId": "00000000-0000-4000-8000-000000000003",
-            "projectId": "00000000-0000-4000-8000-000000000004"
+            "projectId": "00000000-0000-4000-8000-000000000004",
+            "qualifiedId": "contract-00000001-1"
           }
         }
       ],
@@ -11778,7 +11785,7 @@
             "request": {
               "approvalState": "NOT_REQUIRED",
               "createdAt": "2026-01-01T00:00:00Z",
-              "detail": "Run 00000000-0000-4000-8000-000000000004 finished FAILURE for cb9776855921387be1951de5bbbf0914aa54b1bf",
+              "detail": "Run 00000000-0000-4000-8000-000000000005 finished FAILURE for cb9776855921387be1951de5bbbf0914aa54b1bf",
               "featureFreeze": {
                 "features": 0,
                 "frozen": false,
@@ -11802,7 +11809,7 @@
                   "checks": [
                     {
                       "detail": "FAILURE on release/contract-service-rr-1",
-                      "name": "Run 00000000-0000-4000-8000-000000000004",
+                      "name": "Run 00000000-0000-4000-8000-000000000005",
                       "state": "FAILED"
                     }
                   ],
