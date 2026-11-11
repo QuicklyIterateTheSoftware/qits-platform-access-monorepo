@@ -278,6 +278,7 @@ class InteractionClassesTest {
         assertThat(qits.child("artifacts").child("publish").interaction()).isEqualTo(Interaction.CI_ONLY);
         assertThat(qits.child("ci").interaction()).isEqualTo(Interaction.PLAIN);
         assertThat(qits.child("git-credential").interaction()).isEqualTo(Interaction.LOCAL);
+        assertThat(qits.child("docker-credential").interaction()).isEqualTo(Interaction.LOCAL);
         // `help` is hidden, so the screen's model leaves it out; the declaration is still read.
         Object skill = new CommandLine(new AccessCli()).getSubcommands().get("help").getSubcommands().get("skill")
                 .getCommandSpec().userObject();

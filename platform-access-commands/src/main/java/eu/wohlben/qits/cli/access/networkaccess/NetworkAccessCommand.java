@@ -77,7 +77,8 @@ public class NetworkAccessCommand implements Runnable {
     private static final Pattern LABEL = Pattern.compile("[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?");
     private static final Pattern PUBLIC_KEY = Pattern.compile("[A-Za-z0-9+/]{43}=");
     private static final Pattern REGISTRY_REFUSED =
-            Pattern.compile("(?i)unauthorized|denied|authentication required|\\b401\\b|no basic auth credentials");
+            Pattern.compile("(?i)unauthorized|denied|authentication required|credentials required|\\b401\\b"
+                    + "|no basic auth credentials");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @CommandLine.Option(names = "--network-access-url", paramLabel = "<url>", scope = CommandLine.ScopeType.INHERIT,
@@ -213,13 +214,14 @@ public class NetworkAccessCommand implements Runnable {
             footer = {"  qits network-access up",
                     "  qits network-access up --name laptop",
                     "",
-                    "- Needs Docker, and a Docker login for the platform's registry to pull the image.",
+                    "- Needs Docker. Docker gets its login for the platform's registry from `qits registry-login --configure`, "
+                            + "which points it at `qits docker-credential`.",
                     "- Registering the device takes qits:admin."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {"0:The companion is up and healthy.",
                     "1:The platform refused, docker failed, or the companion did not become healthy in 20 s.",
                     "2:Used wrongly, not signed in, or not on a workstation.",
-                    "3:Docker is missing or not running, or the registry refused the pull."})
+                    "3:Docker is missing or not running, or the registry refused the pull: run `qits registry-login --configure`."})
     public static class UpCommand extends PlatformCommand {
 
         @CommandLine.ParentCommand
@@ -250,11 +252,9 @@ public class NetworkAccessCommand implements Runnable {
             Docker.Result pull = docker.run(List.of("pull", companion.reference()));
             if (!pull.ok()) {
                 if (REGISTRY_REFUSED.matcher(pull.said()).find()) {
-                    String registry = companion.image().contains("/")
-                            ? companion.image().substring(0, companion.image().indexOf('/')) : companion.image();
                     throw new CliFailure("The registry refused to pull " + companion.reference()
-                            + ": run `qits registry-login` first, and log Docker in to " + registry
-                            + " (`docker login " + registry + "`).", Docker.NOT_READY);
+                            + ": run `qits registry-login --configure` so Docker gets its login from your qits "
+                            + "session, then run `qits network-access up` again.", Docker.NOT_READY);
                 }
                 throw failed(List.of("pull", companion.reference()), pull);
             }

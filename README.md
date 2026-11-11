@@ -45,9 +45,10 @@ Commands:
 - `qits git-login` signs this workstation in for Git pushes to the platform's git host, and
   `qits git-credential` is the Git credential helper that uses that sign-in — and, inside the
   platform, the workspace token or the credential the process was handed instead.
-- `qits registry-login --configure` gives npm and Maven on this workstation a login for the
+- `qits registry-login --configure` gives npm, Maven and Docker on this workstation a login for the
   platform's registries, in blocks of `~/.npmrc` and `~/.m2/settings.xml` that `qits
-  session-daemon` keeps fresh — see below.
+  session-daemon` keeps fresh, and for Docker a `credHelpers` entry naming `qits docker-credential`
+  — see below.
 - `qits agents list|show|prompt|interrupt|stop|restart|yield|sessions|transcript|chat|attach|files|
   discard|draft` are the platform's agents, each named by its id or by `--work qits-123` — see below.
 - `qits agents claude hook work-links` is a Claude Code hook that shows work ids such as `qits-111`
@@ -2085,14 +2086,15 @@ no file is written.
 With `QITS_PLATFORM=true` and no `QITS_TOKEN`, every action prints nothing, reads and writes no
 file and exits `0`, so Git asks its other helpers.
 
-`git-credential get` is the one place `qits` prints a token, because that is how Git's
-helper protocol works. stderr never carries one.
+`git-credential get` and `docker-credential get` are the two places `qits` prints a token, because
+that is how Git's and Docker's helper protocols work. stderr never carries one.
 
-## npm and Maven registries on this workstation
+## npm, Maven and Docker registries on this workstation
 
     qits registry-login [--configure] [--remove-stale] [--dry-run]
-                        [--npmrc <file>] [--maven-settings <file>]
+                        [--npmrc <file>] [--maven-settings <file>] [--docker-config <file>]
                         [--artifacts-url <url>] [--mirror-url <url>]
+    qits docker-credential <get|store|erase|list>
 
 npm and Maven have no credential helper, so they read a token from a file. `qits registry-login`
 writes the access token of `qits login` into blocks of those files that the CLI owns, and `qits
@@ -2121,6 +2123,35 @@ session-daemon` replaces it each time it refreshes the session. No long-lived se
   tokens last 15 minutes), so a build that starts always has 5 minutes of token. Delete the file
   to stop.
 - A workstation command: inside the platform or with `QITS_TOKEN` it refuses (exit 2).
+
+Docker has a credential helper protocol, so it gets no token in a file. `--configure` sets
+`credHelpers["registry.qits.<domain>"]` to `"qits"` in `$DOCKER_CONFIG/config.json`, else
+`~/.docker/config.json` (`--docker-config` names another), creating the file when it is missing and
+keeping every other key and entry in its order; it is written the way `docker` writes it (tab
+indent), atomically, with mode 0600, and only when the entry is not there yet. An `auths` entry for
+the same host stays, with a warning: `credHelpers` wins, and `docker logout <host>` removes it.
+`--configure` also writes `docker-credential-qits` beside the running qits binary, mode 0755:
+
+    #!/bin/sh
+    exec '<absolute path of qits>' docker-credential "$@"
+
+Docker runs that script from PATH for each pull and push. When qits does not run as the binary (a
+JVM), the script is not written, with a warning; `install.sh` writes the same script next to the
+binary it installs. `--dry-run` shows both as unified diffs, with every `auth`, token, password
+and secret value in the Docker config shown as `<token>`. `registries.json` records the Docker
+config's path as `dockerConfig`; a file written before has none, and Docker is left alone. Neither
+a plain `qits registry-login` nor `qits session-daemon` writes the Docker config: the helper reads
+the session each time.
+
+`qits docker-credential get` reads the registry's address on stdin (`registry.qits.<domain>`, with
+or without `https://`) and, for the host of `https://registry.qits.<domain of the session's idp>`
+(or `QITS_ARTIFACTS_URL`), refreshes the session when it has less than 5 minutes left and prints
+`{"ServerURL":"<as given>","Username":"oauth2","Secret":"<access token>"}`; the edge's registry
+realm takes it as HTTP Basic `oauth2:<token>`. For any other registry, without a session, with
+`QITS_TOKEN` or with `QITS_PLATFORM` it prints `credentials not found in native keychain` and exits
+1, the answer Docker's own helpers give for no login, so Docker pulls anonymously. A refresh that
+fails says why on stderr and gives the same answer. `store` and `erase` read and discard stdin and
+exit 0; `list` prints `{}`.
 
 ## The private edge from this workstation
 
@@ -2157,8 +2188,9 @@ subprocesses are out of scope: the git host stays public.
   /peers/{id}/revoke`), removes the volume and deletes access.json.
 - `status` prints the peer, the container state (`docker inspect`) and the `/healthz` answer;
   exit 0 only when healthy.
-- Exit 3 means Docker is missing or not running, or the registry refused the pull (log Docker in
-  to the registry first). A workstation command: inside the platform or with `QITS_TOKEN` it
+- Exit 3 means Docker is missing or not running, or the registry refused the pull (`unauthorized`,
+  `denied`, `authentication required`, `credentials required`, 401): run `qits registry-login
+  --configure` so Docker gets its login from the qits session, then `up` again. A workstation command: inside the platform or with `QITS_TOKEN` it
   refuses (exit 2), because host containers reach the private edge over the overlay.
 
 ## qits agents

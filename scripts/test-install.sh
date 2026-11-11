@@ -6,8 +6,9 @@
 # different env vars, so one stub can serve both), feeds install.sh a fake
 # authorization code twice (the first try fails, like a mistyped code), and
 # checks: the binary lands, the PATH hint appears, the Git credential helper
-# is set up (replacing an old entry and leaving an unrelated one alone), and
-# the access token never appears in what install.sh prints.
+# is set up (replacing an old entry and leaving an unrelated one alone),
+# docker-credential-qits is written beside the binary, and the access token
+# never appears in what install.sh prints.
 #
 # Run it from anywhere; it finds install.sh next to this script's parent
 # directory. Needs bash, curl, git and python3.
@@ -180,4 +181,12 @@ printf '%s\n' "$HELPER_VALUES" | grep -qF "$OLD_QITS_PATH" && fail "the old qits
 UNRELATED_HELPER="$(git config --file "$GIT_CONFIG_GLOBAL" --get credential.https://github.com.helper)"
 [[ "$UNRELATED_HELPER" == "manager-core" ]] || fail "an unrelated credential helper was touched (now '$UNRELATED_HELPER')"
 
-echo "PASS: install.sh installed the binary, showed the PATH hint, set up Git, and never printed the token."
+# The Docker credential helper: beside the binary, executable, running `qits docker-credential`.
+SHIM="$INSTALL_DIR/docker-credential-qits"
+[[ -x "$SHIM" ]] || fail "docker-credential-qits was not written executable at $SHIM"
+EXPECTED_SHIM="$(printf '#!/bin/sh\nexec %s docker-credential "$@"\n' "'$INSTALL_DIR/qits'")"
+[[ "$(cat "$SHIM")" == "$EXPECTED_SHIM" ]] || fail "docker-credential-qits is '$(cat "$SHIM")', expected '$EXPECTED_SHIM'"
+SHIM_OUTPUT="$("$SHIM" get </dev/null)"
+[[ "$SHIM_OUTPUT" == "$STUB_MARKER" ]] || fail "docker-credential-qits did not run the installed binary (got: $SHIM_OUTPUT)"
+
+echo "PASS: install.sh installed the binary, showed the PATH hint, set up Git, wrote the Docker credential helper, and never printed the token."
