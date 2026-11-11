@@ -831,13 +831,14 @@ public class TargetsCommand implements Runnable {
             for (JsonNode lease : answer) {
                 rows.add(List.of(cell(lease, "id", 36), cell(lease, "slotType", 10),
                         cell(lease, "ownerApp", 16) + "/" + cell(lease, "ownerRef", 30), cell(lease, "state", 10),
-                        cell(lease, "detail", 60), Table.time(text(lease, "requestedAt"))));
+                        cell(lease, "detail", 60), resolversCell(lease), Table.time(text(lease, "requestedAt"))));
             }
             if (rows.isEmpty()) {
                 context.out().println("No leases.");
                 return 0;
             }
-            Table.print(context.out(), "", List.of("ID", "TYPE", "OWNER", "STATE", "DETAIL", "REQUESTED"), rows);
+            Table.print(context.out(), "",
+                    List.of("ID", "TYPE", "OWNER", "STATE", "DETAIL", "RESOLVERS", "REQUESTED"), rows);
             return 0;
         }
 
@@ -849,6 +850,13 @@ public class TargetsCommand implements Runnable {
             rows.add(List.of("owner", cell(lease, "ownerApp", 60) + "/" + cell(lease, "ownerRef", 120)));
             rows.add(List.of("state", cell(lease, "state", 20)));
             rows.add(List.of("detail", cell(lease, "detail", 400)));
+            String resolvers = resolversLine(lease);
+            if (resolvers != null) {
+                rows.add(List.of("resolvers", resolvers));
+            }
+            if (lease.path("resolversStale").asBoolean(false)) {
+                rows.add(List.of("stale", "yes — the node has a resolver this container lacks"));
+            }
             rows.add(List.of("target", cell(lease, "targetId", 60)));
             rows.add(List.of("project", cell(lease, "projectId", 60)));
             rows.add(List.of("work", cell(lease, "workKey", 120)));
@@ -891,6 +899,41 @@ public class TargetsCommand implements Runnable {
             return bytes.isEmpty() ? "-" : Table.bytes(Long.parseLong(bytes));
         }
 
+        /**
+         * A lease's resolvers (qits-2091), for {@code show}: the node tunnel or private edge
+         * resolvers the lease's container may use, comma-separated; {@code node default} when the
+         * list is empty, meaning the node's own default resolvers. {@code null} when {@code
+         * resolvers} is absent (an older service), so the caller leaves the row out rather than
+         * printing it empty.
+         */
+        static String resolversLine(JsonNode lease) {
+            JsonNode resolvers = lease.path("resolvers");
+            if (!resolvers.isArray()) {
+                return null;
+            }
+            if (resolvers.isEmpty()) {
+                return "node default";
+            }
+            List<String> values = new ArrayList<>();
+            resolvers.forEach(value -> values.add(SafeText.line(value.asText())));
+            return String.join(", ", values);
+        }
+
+        /**
+         * A lease's resolvers, for the {@code leases} list: its first resolver, or {@code default}
+         * when the list is empty; {@code -} when {@code resolvers} is absent (an older service).
+         * Suffixed {@code " !"} when {@code resolversStale} is true: the node now has a resolver
+         * (a node tunnel or private edge) this lease's container lacks.
+         */
+        static String resolversCell(JsonNode lease) {
+            JsonNode resolvers = lease.path("resolvers");
+            if (!resolvers.isArray()) {
+                return "-";
+            }
+            String first = resolvers.isEmpty() ? "default" : SafeText.line(resolvers.get(0).asText());
+            return lease.path("resolversStale").asBoolean(false) ? first + " !" : first;
+        }
+
         static String leaseId(String given) throws CliFailure {
             String wanted = given == null ? "" : given.strip();
             if (!isUuid(wanted)) {
@@ -901,9 +944,10 @@ public class TargetsCommand implements Runnable {
         }
 
         @CommandLine.Command(name = "show", mixinStandardHelpOptions = true,
-                description = {"Show one lease: its slot type, owner, state and detail, its target, its OOM kills "
-                        + "and peak memory, and when it was requested, granted, started and ended. A lease the "
-                        + "ENDING deadline or an operator ended says so in its detail.",
+                description = {"Show one lease: its slot type, owner, state and detail, its resolvers and whether "
+                        + "they are stale, its target, its OOM kills and peak memory, and when it was requested, "
+                        + "granted, started and ended. A lease the ENDING deadline or an operator ended says so in "
+                        + "its detail.",
                         "GET /system/api/leases/{id}. " + Doors.LEASE},
                 footerHeading = HelpText.EXAMPLES,
                 footer = {"  qits targets leases show 3f2a9c1e-0000-4000-8000-000000000001",

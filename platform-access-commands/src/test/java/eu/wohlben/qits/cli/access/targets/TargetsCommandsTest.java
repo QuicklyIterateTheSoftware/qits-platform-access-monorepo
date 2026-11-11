@@ -432,6 +432,40 @@ class TargetsCommandsTest {
                 .isEqualTo("slotType=workspace&state=RUNNING");
     }
 
+    // --- resolvers (qits-2091) ---
+
+    @Test
+    void leasesListShowsTheResolversColumnWithTheStaleSuffix() {
+        platform.answer("GET", "/system/api/leases", """
+                [{"id":"00000000-0000-4000-8000-000000000040","slotType":"WORKSPACE","ownerApp":"qits-workspaces",
+                  "ownerRef":"42","targetId":"%s","state":"RUNNING","detail":null,"requestedAt":"2026-10-23T09:00:00Z",
+                  "resolvers":["node-tunnel","private-edge"],"resolversStale":true}]
+                """.formatted(TARGET));
+
+        Result leases = run("targets", "leases");
+
+        assertThat(leases.exit()).as(leases.err()).isZero();
+        assertThat(leases.out()).contains("RESOLVERS");
+        assertThat(leases.out()).containsPattern("RUNNING\\s+-\\s+node-tunnel !\\s+\\S");
+    }
+
+    @Test
+    void leasesListShowsDefaultForEmptyResolversAndADashWhenTheFieldIsAbsent() {
+        platform.answer("GET", "/system/api/leases", """
+                [{"id":"00000000-0000-4000-8000-000000000040","slotType":"WORKSPACE","ownerApp":"qits-workspaces",
+                  "ownerRef":"42","targetId":"%s","state":"RUNNING","detail":null,"requestedAt":"2026-10-23T09:00:00Z",
+                  "resolvers":[]},
+                 {"id":"00000000-0000-4000-8000-000000000041","slotType":"CI","ownerApp":"qits-ci",
+                  "ownerRef":"7","targetId":"%s","state":"RUNNING","detail":null,"requestedAt":"2026-10-23T09:00:00Z"}]
+                """.formatted(TARGET, TARGET));
+
+        Result leases = run("targets", "leases");
+
+        assertThat(leases.exit()).as(leases.err()).isZero();
+        assertThat(leases.out()).containsPattern("qits-workspaces/42\\s+RUNNING\\s+-\\s+default\\s+\\S");
+        assertThat(leases.out()).containsPattern("qits-ci/7\\s+RUNNING\\s+-\\s+-\\s+\\S");
+    }
+
     // --- leases show and end (qits-1644) ---
 
     private static final String LEASE = "00000000-0000-4000-8000-000000000040";
@@ -490,6 +524,59 @@ class TargetsCommandsTest {
         assertThat(shown.exit()).as(shown.err()).isZero();
         assertThat(shown.out()).containsPattern("oom kills\\s+2 \\(NODE\\)");
         assertThat(shown.out()).containsPattern("memory peak\\s+-");
+    }
+
+    // --- resolvers and stale (qits-2091) ---
+
+    private static String leaseWithResolvers(String state, String resolversJson, String resolversStaleJson,
+            String generationJson) {
+        return lease(state, null).replace("\"exitCode\":null,",
+                "\"exitCode\":null,\"resolvers\":" + resolversJson + ",\"resolversStale\":" + resolversStaleJson
+                        + ",\"generation\":" + generationJson + ",");
+    }
+
+    @Test
+    void leasesShowRendersTheResolversAndStaleLines() {
+        platform.answer("GET", "/system/api/leases/" + LEASE,
+                leaseWithResolvers("RUNNING", "[\"node-tunnel\",\"private-edge\"]", "true", "2"));
+
+        Result shown = run("targets", "leases", "show", LEASE);
+
+        assertThat(shown.exit()).as(shown.err()).isZero();
+        assertThat(shown.out()).containsPattern("resolvers\\s+node-tunnel, private-edge");
+        assertThat(shown.out()).containsPattern("stale\\s+yes");
+        assertThat(shown.out()).contains("the node has a resolver this container lacks");
+    }
+
+    @Test
+    void leasesShowRendersNodeDefaultForEmptyResolversAndOmitsStaleWhenFalse() {
+        platform.answer("GET", "/system/api/leases/" + LEASE,
+                leaseWithResolvers("RUNNING", "[]", "false", "1"));
+
+        Result shown = run("targets", "leases", "show", LEASE);
+
+        assertThat(shown.exit()).as(shown.err()).isZero();
+        assertThat(shown.out()).containsPattern("resolvers\\s+node default");
+        assertThat(shown.out()).doesNotContain("stale");
+    }
+
+    @Test
+    void leasesShowWithNoResolversFieldsAtAllOmitsTheRowsAndDoesNotThrow() {
+        platform.answer("GET", "/system/api/leases/" + LEASE, lease("RUNNING", null));
+
+        Result shown = run("targets", "leases", "show", LEASE);
+
+        assertThat(shown.exit()).as(shown.err()).isZero();
+        assertThat(shown.out()).doesNotContain("resolvers");
+        assertThat(shown.out()).doesNotContain("stale");
+    }
+
+    @Test
+    void leasesShowHelpNamesResolvers() {
+        Result help = run("targets", "leases", "show", "--help");
+
+        assertThat(help.exit()).as(help.err()).isZero();
+        assertThat(help.out()).contains("resolvers");
     }
 
     @Test
