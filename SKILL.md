@@ -126,6 +126,43 @@ qits checkout-daemon --path /srv/qits --repository qits-qits --no-submodules
 - `1` The platform refused the stream (401, 403 or another 4xx), or with --once the checkout has local changes or a git command failed.
 - `2` Used wrongly (the origin names no repository and --repository was not given), Git has no credential for the origin's host, not signed in, the session ended, or QITS_PLATFORM is set without QITS_TOKEN.
 
+## qits checkout
+
+A workstation clone of a wrapper, every submodule on its own main: `sync` fast-forwards it to origin/main. A checkout that follows releases is `qits checkout-daemon`'s.
+
+## qits checkout sync
+
+Bring a workstation clone of a wrapper up to date: the root and every submodule, nested ones (a service's webui) included, fast-forwarded on its own main to origin/main, and every submodule .gitmodules newly declares initialised and put on main, tracking origin/main.
+
+Pure git: no sign-in, no platform. Each repository is fetched from its own origin with whatever credential helper git has, and moved only by `git merge --ff-only`. A repository that is detached, on another branch, has tracked changes, has commits origin/main lacks, or whose fast-forward git refuses is left exactly as it was and named with the reason. Untracked files never block.
+
+stdout has one line per repository that moved (`<path> +<n> commits`), then the new ones (`<path> new`), then the skipped ones (`<path> skipped: <reason>`), then a summary line. A repository already at origin/main prints nothing of its own.
+
+```
+qits checkout sync [--path <dir>]
+```
+
+| Name | What it does |
+|---|---|
+| `--path <dir>` | The clone to sync. Default: the directory the command runs in. |
+
+### Examples
+
+```
+qits checkout sync
+qits checkout sync --path ~/src/qits-qits
+```
+
+- It never resets, stashes, switches over local work, stages a path or recurses through git (--recurse-submodules, submodule.recurse): a moved gitlink in a parent's index is the expected drift `ignore = all` hides, and the bumps own it.
+- A submodule whose .git file points at a gitdir that is not there (left by a move of the tree) is skipped and not descended into; the line says how to repair it.
+- It refuses a project agent container's checkout, a root detached at a release tag or one a `qits checkout-daemon` holds: that checkout follows releases, and the daemon keeps it.
+
+### Exit codes
+
+- `0` Every repository is at origin/main, moved there, or new.
+- `1` A repository was skipped or a fetch or fast-forward failed; every other one was still synced.
+- `2` Used wrongly: the path is not in a Git repository, or it is a checkout that follows releases (a project agent container's).
+
 ## qits projects
 
 The platform's projects: list shows them, delivery shows one's delivery desk, desk talks to one's front desk. Other commands take a project's id, slug or name as --project.

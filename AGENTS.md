@@ -16,7 +16,8 @@ Docker companion; epic qits-1977), `qits events` (the live event
 stream), `qits wait` (an agent's declared waits in qits-workspaces), `qits workspaces` (every action
 of the landing app's workspace pages, on the same qits-workspaces doors), `qits targets` (execution
 targets and their leases, qits-system-service's doors; epic qits-1481), `qits checkout-daemon` (a local checkout held at what a repository released, root and
-submodules), `qits observe` (the live, server-filtered telemetry stream of qits-observability, over
+submodules), `qits checkout sync` (a workstation clone of a wrapper fast-forwarded on every
+repository's own `main`, nested submodules included; pure git), `qits observe` (the live, server-filtered telemetry stream of qits-observability, over
 a WebSocket), and `qits git-login` / `qits git-credential` (Git pushes to
 `refs/heads/external/*`, sign-in stored in `$XDG_CONFIG_HOME/qits/git.json`), `qits agents` (the
 platform's agents, one verb each, on qits-workspaces' agent doors; epic qits-1667), `qits agents claude …` (what
@@ -247,6 +248,10 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
     checkout/  qits checkout-daemon: the Git side of one checkout (Checkout) and the reconcile-and-
                watch loop over ReleaseRequestStateChanged to FINALIZED (ReleaseWatcher; never
                SCMRelease, qits-1470), a sibling of events/EventStream that shares its SSE parser
+               qits checkout sync (CheckoutCommand, CheckoutSyncCommand; Sync, qits-2043): a
+               workstation clone of a wrapper fast-forwarded on each repository's own main, pure git,
+               Interaction.LOCAL. Submodules is what both read alike: tracked changes, the declared
+               and initialised submodules, a gitlink
     observe/   qits observe: the --filter grammar, the reconnecting WebSocket stream, the line form,
                and SafeText (terminal control characters out of every streamed value); `query`
                under it asks the records search with the same filters (ObserveQueryCommand)

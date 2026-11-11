@@ -4,6 +4,7 @@ import eu.wohlben.qits.cli.access.agentmcp.AgentMcpCommand;
 import eu.wohlben.qits.cli.access.agents.AgentsCommand;
 import eu.wohlben.qits.cli.access.artifacts.ArtifactsCommand;
 import eu.wohlben.qits.cli.access.changelog.ChangelogGroup;
+import eu.wohlben.qits.cli.access.checkout.CheckoutCommand;
 import eu.wohlben.qits.cli.access.checkout.CheckoutDaemonCommand;
 import eu.wohlben.qits.cli.access.ci.CiCommand;
 import eu.wohlben.qits.cli.access.contracts.ContractsCommand;
@@ -49,7 +50,8 @@ import picocli.CommandLine;
         name = "qits",
         mixinStandardHelpOptions = true,
         versionProvider = QitsVersion.Provider.class,
-        subcommands = {LoginCommand.class, SessionDaemonCommand.class, CheckoutDaemonCommand.class, ProjectsCommand.class,
+        subcommands = {LoginCommand.class, SessionDaemonCommand.class, CheckoutDaemonCommand.class, CheckoutCommand.class,
+                ProjectsCommand.class,
                 RepositoriesCommand.class, WorkCommand.class, IdeasCommand.class,
                 ReleaseRequestCommand.class, CiCommand.class, DatabaseCommand.class, ContractsCommand.class, DeploymentsCommand.class, MaintenanceCommand.class, UsersCommand.class,
                 RememberedDevicesCommand.class,

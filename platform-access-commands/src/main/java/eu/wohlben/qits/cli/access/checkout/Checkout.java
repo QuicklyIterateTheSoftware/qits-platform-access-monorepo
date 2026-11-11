@@ -7,12 +7,9 @@ import eu.wohlben.qits.cli.access.platform.CliFailure;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -276,22 +273,9 @@ public final class Checkout {
         }
     }
 
-    /**
-     * The tracked changes of one repository, its submodules' insides left out: the modified paths
-     * {@code status} reports with {@code --ignore-submodules=all}, and every staged path, a staged
-     * gitlink included.
-     */
+    /** {@link Submodules#trackedChanges}: the one rule {@code qits checkout sync} asks by too. */
     private static Set<String> trackedChanges(Git in) throws CliFailure, InterruptedException {
-        Set<String> changed = new LinkedHashSet<>();
-        for (String line : in.run("status", "--porcelain", "--untracked-files=no", "--ignore-submodules=all")
-                .lines().filter(entry -> !entry.isBlank()).toList()) {
-            // The status letters, then the path. The output is stripped, so the first line may have
-            // lost the blank that stands for an unchanged index.
-            changed.add(line.strip().replaceFirst("^\\S{1,2}\\s+", ""));
-        }
-        changed.addAll(in.run("diff", "--cached", "--name-only", "--ignore-submodules=none").lines()
-                .filter(line -> !line.isBlank()).toList());
-        return changed;
+        return Submodules.trackedChanges(in);
     }
 
     /**
@@ -324,32 +308,16 @@ public final class Checkout {
 
     /** The commit {@code repo}'s index records for {@code sub}, or null when it carries no gitlink there. */
     private String gitlink(Path repo, String sub) throws CliFailure, InterruptedException {
-        String staged = new Git(repo, git.env).ask("ls-files", "--stage", "--", sub);
-        if (staged == null || !staged.startsWith("160000 ")) {
-            return null;
-        }
-        String[] fields = staged.split("\\s+");
-        return fields.length > 1 ? fields[1] : null;
+        return Submodules.gitlink(repo, sub, git.env);
     }
 
-    /** A submodule Git has checked out in {@code repo} has a {@code .git}, a file or a directory. */
     private static boolean initialised(Path repo, String sub) {
-        return Files.exists(repo.resolve(sub).resolve(".git"));
+        return Submodules.initialised(repo, sub);
     }
 
     /** Every submodule {@code repo}'s {@code .gitmodules} declares: its name, and its path. */
     private Map<String, String> declaredSubmodules(Path repo) throws CliFailure, InterruptedException {
-        Map<String, String> declared = new LinkedHashMap<>();
-        Git in = new Git(repo, git.env);
-        String keys = in.ask("config", "-f", ".gitmodules", "--name-only", "--get-regexp", "^submodule\\..*\\.path$");
-        if (keys == null || keys.isBlank()) {
-            return declared;
-        }
-        for (String key : keys.lines().map(String::strip).filter(line -> !line.isEmpty()).toList()) {
-            String name = key.substring("submodule.".length(), key.length() - ".path".length());
-            declared.put(name, in.run("config", "-f", ".gitmodules", "--get", key));
-        }
-        return declared;
+        return Submodules.declared(repo, git.env);
     }
 
     /** The tag alone, never a branch: a release is a tag, and a branch tip moves under a reader. */
@@ -451,6 +419,15 @@ public final class Checkout {
             return result.exit == 0 ? result.out.strip() : null;
         }
 
+        /**
+         * The whole answer, its exit code and both streams, for a caller that reports a refusal and
+         * carries on rather than ending on it ({@code qits checkout sync}). Only a git that cannot be
+         * started at all ends the command.
+         */
+        Result attempt(String... args) throws CliFailure, InterruptedException {
+            return call(argv(args));
+        }
+
         private List<String> argv(String... args) {
             List<String> argv = new ArrayList<>(List.of("git", "-C", path.toString()));
             argv.addAll(List.of(args));
@@ -481,7 +458,8 @@ public final class Checkout {
             }
         }
 
-        private record Result(int exit, String out, String err) {
+        /** One git process's answer: its exit code, stdout and stderr, as git wrote them. */
+        record Result(int exit, String out, String err) {
         }
     }
 }

@@ -676,6 +676,7 @@ Installing it is not part of this version.
     qits observe query --filter <conditions> [--filter <conditions> …] [--source <key>] \
         [--since <time>] [--until <time>] [--limit <n>] [-o json]
     qits checkout-daemon [--path <dir>] [--repository <name>] [--once] [--no-submodules]
+    qits checkout sync [--path <dir>]
     qits wait --event <Name> [--when <conditions> …] [--timeout <duration>] [--label <text>]
     qits wait branch <branch> --until joined|released|live|failed [--repository <name>] \
         [--project <project>] [--timeout <duration>] [--label <text>]
@@ -1606,6 +1607,78 @@ Nested submodules take their URLs from their parent's `.gitmodules`. `--no-submo
 - A dropped connection or a 5xx is followed by a reconnect, waiting 1, 2, 4 … up to 30 seconds; a
   connection silent for 60 seconds counts as dropped. A 4xx stops the command with exit code 1, and
   SIGINT or SIGTERM with 0.
+
+### qits checkout sync
+
+    qits checkout sync [--path <dir>]
+
+Brings a **workstation** clone of a wrapper up to date, the way the wrapper's `CLAUDE.md` wants one
+("Submodules", "Fresh clone"): every repository on its own `main`, following `origin/main`. It is
+the opposite of `qits checkout-daemon`, which detaches everything at a release, and it is pure git:
+no sign-in, no `QITS_TOKEN`, no events address, no credential-helper check. Each repository is
+fetched from its own `origin` with whatever helper git has (GitHub or the platform git host alike;
+`GIT_TERMINAL_PROMPT=0` unless set, so a fetch that wants a password fails and is named rather than
+waiting), and a failed fetch is one skipped line, not the end of the run.
+
+    qits checkout sync
+    qits checkout sync --path ~/src/qits-qits
+
+`--path` defaults to `.`; the clone is the top level of the repository it is in. In order:
+
+1. **A project agent container's checkout is refused** with exit code 2, nothing touched: a root
+   detached at a commit `git tag --points-at HEAD` names, or one a running `qits checkout-daemon`
+   holds (Linux: a `/proc/<pid>/cmdline` whose argv is `qits checkout-daemon` with a `--path` that
+   resolves to this directory, or no `--path` and this directory as its cwd; the argv is compared
+   word by word, never as a `pgrep -f` substring, which would find the asking shell). That checkout
+   follows releases, and the daemon keeps it. A root detached at no tag is not refused, only
+   skipped as `detached`.
+2. **The root**: `git fetch origin`, then `git merge --ff-only origin/main` if it is on `main`, has no
+   tracked changes and nothing `origin/main` lacks; otherwise it is skipped with its reason. The
+   submodule steps then read the `.gitmodules` the root has now.
+3. **New submodules**: an entry `.gitmodules` declares whose path has no `.git` yet gets
+   `git submodule update --init --checkout -- <path>` and then `git switch main` inside (a local
+   `main` tracking `origin/main` is created when there is none). That switch only ever runs on a
+   fresh clone.
+4. **Every initialised submodule, nested ones too** (a service's `service/src/main/webui`; parent
+   first, then its own `.gitmodules`, down to eight levels): `git fetch origin`, then
+   `git merge --ff-only origin/main` only when it is on `main` (`detached` or `on <branch>`
+   otherwise), has no tracked changes (`tracked changes (<paths>)`) and is not ahead of
+   `origin/main` (`<n> local commits ahead`, and `, <m> behind` when it has diverged). Untracked
+   files never block; when the incoming tree would overwrite one, git refuses the fast-forward and
+   its first line is the reason (`fast-forward refused: ...`).
+5. **A broken gitdir pointer** — a `.git` file naming a `gitdir:` that is not there, left behind by
+   the move from the role directories to `components/` — is skipped as
+   `broken gitdir pointer -> <gitdir>`, and its submodules are not descended into. Nothing repairs
+   it: the line names `git -C <parent> submodule absorbgitdirs`, or removing and initialising it
+   again, for the person to choose.
+
+"Tracked changes" is `qits checkout-daemon`'s rule, shared code: `git status --porcelain
+--untracked-files=no --ignore-submodules=all` plus `git diff --cached --name-only
+--ignore-submodules=none`, so a staged gitlink counts and a submodule that merely moved does not.
+
+stdout, after the run:
+
+    .  +2 commits
+    components/qits-ci/qits-ci-service  +1 commit
+    components/qits-ci/qits-ci-service/service/src/main/webui  +3 commits
+    components/qits-network-access/qits-network-access-service  new
+    components/qits-docs/qits-docs  skipped: tracked changes (README.md)
+    3 moved, 1 new, 1 skipped, 31 up to date
+
+the moved repositories (`+<n>` is `git rev-list --count <before>..<after>`), the new ones, the
+skipped ones, and a summary. A repository already at `origin/main` prints nothing of its own. Git's
+own chatter does not reach stdout, and everything of git's that is printed goes through
+`SafeText.line`.
+
+- **It only ever fast-forwards.** It never resets, stashes, runs `checkout --` or `switch` over local
+  work, adds a path to any index, or lets git recurse (`--no-recurse-submodules` on every fetch,
+  `-c submodule.recurse=false` on every command): each repository is visited and asked on its own.
+  A gitlink a parent's index records and its submodule has moved past is the expected drift
+  `ignore = all` hides; the bumps own it, and it is never staged here.
+- Exit code 0 when nothing was skipped; 1 when anything was skipped or a fetch or fast-forward failed
+  (every other repository is still synced); 2 when the path is not in a Git repository or it is a
+  project agent container's checkout.
+- `LOCAL`: the MCP service does not serve it.
 
 ### qits observe
 

@@ -24,7 +24,8 @@
 #
 # Everything the tapes see is fixed, because a tape's text golden must be the same on every play:
 # the ports below, the token, the domain, the agent, the time zone and a scratch directory at a
-# fixed path, which the tapes that need files (checkout-daemon, update, changelog) work in.
+# fixed path, which the tapes that need files (checkout-daemon, checkout, update, changelog) work
+# in.
 
 qits_tapes_prepare() {
   local root scratch kit binary classpath java_bin waited

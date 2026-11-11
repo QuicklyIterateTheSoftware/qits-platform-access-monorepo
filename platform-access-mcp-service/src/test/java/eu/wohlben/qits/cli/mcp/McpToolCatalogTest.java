@@ -178,6 +178,7 @@ class McpToolCatalogTest {
         assertThat(byCommand.get("qits login").reason()).isEqualTo("needs a browser and a person");
         assertThat(byCommand.get("qits events").reason()).isEqualTo("runs until stopped");
         assertThat(byCommand.get("qits git-credential").reason()).isEqualTo("only means something on the caller's machine");
+        assertThat(byCommand.get("qits checkout sync").reason()).isEqualTo("only means something on the caller's machine");
         byCommand.values().stream().filter(e -> e.command().startsWith("qits artifacts publish"))
                 .forEach(e -> assertThat(e.reason()).isEqualTo("CI-step only, reads local files"));
 
@@ -234,6 +235,8 @@ class McpToolCatalogTest {
         assertThat(catalog.tool("login")).isEmpty();
         assertThat(catalog.tool("help_skill")).isEmpty();
         assertThat(catalog.tool("update")).as("it replaces a file on the caller's machine").isEmpty();
+        assertThat(catalog.tool("checkout_sync")).as("it moves repositories on the caller's machine").isEmpty();
+        assertThat(catalog.tool("checkout")).isEmpty();
         assertThat(catalog.tools()).extracting(Tool::name)
                 .contains("projects_list", "projects_delivery", "work_update", "work_dispatch", "work_comment_create",
                         "release-request_join", "ci_runs", "repositories_create", "wait_branch");
