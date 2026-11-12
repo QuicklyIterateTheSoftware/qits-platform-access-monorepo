@@ -97,7 +97,7 @@
         <qits.ci-golden-masters.version>2026.1109.132507</qits.ci-golden-masters.version>
         <qits.idp-golden-masters.version>2026.1109.13349</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1109.83116</qits.events-golden-masters.version>
-        <qits.maintenance-golden-masters.version>2026.1108.232519</qits.maintenance-golden-masters.version>
+        <qits.maintenance-golden-masters.version>2026.1112.35408</qits.maintenance-golden-masters.version>
         <qits.observability-golden-masters.version>2026.1107.172205</qits.observability-golden-masters.version>
         <!-- qits-system's recordings, for the targets the VHS tapes' fake platform answers with
              (FakePlatformMain, epic qits-881); no consumer pact reads them yet. Bumped by
