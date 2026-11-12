@@ -24,7 +24,8 @@ public final class ManagedBlocks {
     public static final String REPOSITORY_ID = "qits-maven";
     private static final Set<String> MAVEN_IDS = Set.of(MIRROR_ID, REPOSITORY_ID);
 
-    private static final String STALE_HOST = ".dev.localhost";
+    /** The old registries {@code --remove-stale} drops; the Docker config uses it too. */
+    static final String STALE_HOST = ".dev.localhost";
 
     private ManagedBlocks() {
     }

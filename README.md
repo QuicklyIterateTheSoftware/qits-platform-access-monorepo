@@ -2113,7 +2113,9 @@ session-daemon` replaces it each time it refreshes the session. No long-lived se
   `qits-maven-host` and `qits-maven` with an `Authorization: Bearer` header.
 - Only the blocks change. Each file is replaced atomically with mode 0600; a symbolic link is
   followed. `--remove-stale` also drops the `*.dev.localhost` registries and entries outside the
-  blocks that use the same registries or ids; without it they stay, with a warning.
+  blocks that use the same registries or ids, and, in the Docker config (read only with
+  `--configure`), the `auths` logins for the `*.dev.localhost` registries and for the platform's
+  registry, which the helper supersedes; without it they stay, with a warning.
 - `--dry-run` writes nothing and prints a unified diff per file, or `No changes`. It masks by
   structure: in settings.xml the content of every `<password>`, `<passphrase>`, `<privateKey>`,
   `<username>` and httpHeaders `<value>`, across lines; in .npmrc the value of every key that ends

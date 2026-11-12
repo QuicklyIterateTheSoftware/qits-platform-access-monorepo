@@ -4940,7 +4940,7 @@ qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file
 | `--maven-settings <file>` | With --configure: the Maven user settings. Default: ~/.m2/settings.xml. |
 | `--mirror-url <url>` | With --configure: qits-mirror. Default: QITS_MIRROR_URL, else https://mirror.qits.<domain of the session's idp>. |
 | `--npmrc <file>` | With --configure: the npm user config. Default: NPM_CONFIG_USERCONFIG, else ~/.npmrc. |
-| `--remove-stale` | Also drop *.dev.localhost registries and duplicates of the blocks' entries. |
+| `--remove-stale` | Also drop *.dev.localhost registries and duplicates of the blocks' entries, and with --configure the Docker config's auths logins for those and the platform's registry. |
 
 ### Examples
 
@@ -4951,7 +4951,7 @@ qits registry-login
 ```
 
 - --dry-run writes nothing. It prints a unified diff per file, or "No changes". Every secret shows as <token>, and lines outside the blocks show only when they change.
-- --remove-stale also drops lines for the old *.dev.localhost registries, and entries outside the blocks that use the same registries or ids. Without it they stay, with a warning.
+- --remove-stale also drops lines for the old *.dev.localhost registries, and entries outside the blocks that use the same registries or ids. In the Docker config, read only with --configure, it drops the auths logins for those registries and for the platform's. Without it they stay, with a warning.
 - A workstation command: inside the platform, or with QITS_TOKEN, the container has its own registry setup.
 - To stop: delete $XDG_CONFIG_HOME/qits/registries.json and the blocks, and the qits entry of the Docker config's credHelpers.
 

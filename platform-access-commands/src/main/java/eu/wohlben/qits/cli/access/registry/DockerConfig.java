@@ -23,7 +23,9 @@ import java.util.regex.Pattern;
 
 /**
  * The Docker client's {@code config.json}: one {@code credHelpers} entry sending the platform's
- * registry to {@code docker-credential-qits}. Everything else in the file is kept, in its order.
+ * registry to {@code docker-credential-qits}. Everything else in the file is kept, in its order, but
+ * for the {@code auths} logins {@code --remove-stale} drops: the old {@code *.dev.localhost} registries'
+ * and the platform registry's own, which the helper supersedes.
  * <p>
  * The entry holds no secret: Docker runs the helper for each pull and the helper answers with the
  * session's current token. So the file is written by {@code --configure} only, never on a refresh.
@@ -70,15 +72,23 @@ final class DockerConfig {
         return defaultPort ? host : host + ":" + port;
     }
 
-    /** What the file becomes; {@code after} equals {@code before} when the entry is already there. */
-    record Plan(Path path, String before, String after, List<String> warnings) {
+    /**
+     * What the file becomes; {@code after} equals {@code before} when nothing changes.
+     *
+     * @param removed the {@code auths} keys dropped by {@code removeStale}
+     */
+    record Plan(Path path, String before, String after, List<String> warnings, List<String> removed) {
 
         boolean changed() {
             return !before.equals(after);
         }
     }
 
-    static Plan plan(Path path, String registryHost) throws IOException {
+    /**
+     * @param removeStale drop {@code auths} logins for the old {@code *.dev.localhost} registries and for
+     *                    {@code registryHost} itself; without it they stay, with a warning
+     */
+    static Plan plan(Path path, String registryHost, boolean removeStale) throws IOException {
         String before;
         try {
             before = Files.readString(path, StandardCharsets.UTF_8);
@@ -103,28 +113,39 @@ final class DockerConfig {
         }
 
         List<String> warnings = new ArrayList<>();
+        List<String> removed = new ArrayList<>();
         JsonNode auths = config.get("auths");
         if (auths != null && auths.isObject()) {
             for (Iterator<String> names = auths.fieldNames(); names.hasNext(); ) {
                 String name = names.next();
-                if (sameHost(name, registryHost)) {
+                boolean same = sameHost(name, registryHost);
+                boolean stale = !same && stale(name);
+                if ((same || stale) && removeStale) {
+                    removed.add(name);
+                } else if (same) {
                     warnings.add("Warning: " + path + " also has a stored login for " + name + " under auths. "
                             + "credHelpers takes precedence, so it is no longer used; `docker logout "
-                            + registryHost + "` removes it.");
+                            + registryHost + "` removes it, and --remove-stale drops it.");
+                } else if (stale) {
+                    warnings.add("Warning: " + path + " has a stored login for " + name + " under auths, an old "
+                            + "*.dev.localhost registry; --remove-stale drops it.");
                 }
             }
+            // An emptied auths stays as {}, as docker leaves it after a logout.
+            removed.forEach(((ObjectNode) auths)::remove);
         }
 
         JsonNode helpers = config.get("credHelpers");
         if (helpers != null && !helpers.isObject()) {
             throw new IOException(path + " is not a Docker config file: credHelpers is not a JSON object");
         }
-        if (helpers != null && HELPER.equals(helpers.path(registryHost).textValue())) {
-            return new Plan(path, before, before, warnings);
+        boolean helperThere = helpers != null && HELPER.equals(helpers.path(registryHost).textValue());
+        if (!helperThere) {
+            ObjectNode entries = helpers != null ? (ObjectNode) helpers : config.putObject("credHelpers");
+            entries.put(registryHost, HELPER);
         }
-        ObjectNode entries = helpers != null ? (ObjectNode) helpers : config.putObject("credHelpers");
-        entries.put(registryHost, HELPER);
-        return new Plan(path, before, write(config) + "\n", warnings);
+        String after = helperThere && removed.isEmpty() ? before : write(config) + "\n";
+        return new Plan(path, before, after, warnings, List.copyOf(removed));
     }
 
     private static boolean sameHost(String name, String registryHost) {
@@ -133,6 +154,17 @@ final class DockerConfig {
         } catch (IllegalArgumentException notAUrl) {
             return false;
         }
+    }
+
+    /** An {@code auths} key for an old {@code *.dev.localhost} registry, whatever its port. */
+    private static boolean stale(String name) {
+        String host;
+        try {
+            host = host(name);
+        } catch (IllegalArgumentException notAUrl) {
+            host = name.strip().toLowerCase(Locale.ROOT);
+        }
+        return host.replaceFirst(":\\d+$", "").endsWith(ManagedBlocks.STALE_HOST);
     }
 
     /** The redacted unified diff {@code --dry-run} prints; empty when nothing changes. */

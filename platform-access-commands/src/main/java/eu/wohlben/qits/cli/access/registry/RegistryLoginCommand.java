@@ -49,7 +49,9 @@ import java.util.function.Supplier;
                 "- --dry-run writes nothing. It prints a unified diff per file, or \"No changes\". Every secret "
                         + "shows as <token>, and lines outside the blocks show only when they change.",
                 "- --remove-stale also drops lines for the old *.dev.localhost registries, and entries outside the "
-                        + "blocks that use the same registries or ids. Without it they stay, with a warning.",
+                        + "blocks that use the same registries or ids. In the Docker config, read only with "
+                        + "--configure, it drops the auths logins for those registries and for the platform's. "
+                        + "Without it they stay, with a warning.",
                 "- A workstation command: inside the platform, or with QITS_TOKEN, the container has its own "
                         + "registry setup.",
                 "- To stop: delete $XDG_CONFIG_HOME/qits/registries.json and the blocks, and the qits entry of the "
@@ -65,7 +67,8 @@ public class RegistryLoginCommand extends PlatformCommand {
     boolean configure;
 
     @CommandLine.Option(names = "--remove-stale",
-            description = "Also drop *.dev.localhost registries and duplicates of the blocks' entries.")
+            description = "Also drop *.dev.localhost registries and duplicates of the blocks' entries, and with "
+                    + "--configure the Docker config's auths logins for those and the platform's registry.")
     boolean removeStale;
 
     @CommandLine.Option(names = "--dry-run",
@@ -143,7 +146,7 @@ public class RegistryLoginCommand extends PlatformCommand {
                         found.npm(), found.mavenUrl(), dockerFile.toString());
                 // Read before any file is written, so a Docker config that cannot be read changes nothing.
                 dockerHost = DockerConfig.host(artifacts);
-                docker = DockerConfig.plan(dockerFile, dockerHost);
+                docker = DockerConfig.plan(dockerFile, dockerHost, removeStale);
                 Optional<Path> self = binary.get();
                 if (self.isPresent()) {
                     shim = Optional.of(DockerShim.plan(self.get()));
@@ -186,6 +189,9 @@ public class RegistryLoginCommand extends PlatformCommand {
             }
             if (docker != null) {
                 context.out().println((docker.changed() ? "Updated " : "Up to date: ") + docker.path());
+                for (String key : docker.removed()) {
+                    context.out().println("Removed the stored login for " + key + " from " + docker.path() + ".");
+                }
             }
             if (shim.isPresent()) {
                 context.out().println((shimWritten ? "Updated " : "Up to date: ") + shim.get().path());

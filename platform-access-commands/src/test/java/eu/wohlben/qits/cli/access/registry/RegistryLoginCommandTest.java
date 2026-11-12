@@ -312,9 +312,141 @@ class RegistryLoginCommandTest {
 
         assertThat(result.exit()).isZero();
         assertThat(result.err()).contains("credHelpers takes precedence")
-                .contains("`docker logout " + registryHost() + "`");
+                .contains("`docker logout " + registryHost() + "`").contains("--remove-stale drops it");
         assertThat(Files.readString(dockerConfig())).contains(FakeIdp.SECRET + "basic")
                 .contains("\"" + registryHost() + "\": \"qits\"");
+    }
+
+    @Test
+    void removeStaleDropsTheStoredLoginForTheRegistry() throws Exception {
+        Files.createDirectories(dockerConfig().getParent());
+        Files.writeString(dockerConfig(), "{\"auths\":{\"" + registryHost() + "\":{\"auth\":\"" + FakeIdp.SECRET
+                + "basic\"},\"ghcr.io\":{\"auth\":\"" + FakeIdp.SECRET + "ghcr\"}}}");
+
+        Result result = run("registry-login", "--configure", "--remove-stale");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.err()).doesNotContain("auths");
+        assertThat(result.out()).contains("Removed the stored login for " + registryHost() + " from "
+                + dockerConfig() + ".");
+        assertThat(Files.readString(dockerConfig())).isEqualTo("""
+                {
+                	"auths": {
+                		"ghcr.io": {
+                			"auth": "%sghcr"
+                		}
+                	},
+                	"credHelpers": {
+                		"%s": "qits"
+                	}
+                }
+                """.formatted(FakeIdp.SECRET, registryHost()));
+    }
+
+    /** auths for the old registries, beside entries that are not the CLI's. */
+    private String staleDockerConfig() {
+        return """
+                {
+                	"auths": {
+                		"https://registry.dev.localhost:8080/v1/": {
+                			"auth": "%1$sold"
+                		},
+                		"ghcr.io": {
+                			"auth": "%1$sghcr"
+                		},
+                		"mirror.dev.localhost:8080": {
+                			"auth": "%1$smirror"
+                		}
+                	},
+                	"credsStore": "desktop",
+                	"credHelpers": {
+                		"gcr.io": "gcloud"
+                	}
+                }
+                """.formatted(FakeIdp.SECRET);
+    }
+
+    @Test
+    void staleDockerLoginsAreWarnedAboutAndKeptWithoutRemoveStale() throws Exception {
+        Files.createDirectories(dockerConfig().getParent());
+        Files.writeString(dockerConfig(), staleDockerConfig());
+
+        Result result = run("registry-login", "--configure");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.err()).contains("Warning: " + dockerConfig() + " has a stored login for "
+                        + "https://registry.dev.localhost:8080/v1/ under auths, an old *.dev.localhost registry; "
+                        + "--remove-stale drops it.")
+                .contains("stored login for mirror.dev.localhost:8080 under auths").doesNotContain("ghcr.io");
+        assertThat(result.out()).doesNotContain("Removed");
+        assertThat(Files.readString(dockerConfig())).contains("registry.dev.localhost:8080")
+                .contains("mirror.dev.localhost:8080").contains(FakeIdp.SECRET + "old");
+    }
+
+    @Test
+    void removeStaleDropsTheStaleDockerLoginsAndKeepsTheRest() throws Exception {
+        Files.createDirectories(dockerConfig().getParent());
+        Files.writeString(dockerConfig(), staleDockerConfig());
+
+        Result result = run("registry-login", "--configure", "--remove-stale");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.err()).doesNotContain("auths");
+        assertThat(result.out()).contains("Updated " + dockerConfig())
+                .contains("Removed the stored login for https://registry.dev.localhost:8080/v1/ from "
+                        + dockerConfig() + ".")
+                .contains("Removed the stored login for mirror.dev.localhost:8080 from " + dockerConfig() + ".");
+        assertThat(Files.readString(dockerConfig())).isEqualTo("""
+                {
+                	"auths": {
+                		"ghcr.io": {
+                			"auth": "%sghcr"
+                		}
+                	},
+                	"credsStore": "desktop",
+                	"credHelpers": {
+                		"gcr.io": "gcloud",
+                		"%s": "qits"
+                	}
+                }
+                """.formatted(FakeIdp.SECRET, registryHost()));
+    }
+
+    @Test
+    void removeStaleDropsStaleDockerLoginsWhenTheHelperIsAlreadyThere() throws Exception {
+        Files.createDirectories(dockerConfig().getParent());
+        Files.writeString(dockerConfig(), """
+                {"auths": {"registry.dev.localhost:8080": {"auth": "%sold"}},
+                 "credHelpers": {"%s": "qits"}}
+                """.formatted(FakeIdp.SECRET, registryHost()));
+
+        Result result = run("registry-login", "--configure", "--remove-stale");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.out()).contains("Updated " + dockerConfig())
+                .contains("Removed the stored login for registry.dev.localhost:8080 from " + dockerConfig() + ".");
+        // The last login gone, auths stays as {}, as docker leaves it after a logout.
+        assertThat(Files.readString(dockerConfig())).isEqualTo(
+                "{\n\t\"auths\": {},\n\t\"credHelpers\": {\n\t\t\"" + registryHost() + "\": \"qits\"\n\t}\n}\n");
+
+        assertThat(run("registry-login", "--configure", "--remove-stale").out())
+                .contains("Up to date: " + dockerConfig()).doesNotContain("Removed");
+    }
+
+    @Test
+    void aDryRunShowsTheStaleDockerLoginsItWouldRemoveMasked() throws Exception {
+        Files.createDirectories(dockerConfig().getParent());
+        Files.writeString(dockerConfig(), staleDockerConfig());
+
+        Result result = run("registry-login", "--configure", "--remove-stale", "--dry-run");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.out()).contains("--- " + dockerConfig() + "\n+++ " + dockerConfig())
+                .contains("-\t\t\"https://registry.dev.localhost:8080/v1/\": {\n-\t\t\t\"auth\": \"<token>\"\n")
+                .contains("-\t\t\"mirror.dev.localhost:8080\": {\n-\t\t\t\"auth\": \"<token>\"\n")
+                .contains("+\t\t\"" + registryHost() + "\": \"qits\"")
+                .doesNotContain("Removed");
+        assertThat(Files.readString(dockerConfig())).isEqualTo(staleDockerConfig());
     }
 
     @Test
