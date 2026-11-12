@@ -618,7 +618,17 @@ Then:
     systemctl --user enable --now qits-session-daemon
     journalctl --user -u qits-session-daemon -f
 
-Installing it is not part of this version.
+`qits registry-login --configure --install-daemon` installs it: it writes the unit to
+`$XDG_CONFIG_HOME/systemd/user/qits-session-daemon.service` (else under `~/.config`), mode 0644,
+with `ExecStart` naming the running qits binary (in systemd's double quotes when the path has a
+blank) and, when `XDG_CONFIG_HOME` is not `~/.config`, an `Environment=XDG_CONFIG_HOME=` line so the
+daemon finds the same `t.json`; then it runs the first two lines above (`enable` without `--now` when
+a daemon started by hand already runs, so it starts at the next login). A failing `systemctl` is
+exit 1 with the command and what it said. It never replaces a unit file that is there, whatever is
+in it: it says `<path> exists; left as it is`. It first asks `systemctl --user show-environment`;
+when that fails or there is no `systemctl`, it writes nothing and says how to start the daemon by
+hand. Run as a JVM rather than the binary, it prints the unit for you to write. With `--dry-run` it
+prints the unit as a diff and the two `systemctl` lines, and runs only that question.
 
 ## Platform commands
 
@@ -2091,7 +2101,7 @@ that is how Git's and Docker's helper protocols work. stderr never carries one.
 
 ## npm, Maven and Docker registries on this workstation
 
-    qits registry-login [--configure] [--remove-stale] [--dry-run]
+    qits registry-login [--configure [--install-daemon]] [--remove-stale] [--dry-run]
                         [--npmrc <file>] [--maven-settings <file>] [--docker-config <file>]
                         [--artifacts-url <url>] [--mirror-url <url>]
     qits docker-credential <get|store|erase|list>
@@ -2124,6 +2134,17 @@ session-daemon` replaces it each time it refreshes the session. No long-lived se
 - While `registries.json` exists, the daemon refreshes at least 5 minutes before expiry (access
   tokens last 15 minutes), so a build that starts always has 5 minutes of token. Delete the file
   to stop.
+- Only `qits session-daemon` renews the token in those files. When none runs (it holds
+  `session-daemon.lock`; the command takes the lock for an instant to find out, and closes it at
+  once), the command warns on stderr, with or without `--configure` and on `--dry-run`: `Warning:
+  no qits session-daemon is running, so the npm and Maven token in <npmrc> and <settings> stops
+  working at <time>.`, followed by the fix that fits: `systemctl --user enable --now
+  qits-session-daemon` when the unit file is there, `qits registry-login --configure
+  --install-daemon` when systemd answers and it is not, and `qits session-daemon &` (again after
+  every reboot) without systemd. The exit code stays the same. A daemon starting in the instant the
+  lock is taken exits 1; the unit's `Restart=on-failure` starts it again within 30 seconds.
+- `--install-daemon` (with `--configure`) installs and starts the systemd user unit, after the
+  registry files are written; see "As a systemd user service".
 - A workstation command: inside the platform or with `QITS_TOKEN` it refuses (exit 2).
 
 Docker has a credential helper protocol, so it gets no token in a file. `--configure` sets

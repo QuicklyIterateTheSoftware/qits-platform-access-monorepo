@@ -166,7 +166,8 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
     idp/       the idp's /token endpoint and which idp to use
     session/   the session file, its atomic write, the two locks, and the one refresh (SessionRefresh)
     login/     qits login: PKCE, the pasted code, the browser opener
-    daemon/    qits session-daemon: the refresh loop, the sleeper seam, the stop signals
+    daemon/    qits session-daemon: the refresh loop, the sleeper seam, the stop signals, and whether
+               one runs (DaemonProbe, which takes session-daemon.lock for an instant)
     platform/  what every platform command shares: the context, the token (with inline refresh),
                the HTTP client and its error messages, which address a service has (PlatformUrls),
                the aligned table (Table), and the --since/--until/--limit window both query
@@ -304,8 +305,9 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                RegistryLogins, registries.json as RegistryState), the redacted --dry-run diff
                (UnifiedDiff), the Docker config's credHelpers entry (DockerConfig, written in
                docker's own tab layout), the docker-credential-qits script beside the binary
-               (DockerShim; install.sh writes the same), and Docker's helper protocol
-               (DockerCredentialCommand, qits-2082)
+               (DockerShim; install.sh writes the same), Docker's helper protocol
+               (DockerCredentialCommand, qits-2082), and --install-daemon's systemd user unit
+               (SessionDaemonUnit, systemctl behind a runner seam; qits-2108)
     artifacts/ qits artifacts: the group, with publish (in publish/ below) and fetch. `fetch
                deployed-pacts` (qits-1765, Interaction.LOCAL: it writes files) asks qits-maintenance's
                MaintenanceApi.deployedPacts which pact package each deployed consumer version was

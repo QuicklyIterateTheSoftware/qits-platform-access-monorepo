@@ -29,7 +29,8 @@ import java.util.concurrent.Callable;
                 "  qits session-daemon &",
                 "  systemctl --user enable --now qits-session-daemon",
                 "",
-                "- The systemd unit is in the README. Only one daemon runs at a time; a second one exits with 1.",
+                "- `qits registry-login --configure --install-daemon` installs and starts the systemd user unit; "
+                        + "the README has it too. Only one daemon runs at a time; a second one exits with 1.",
                 "- When the session ends (revoked or expired), it says so, keeps running, and carries on after the "
                         + "next `qits login`.",
                 "- Without it, a command refreshes an access token that is about to expire before it calls the "

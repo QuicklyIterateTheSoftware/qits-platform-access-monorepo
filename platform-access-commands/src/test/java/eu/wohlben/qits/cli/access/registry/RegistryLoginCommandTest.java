@@ -10,6 +10,7 @@ import eu.wohlben.qits.cli.access.idp.TokenClient;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.session.Session;
 import eu.wohlben.qits.cli.access.session.SessionFile;
+import eu.wohlben.qits.cli.access.session.Times;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -75,6 +78,18 @@ class RegistryLoginCommandTest {
     /** The qits binary the command believes it runs from; empty, as in any JVM, unless a test sets it. */
     private Optional<Path> binary = Optional.empty();
 
+    /** Whether the command finds a qits session-daemon running. */
+    private boolean daemon = false;
+
+    /** Whether `systemctl --user show-environment` answers 0. */
+    private boolean systemd = false;
+
+    /** Every systemctl command the command ran, in order; no test reaches the real one. */
+    private final List<List<String>> systemctl = new ArrayList<>();
+
+    /** The exit code each systemctl command after the probe answers. */
+    private int systemctlExit = 0;
+
     private Result run(String... args) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -91,6 +106,15 @@ class RegistryLoginCommandTest {
                 if (made instanceof RegistryLoginCommand login) {
                     Optional<Path> self = binary;
                     login.binary = () -> self;
+                    boolean running = daemon;
+                    login.daemonRunning = store -> running;
+                    login.systemctl = argv -> {
+                        systemctl.add(argv);
+                        if (argv.equals(SessionDaemonUnit.PROBE)) {
+                            return new SessionDaemonUnit.Ran(systemd ? 0 : 1, "");
+                        }
+                        return new SessionDaemonUnit.Ran(systemctlExit, systemctlExit == 0 ? "" : "Failed to connect");
+                    };
                 }
                 return made;
             }
@@ -509,5 +533,202 @@ class RegistryLoginCommandTest {
 
         assertThat(result.exit()).isEqualTo(2);
         assertThat(result.err()).contains("--docker-config");
+    }
+
+    // ---------------------------------------------------------------- the session daemon
+
+    private Path unit() {
+        return home.resolve(".config/systemd/user/qits-session-daemon.service");
+    }
+
+    @Test
+    void withoutADaemonItWarnsWhenTheTokenStopsWorking() {
+        Result result = run("registry-login", "--configure");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.err()).contains("Warning: no qits session-daemon is running, so the npm and Maven token in "
+                + home.resolve(".npmrc") + " and " + home.resolve(".m2/settings.xml") + " stops working at "
+                + Times.local(T0.plus(Duration.ofMinutes(10))) + ".");
+        assertThat(result.out()).contains("The token is good until ").doesNotContain("is running");
+
+        // A dry run and a plain run warn as well.
+        assertThat(run("registry-login", "--configure", "--dry-run").err()).contains("no qits session-daemon");
+        assertThat(run("registry-login").err()).contains("no qits session-daemon");
+    }
+
+    @Test
+    void withADaemonThereIsNoWarning() {
+        daemon = true;
+
+        Result result = run("registry-login", "--configure");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.err()).doesNotContain("session-daemon");
+        assertThat(result.out()).contains("`qits session-daemon` is running and renews it.");
+        // Nothing to advise, nothing to install: systemd is not asked.
+        assertThat(systemctl).isEmpty();
+    }
+
+    @Test
+    void theWarningNamesTheFixThatFits() throws Exception {
+        assertThat(run("registry-login", "--configure").err()).contains("`qits session-daemon &`")
+                .contains("nohup qits session-daemon").contains("reboot");
+
+        systemd = true;
+        assertThat(run("registry-login", "--configure").err())
+                .contains("`qits registry-login --configure --install-daemon`");
+
+        Files.createDirectories(unit().getParent());
+        Files.writeString(unit(), "[Service]\n");
+        assertThat(run("registry-login", "--configure").err())
+                .contains("`systemctl --user enable --now qits-session-daemon`");
+    }
+
+    @Test
+    void installDaemonNeedsConfigure() {
+        Result result = run("registry-login", "--install-daemon");
+
+        assertThat(result.exit()).isEqualTo(2);
+        assertThat(result.err()).contains("--install-daemon needs --configure");
+        assertThat(systemctl).isEmpty();
+    }
+
+    @Test
+    void installDaemonWritesTheUnitAndEnablesIt() throws Exception {
+        systemd = true;
+        Path bin = Files.createDirectories(home.resolve("my bin"));
+        binary = Optional.of(bin.resolve("qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        assertThat(Files.readString(unit())).isEqualTo("""
+                [Unit]
+                Description=Keep the qits session fresh
+
+                [Service]
+                ExecStart="%s/my bin/qits" session-daemon
+                Restart=on-failure
+                RestartSec=30
+
+                [Install]
+                WantedBy=default.target
+                """.formatted(home));
+        assertThat(PosixFilePermissions.toString(Files.getPosixFilePermissions(unit()))).isEqualTo("rw-r--r--");
+        assertThat(systemctl).containsExactly(SessionDaemonUnit.PROBE,
+                List.of("systemctl", "--user", "daemon-reload"),
+                List.of("systemctl", "--user", "enable", "--now", "qits-session-daemon"));
+        assertThat(result.out()).contains("Installed " + unit()).contains("Enabled qits-session-daemon")
+                .contains("`qits session-daemon` is running and renews it.");
+        assertThat(result.err()).doesNotContain("no qits session-daemon");
+        assertThat(Files.readString(home.resolve(".npmrc"))).contains(FakeIdp.SECRET);
+    }
+
+    @Test
+    void aDaemonRunningAlreadyIsNotStartedASecondTime() throws Exception {
+        daemon = true;
+        systemd = true;
+        binary = Optional.of(Files.createDirectories(home.resolve("bin")).resolve("qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        assertThat(unit()).exists();
+        assertThat(systemctl).containsExactly(SessionDaemonUnit.PROBE,
+                List.of("systemctl", "--user", "daemon-reload"),
+                List.of("systemctl", "--user", "enable", "qits-session-daemon"));
+        assertThat(result.out()).contains("it starts at the next login");
+    }
+
+    @Test
+    void anExistingUnitFileIsLeftAsItIs() throws Exception {
+        systemd = true;
+        binary = Optional.of(home.resolve("qits"));
+        Files.createDirectories(unit().getParent());
+        byte[] mine = "[Service]\nExecStart=/opt/qits session-daemon --margin 60\n".getBytes(StandardCharsets.UTF_8);
+        Files.write(unit(), mine);
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        assertThat(Files.readAllBytes(unit())).isEqualTo(mine);
+        assertThat(result.out()).contains(unit() + " exists; left as it is").doesNotContain("Installed");
+        assertThat(result.err()).contains("`systemctl --user enable --now qits-session-daemon`");
+        assertThat(systemctl).doesNotContain(List.of("systemctl", "--user", "daemon-reload"));
+    }
+
+    @Test
+    void aDryRunShowsTheUnitAndRunsOnlyTheProbe() {
+        systemd = true;
+        binary = Optional.of(home.resolve("bin/qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon", "--dry-run");
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.out()).contains("--- " + unit() + "\n+++ " + unit())
+                .contains("+ExecStart=" + home.resolve("bin/qits") + " session-daemon")
+                .contains("+WantedBy=default.target")
+                .contains("Would run: systemctl --user daemon-reload")
+                .contains("Would run: systemctl --user enable --now qits-session-daemon");
+        assertThat(unit()).doesNotExist();
+        assertThat(home.resolve(".config/systemd")).doesNotExist();
+        assertThat(systemctl).containsExactly(SessionDaemonUnit.PROBE);
+    }
+
+    @Test
+    void withoutSystemdNothingIsInstalled() {
+        binary = Optional.of(home.resolve("qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        assertThat(unit()).doesNotExist();
+        assertThat(systemctl).containsExactly(SessionDaemonUnit.PROBE);
+        assertThat(result.err()).contains("no systemd user manager answers").contains("`qits session-daemon &`");
+    }
+
+    @Test
+    void aFailingSystemctlIsExitOneNamingTheCommand() {
+        systemd = true;
+        systemctlExit = 1;
+        binary = Optional.of(home.resolve("qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("`systemctl --user daemon-reload` failed (exit code 1): Failed to connect");
+        assertThat(systemctl).doesNotContain(List.of("systemctl", "--user", "enable", "--now", "qits-session-daemon"));
+    }
+
+    @Test
+    void withoutTheBinaryTheUnitIsPrintedNotWritten() {
+        systemd = true;
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        assertThat(unit()).doesNotExist();
+        assertThat(result.err()).contains("this is not the qits binary, so " + unit() + " was not written")
+                .contains("ExecStart=%h/.local/bin/qits session-daemon");
+        assertThat(systemctl).containsExactly(SessionDaemonUnit.PROBE);
+    }
+
+    @Test
+    void aNonDefaultXdgConfigHomeHoldsTheUnitAndIsHandedToTheDaemon() throws Exception {
+        Path config = home.resolve("cfg");
+        new SessionFile(config.resolve("qits")).write(new Session(idp.url(), "qits-cli",
+                FakeIdp.SECRET + "access-0", T0.plus(Duration.ofMinutes(10)), idp.issueRefreshToken(),
+                T0.plus(Duration.ofDays(30))));
+        env.put("XDG_CONFIG_HOME", config.toString());
+        systemd = true;
+        binary = Optional.of(home.resolve("qits"));
+
+        Result result = run("registry-login", "--configure", "--install-daemon");
+
+        assertThat(result.exit()).isZero();
+        Path unit = config.resolve("systemd/user/qits-session-daemon.service");
+        assertThat(Files.readString(unit)).contains("ExecStart=" + home.resolve("qits") + " session-daemon\n"
+                + "Environment=XDG_CONFIG_HOME=" + config + "\n");
+        assertThat(unit()).doesNotExist();
     }
 }

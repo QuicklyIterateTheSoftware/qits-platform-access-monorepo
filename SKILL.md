@@ -78,7 +78,7 @@ qits session-daemon &
 systemctl --user enable --now qits-session-daemon
 ```
 
-- The systemd unit is in the README. Only one daemon runs at a time; a second one exits with 1.
+- `qits registry-login --configure --install-daemon` installs and starts the systemd user unit; the README has it too. Only one daemon runs at a time; a second one exits with 1.
 - When the session ends (revoked or expired), it says so, keeps running, and carries on after the next `qits login`.
 - Without it, a command refreshes an access token that is about to expire before it calls the platform.
 - After `qits registry-login --configure` it also writes each new token into the registry blocks of ~/.npmrc and ~/.m2/settings.xml, and refreshes at least 5 minutes before expiry.
@@ -4927,8 +4927,10 @@ Only the blocks change; the rest of each file stays as it is. Each file is repla
 
 For Docker, --configure sets credHelpers["registry.qits.<domain>"] to "qits" in ~/.docker/config.json (or $DOCKER_CONFIG/config.json), keeping every other entry, and writes docker-credential-qits beside the qits binary: a two-line script that runs `qits docker-credential`. Docker runs it for each pull and push, so no token is stored for Docker and nothing needs renewing.
 
+--install-daemon also installs `qits session-daemon` as a systemd user service, so the npm and Maven token keeps being renewed. Without a running daemon the command warns when that token stops working, and says how to start one.
+
 ```
-qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file>] [--dry-run] [--maven-settings <file>] [--mirror-url <url>] [--npmrc <file>] [--remove-stale]
+qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file>] [--dry-run] [--install-daemon] [--maven-settings <file>] [--mirror-url <url>] [--npmrc <file>] [--remove-stale]
 ```
 
 | Name | What it does |
@@ -4937,6 +4939,7 @@ qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file
 | `--configure` | Set up the blocks (again), with the registries the platform lists now. |
 | `--docker-config <file>` | With --configure: the Docker client config. Default: $DOCKER_CONFIG/config.json, else ~/.docker/config.json. |
 | `--dry-run` | Write nothing; print the changes as a redacted unified diff. |
+| `--install-daemon` | With --configure: install and start `qits session-daemon` as a systemd user service, unless its unit file exists. |
 | `--maven-settings <file>` | With --configure: the Maven user settings. Default: ~/.m2/settings.xml. |
 | `--mirror-url <url>` | With --configure: qits-mirror. Default: QITS_MIRROR_URL, else https://mirror.qits.<domain of the session's idp>. |
 | `--npmrc <file>` | With --configure: the npm user config. Default: NPM_CONFIG_USERCONFIG, else ~/.npmrc. |
@@ -4948,17 +4951,19 @@ qits registry-login [--artifacts-url <url>] [--configure] [--docker-config <file
 qits registry-login --configure --remove-stale --dry-run
 qits registry-login --configure --remove-stale
 qits registry-login
+qits registry-login --configure --install-daemon --dry-run
 ```
 
 - --dry-run writes nothing. It prints a unified diff per file, or "No changes". Every secret shows as <token>, and lines outside the blocks show only when they change.
 - --remove-stale also drops lines for the old *.dev.localhost registries, and entries outside the blocks that use the same registries or ids. In the Docker config, read only with --configure, it drops the auths logins for those registries and for the platform's. Without it they stay, with a warning.
+- --install-daemon writes $XDG_CONFIG_HOME/systemd/user/qits-session-daemon.service (else under ~/.config) with the qits binary's path, then runs `systemctl --user daemon-reload` and `systemctl --user enable --now qits-session-daemon`. An existing unit file is left as it is. Without a systemd user manager it writes nothing and says how to start the daemon by hand.
 - A workstation command: inside the platform, or with QITS_TOKEN, the container has its own registry setup.
 - To stop: delete $XDG_CONFIG_HOME/qits/registries.json and the blocks, and the qits entry of the Docker config's credHelpers.
 
 ### Exit codes
 
 - `0` Done, or nothing to change.
-- `1` A file cannot be read or written, or the session cannot be refreshed.
+- `1` A file cannot be read or written, the session cannot be refreshed, or systemctl failed.
 - `2` Used wrongly, not signed in, not set up, or not on a workstation.
 
 ## qits docker-credential
