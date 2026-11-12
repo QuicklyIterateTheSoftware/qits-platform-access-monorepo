@@ -87,7 +87,7 @@
              this repository the way every pin does — as a qits-maintenance bump on this property,
              gated here, where a changed answer the CLI cannot read goes red before it ships. Do not
              hand-edit it to chase a release. -->
-        <qits.projects-golden-masters.version>2026.1111.203405</qits.projects-golden-masters.version>
+        <qits.projects-golden-masters.version>2026.1112.85411</qits.projects-golden-masters.version>
         <!-- The other providers' golden masters, one per service the commands call (ticket
              qits-1149): each pact under pacts/ is written from its provider's recordings. Bumped by
              qits-maintenance like the one above. -->
