@@ -2010,11 +2010,11 @@ class PlatformCommandsTest {
     void dispatchSendsTheModeAndTheRuleAndPrintsWhatItStarted() throws Exception {
         answerDispatch();
 
-        Result r = run("work", "--entity", "qits-100", "dispatch", "--mode", "flow", "--rule", "backlog-newest-first");
+        Result r = run("work", "--entity", "qits-100", "dispatch", "--mode", "flow", "--rule", "backlog-order");
 
         assertThat(r.exit()).as(r.err()).isZero();
         assertThat(JSON.readTree(platform.requests("POST", DISPATCH).getFirst().body()))
-                .isEqualTo(JSON.readTree("{\"mode\":\"FLOW\",\"rule\":\"backlog-newest-first\"}"));
+                .isEqualTo(JSON.readTree("{\"mode\":\"FLOW\",\"rule\":\"backlog-order\"}"));
         assertThat(r.out().lines().toList()).containsExactly(
                 "ENTITY    MODE  PHASE      BRANCH           ASSIGNEE",
                 "qits-100  FLOW  implement  ticket/qits-100  ws-agent-41");

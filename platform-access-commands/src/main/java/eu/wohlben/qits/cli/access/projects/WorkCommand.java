@@ -882,7 +882,7 @@ public class WorkCommand implements Runnable {
             footer = {
                     "  qits work --entity qits-100 dispatch --mode flow",
                     "  qits work dispatch --entity qits-100 --mode PHASE -o json",
-                    "  qits work --entity qits-100 dispatch --mode FLOW --rule backlog-newest-first",
+                    "  qits work --entity qits-100 dispatch --mode FLOW --rule backlog-order",
                     "",
                     "- Pressing takes qits:admin, or the project's delivery desk, which names the rule it presses "
                             + "under; a plain agent is answered HTTP 403.",
@@ -909,7 +909,7 @@ public class WorkCommand implements Runnable {
         String mode;
 
         @CommandLine.Option(names = "--rule", paramLabel = "<rule>",
-                description = "The delivery desk's rule the press is made under (backlog-newest-first, "
+                description = "The delivery desk's rule the press is made under (backlog-order, "
                         + "start-refined). Optional; the service ignores it for anyone but the desk.")
         String rule;
 

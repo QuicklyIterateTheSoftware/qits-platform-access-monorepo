@@ -1080,14 +1080,14 @@ qits work dispatch [--entity <entity>] [--mode <mode>] [--output table|json] [--
 | `--mode <mode>` | FLOW (every phase from here on) or PHASE (the next one only); required. Case-insensitive. |
 | `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
 | `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
-| `--rule <rule>` | The delivery desk's rule the press is made under (backlog-newest-first, start-refined). Optional; the service ignores it for anyone but the desk. |
+| `--rule <rule>` | The delivery desk's rule the press is made under (backlog-order, start-refined). Optional; the service ignores it for anyone but the desk. |
 
 ### Examples
 
 ```
 qits work --entity qits-100 dispatch --mode flow
 qits work dispatch --entity qits-100 --mode PHASE -o json
-qits work --entity qits-100 dispatch --mode FLOW --rule backlog-newest-first
+qits work --entity qits-100 dispatch --mode FLOW --rule backlog-order
 ```
 
 - Pressing takes qits:admin, or the project's delivery desk, which names the rule it presses under; a plain agent is answered HTTP 403.
