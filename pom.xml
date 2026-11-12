@@ -102,7 +102,7 @@
         <!-- qits-system's recordings, for the targets the VHS tapes' fake platform answers with
              (FakePlatformMain, epic qits-881); no consumer pact reads them yet. Bumped by
              qits-maintenance like the others. -->
-        <qits.system-golden-masters.version>2026.1110.173442</qits.system-golden-masters.version>
+        <qits.system-golden-masters.version>2026.1112.808</qits.system-golden-masters.version>
         <qits.deployments-golden-masters.version>2026.1111.21132</qits.deployments-golden-masters.version>
         <!-- qits-network-access's recordings, for `qits network-access` (epic qits-1977). The first pin
              is 2026.1110.191501, whose getCompanion answers the entrypoint and user the CLI runs the
