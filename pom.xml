@@ -87,7 +87,7 @@
              this repository the way every pin does — as a qits-maintenance bump on this property,
              gated here, where a changed answer the CLI cannot read goes red before it ships. Do not
              hand-edit it to chase a release. -->
-        <qits.projects-golden-masters.version>2026.1113.65138</qits.projects-golden-masters.version>
+        <qits.projects-golden-masters.version>2026.1113.120648</qits.projects-golden-masters.version>
         <!-- The other providers' golden masters, one per service the commands call (ticket
              qits-1149): each pact under pacts/ is written from its provider's recordings. Bumped by
              qits-maintenance like the one above. -->
@@ -103,7 +103,7 @@
              (FakePlatformMain, epic qits-881); no consumer pact reads them yet. Bumped by
              qits-maintenance like the others. -->
         <qits.system-golden-masters.version>2026.1112.808</qits.system-golden-masters.version>
-        <qits.deployments-golden-masters.version>2026.1111.21132</qits.deployments-golden-masters.version>
+        <qits.deployments-golden-masters.version>2026.1113.124805</qits.deployments-golden-masters.version>
         <!-- qits-network-access's recordings, for `qits network-access` (epic qits-1977). The first pin
              is 2026.1110.191501, whose getCompanion answers the entrypoint and user the CLI runs the
              companion with. Bumped by qits-maintenance like the others. -->
