@@ -654,11 +654,11 @@ public final class ProjectsApi {
         return client.get(uri(deskTriggersPath(projectId) + query(query)));
     }
 
-    // --- named agents (epic qits-2154) ---
+    // --- named agents (qits-2154) ---
 
     /**
      * {@code {"agents":[{"name","surface","state","sessionId","commandId"}]}}: every named agent
-     * kept in the project's desk container, generalising the front desk (epic qits-2154); the desk
+     * kept in the project's desk container, generalising the front desk (qits-2154); the desk
      * is listed first. {@code state} is one of STOPPED, STARTING, IDLE, BUSY or FAILED. The door
      * takes the same roles as {@link #agentPrompt} and {@link #agentAnswer}, so an agent's own
      * {@code qits:agent} credential is refused here too (403) despite this being a plain read.
@@ -669,7 +669,7 @@ public final class ProjectsApi {
 
     /**
      * {@code {"commandId", "state", "delivered", "queued", "position"}}: one turn handed to a
-     * named agent's kept session (epic qits-2154), the same shape {@link #deskPrompt} answers.
+     * named agent's kept session (qits-2154), the same shape {@link #deskPrompt} answers.
      * {@code delivered} when it was typed at once, {@code queued} with its {@code position} when
      * it waits for the session to be idle. With the desk container stopped (or not yet connected),
      * the service starts it and answers 202 {@code {"commandId":null,"state":"STARTING",

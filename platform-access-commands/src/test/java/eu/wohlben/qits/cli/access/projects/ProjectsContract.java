@@ -118,7 +118,7 @@ public final class ProjectsContract {
     static final String DESK_RECEIVED_A_TRIGGER = "a project whose desk received a trigger message";
     static final String DESK_TRIGGERS_OPERATION = "listDeskTriggerMessages";
     /**
-     * The named agents' doors of {@code qits projects agents} (epic qits-2154), generalising the
+     * The named agents' doors of {@code qits projects agents} (qits-2154), generalising the
      * front desk into named agents with {@code ui-builder} as the pilot. Pending on the provider
      * the same way {@link #DESK_RUNNING} is: the golden masters pinned in the root pom record no
      * such state yet, so all three rows are skipped with this state and their door, and stay out
@@ -1328,7 +1328,7 @@ public final class ProjectsContract {
                 .consumes(held(DESK_RECEIVED_A_TRIGGER, DESK_TRIGGERS_OPERATION, DESK_TRIGGERS_FIELDS))
                 .request("GET /projects/api/projects/{projectId}/desk-triggers"));
 
-        // qits projects agents (epic qits-2154): pending, the same way the front desk's rows above are.
+        // qits projects agents (qits-2154): pending, the same way the front desk's rows above are.
         rows.add(row("qits projects agents list", A_PROJECT, "listProjects", "project", FIND_PROJECT)
                 .consumes(PROJECT));
         rows.add(row("qits projects agents list", AGENT_RUNNING, LIST_AGENTS_OPERATION, "agents", LIST_AGENTS)

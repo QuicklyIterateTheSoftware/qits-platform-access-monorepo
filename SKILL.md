@@ -342,7 +342,7 @@ qits projects desk triggers --project qits -o json
 
 A project's named agents: list shows them, prompt types a turn into one's kept session, answer shows that session's last answer.
 
-A named agent is a kept Claude session in the project's desk container (epic qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent. Each runs only when prompted and stops when idle; prompting one starts the desk container when it is stopped.
+A named agent is a kept Claude session in the project's desk container (qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent. Each runs only when prompted and stops when idle; prompting one starts the desk container when it is stopped.
 
 ### Notes
 
@@ -385,7 +385,7 @@ Type a turn into a named agent's kept session. The words after the options are j
 
 Sends POST /projects/api/projects/{projectId}/agents/{name}/prompt. When the agent's session is idle the turn is typed at once (delivered). While it is busy, the turn waits in the agent's own queue and is typed once it is idle (queued, with its position). When the desk container is stopped, prompting it starts the container; the turn then waits and is delivered once the agent's session first comes up. Either way it prints the command id; `qits projects agents answer` shows what the agent answered.
 
-A named agent is a kept Claude session in the project's desk container (epic qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent.
+A named agent is a kept Claude session in the project's desk container (qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent.
 
 ```
 qits projects agents prompt [--name <name>] [--output table|json] [--project <project>] [--projects-url <url>] [<text>]

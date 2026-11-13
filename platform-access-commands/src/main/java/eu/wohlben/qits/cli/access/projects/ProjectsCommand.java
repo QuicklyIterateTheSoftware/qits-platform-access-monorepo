@@ -398,7 +398,7 @@ public class ProjectsCommand implements Runnable {
     }
 
     /**
-     * {@code qits projects agents}: the project's named agents (epic qits-2154) — kept Claude
+     * {@code qits projects agents}: the project's named agents (qits-2154) — kept Claude
      * sessions in the desk's container, generalising the front desk: {@code desk} is the front
      * desk itself, listed the same as any other; {@code ui-builder} is the pilot. list shows them,
      * prompt types a turn into one, answer shows what it last answered. Modelled on {@link
@@ -411,7 +411,7 @@ public class ProjectsCommand implements Runnable {
                     AgentsCommand.AnswerCommand.class},
             description = {"A project's named agents: list shows them, prompt types a turn into one's kept "
                     + "session, answer shows that session's last answer.",
-                    "A named agent is a kept Claude session in the project's desk container (epic qits-2154): "
+                    "A named agent is a kept Claude session in the project's desk container (qits-2154): "
                             + "`desk` is the front desk, `ui-builder` the UI builder's agent. Each runs only when "
                             + "prompted and stops when idle; prompting one starts the desk container when it is "
                             + "stopped."},
@@ -502,7 +502,7 @@ public class ProjectsCommand implements Runnable {
                                 + "container; the turn then waits and is delivered once the agent's session "
                                 + "first comes up. Either way it prints the command id; `qits projects agents "
                                 + "answer` shows what the agent answered.",
-                        "A named agent is a kept Claude session in the project's desk container (epic qits-2154): "
+                        "A named agent is a kept Claude session in the project's desk container (qits-2154): "
                                 + "`desk` is the front desk, `ui-builder` the UI builder's agent."},
                 footerHeading = HelpText.EXAMPLES,
                 footer = {"  qits projects agents prompt --project qits --name ui-builder Pitch a calmer header.",

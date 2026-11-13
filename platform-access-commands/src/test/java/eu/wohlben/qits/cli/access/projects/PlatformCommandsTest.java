@@ -2273,7 +2273,7 @@ class PlatformCommandsTest {
         assertThat(noProject.err()).contains("Name the project: --project <id, slug or name>.");
     }
 
-    // --- the named agents (epic qits-2154) ---
+    // --- the named agents (qits-2154) ---
 
     private static final String AGENTS = "/projects/api/projects/" + QITS + "/agents";
     private static final String UI_BUILDER_PROMPT = "/projects/api/projects/" + QITS + "/agents/ui-builder/prompt";
