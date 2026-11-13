@@ -539,7 +539,7 @@
  │   work                Work items of every archetype - epics, tickets, features, tasks and issue │
  │   ideas               A project's ideas: short, titled notes that an epic or a ticket names as  │
  │   pitches             A project's pitches: mock HTML snapshots a named agent (such as ui-builde │
- │   release-request     Release requests: the one way to release a repository. list shows them (o │
+ │   ui-builder          The reads for the project's ui-builder named agent (qits-2156): what the  │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits
@@ -570,7 +570,7 @@
  │   work                Work items of every archetype - epics, tickets, features, tasks and issue │
  │   ideas               A project's ideas: short, titled notes that an epic or a ticket names as  │
  │   pitches             A project's pitches: mock HTML snapshots a named agent (such as ui-builde │
- │   release-request     Release requests: the one way to release a repository. list shows them (o │
+ │   ui-builder          The reads for the project's ui-builder named agent (qits-2156): what the  │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits
