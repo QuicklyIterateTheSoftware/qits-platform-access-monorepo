@@ -118,6 +118,22 @@ public final class ProjectsContract {
     static final String DESK_RECEIVED_A_TRIGGER = "a project whose desk received a trigger message";
     static final String DESK_TRIGGERS_OPERATION = "listDeskTriggerMessages";
     /**
+     * The named agents' doors of {@code qits projects agents} (epic qits-2154), generalising the
+     * front desk into named agents with {@code ui-builder} as the pilot. Pending on the provider
+     * the same way {@link #DESK_RUNNING} is: the golden masters pinned in the root pom record no
+     * such state yet, so all three rows are skipped with this state and their door, and stay out
+     * of the pact file. They go live with no change here once qits-maintenance bumps {@code
+     * qits.projects-golden-masters.version} past the qits-projects-service release that records
+     * this state under the operation ids {@link #LIST_AGENTS_OPERATION}, {@link
+     * #PROMPT_AGENT_OPERATION} and {@link #AGENT_ANSWER_OPERATION}: write the pact again with
+     * {@code -Dgolden.update=true} on that bump. If the provider records them under other
+     * operation ids, the ids here follow.
+     */
+    static final String AGENT_RUNNING = "a project whose named agent is running";
+    static final String LIST_AGENTS_OPERATION = "listAgents";
+    static final String PROMPT_AGENT_OPERATION = "promptAgent";
+    static final String AGENT_ANSWER_OPERATION = "getAgentLastAnswer";
+    /**
      * The project list filtered by {@code ?supersededBy=}, the item named by its qualified id; its
      * items are not blocked, so no blockSource.
      */
@@ -240,6 +256,13 @@ public final class ProjectsContract {
      */
     static final List<String> DESK_TRIGGERS_FIELDS = List.of("messages[].openedAt", "messages[].state",
             "messages[].events[].source", "messages[].attempts", "messages[].acceptedAt");
+
+    /**
+     * What {@code qits projects agents list} reads of each agent: the table's five columns (name,
+     * surface, state, session, command).
+     */
+    static final List<String> AGENT_ROWS_FIELDS = List.of("agents[].name", "agents[].surface", "agents[].state",
+            "agents[].sessionId", "agents[].commandId");
 
     /**
      * One work item as a row of a list ({@code WorkEntities.printRows}): each only where the service
@@ -867,6 +890,35 @@ public final class ProjectsContract {
         });
     };
 
+    /** {@code qits projects agents list}: every named agent, the desk first. */
+    private static final Call LIST_AGENTS = (api, params, recorded) -> {
+        JsonNode answer = api.agents(params.get("projectId"));
+        assertThat(answer.path("agents")).isNotEmpty();
+        answer.path("agents").forEach(a -> {
+            assertThat(ProjectsApi.text(a, "name")).isNotBlank();
+            assertThat(ProjectsApi.text(a, "surface")).isNotBlank();
+            assertThat(ProjectsApi.text(a, "state")).isNotBlank();
+        });
+    };
+
+    /**
+     * {@code qits projects agents prompt}: the recorded text; the table prints delivered, queued or
+     * (with the desk container starting) waiting.
+     */
+    private static final Call PROMPT_AGENT = (api, params, recorded) -> {
+        JsonNode answer = api.agentPrompt(params.get("projectId"), params.get("name"),
+                body(recorded).path("text").asText());
+        assertThat(answer.path("delivered").isBoolean()).isTrue();
+        assertThat(answer.path("queued").isBoolean()).isTrue();
+    };
+
+    /** {@code qits projects agents answer}: the last answer, whose text is null until the agent has answered. */
+    private static final Call AGENT_ANSWER = (api, params, recorded) -> {
+        JsonNode answer = api.agentAnswer(params.get("projectId"), params.get("name"));
+        assertThat(answer.has("text")).isTrue();
+        assertThat(answer.path("text").isTextual() || answer.path("text").isNull()).isTrue();
+    };
+
     /** {@code qits ideas list}: the project's ideas, without the archived ones. */
     private static final Call LIST_IDEAS = (api, params, recorded) -> {
         // No length: the list grows as a project writes ideas, so the mock answers its shortest.
@@ -1275,6 +1327,28 @@ public final class ProjectsContract {
                 DESK_TRIGGERS)
                 .consumes(held(DESK_RECEIVED_A_TRIGGER, DESK_TRIGGERS_OPERATION, DESK_TRIGGERS_FIELDS))
                 .request("GET /projects/api/projects/{projectId}/desk-triggers"));
+
+        // qits projects agents (epic qits-2154): pending, the same way the front desk's rows above are.
+        rows.add(row("qits projects agents list", A_PROJECT, "listProjects", "project", FIND_PROJECT)
+                .consumes(PROJECT));
+        rows.add(row("qits projects agents list", AGENT_RUNNING, LIST_AGENTS_OPERATION, "agents", LIST_AGENTS)
+                .consumes(held(AGENT_RUNNING, LIST_AGENTS_OPERATION, AGENT_ROWS_FIELDS))
+                .request("GET /projects/api/projects/{projectId}/agents"));
+        rows.add(row("qits projects agents prompt", A_PROJECT, "listProjects", "project", FIND_PROJECT)
+                .consumes(PROJECT));
+        rows.add(row("qits projects agents prompt", AGENT_RUNNING, PROMPT_AGENT_OPERATION, "agentPrompt",
+                PROMPT_AGENT)
+                .consumes(held(AGENT_RUNNING, PROMPT_AGENT_OPERATION,
+                        List.of("commandId", "state", "delivered", "queued", "position")))
+                .request("POST /projects/api/projects/{projectId}/agents/{name}/prompt"));
+        rows.add(row("qits projects agents answer", A_PROJECT, "listProjects", "project", FIND_PROJECT)
+                .consumes(PROJECT));
+        rows.add(row("qits projects agents answer", AGENT_RUNNING, AGENT_ANSWER_OPERATION, "agentAnswer",
+                AGENT_ANSWER)
+                .consumes(held(AGENT_RUNNING, AGENT_ANSWER_OPERATION,
+                        List.of("commandId", "sessionId", "state", "text", "at")))
+                .request("GET /projects/api/projects/{projectId}/agents/{name}/last-answer"));
+
         REPOSITORY_SCOPED.forEach(c -> rows.add(row(c, ONE_REPOSITORY, "listProjectRepositories", "repositories",
                 FIND_REPOSITORY).consumes(REPOSITORY)));
 

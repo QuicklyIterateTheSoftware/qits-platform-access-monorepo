@@ -23,9 +23,10 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
 
 @CommandLine.Command(name = "projects", mixinStandardHelpOptions = true,
         subcommands = {ProjectsCommand.ListCommand.class, ProjectsCommand.DeliveryCommand.class,
-                ProjectsCommand.DeskCommand.class},
+                ProjectsCommand.DeskCommand.class, ProjectsCommand.AgentsCommand.class},
         description = "The platform's projects: list shows them, delivery shows one's delivery desk, desk talks to "
-                + "one's front desk. Other commands take a project's id, slug or name as --project.")
+                + "one's front desk, agents talks to one's named agents. Other commands take a project's id, slug "
+                + "or name as --project.")
 public class ProjectsCommand implements Runnable {
 
     @CommandLine.Mixin
@@ -392,6 +393,266 @@ public class ProjectsCommand implements Runnable {
                 return List.of(SafeText.line(text(message, "openedAt")), SafeText.line(text(message, "state")),
                         String.valueOf(message.path("events").size()), Table.cell(String.join(", ", sources), 60),
                         SafeText.line(text(message, "attempts")), accepted.isEmpty() ? "-" : accepted);
+            }
+        }
+    }
+
+    /**
+     * {@code qits projects agents}: the project's named agents (epic qits-2154) — kept Claude
+     * sessions in the desk's container, generalising the front desk: {@code desk} is the front
+     * desk itself, listed the same as any other; {@code ui-builder} is the pilot. list shows them,
+     * prompt types a turn into one, answer shows what it last answered. Modelled on {@link
+     * DeskCommand}'s prompt and answer, which keep working exactly as they are: this group is a
+     * second, more general door onto the same kind of session, and a new agent surface needs no
+     * command of its own here, only an entry in the service's registry.
+     */
+    @CommandLine.Command(name = "agents", mixinStandardHelpOptions = true,
+            subcommands = {AgentsCommand.ListCommand.class, AgentsCommand.PromptCommand.class,
+                    AgentsCommand.AnswerCommand.class},
+            description = {"A project's named agents: list shows them, prompt types a turn into one's kept "
+                    + "session, answer shows that session's last answer.",
+                    "A named agent is a kept Claude session in the project's desk container (epic qits-2154): "
+                            + "`desk` is the front desk, `ui-builder` the UI builder's agent. Each runs only when "
+                            + "prompted and stops when idle; prompting one starts the desk container when it is "
+                            + "stopped."},
+            footerHeading = "%nNotes:%n",
+            footer = {"- Every subcommand takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with "
+                    + "qits:agent alone is refused (HTTP 403), list and answer included, although neither writes."})
+    public static class AgentsCommand implements Runnable {
+
+        @CommandLine.ParentCommand
+        ProjectsCommand parent;
+
+        @CommandLine.Spec
+        CommandLine.Model.CommandSpec spec;
+
+        static final String NAME_THE_AGENT = "Name the agent: --name <name>.";
+
+        @Override
+        public void run() {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Name a command.");
+        }
+
+        @CommandLine.Command(name = "list", mixinStandardHelpOptions = true,
+                description = {"List the project's named agents: their surface, state, session and terminal "
+                        + "command id.",
+                        "Sends GET /projects/api/projects/{projectId}/agents. state is one of STOPPED, STARTING, "
+                                + "IDLE, BUSY or FAILED; the desk is listed first."},
+                footerHeading = HelpText.EXAMPLES,
+                footer = {"  qits projects agents list --project qits",
+                        "  qits projects agents list --project qits -o json",
+                        "",
+                        "- -o json prints the service's answer: agents[].{name,surface,state,sessionId,commandId}."},
+                exitCodeListHeading = HelpText.EXIT_CODES,
+                exitCodeList = {HelpText.DONE, HelpText.REFUSED, HelpText.USAGE})
+        @TuiCommand(effect = Effect.READ)
+        public static class ListCommand extends PlatformCommand {
+
+            @CommandLine.ParentCommand
+            AgentsCommand agents;
+
+            @Completes(ProjectSource.class)
+            @CommandLine.Option(names = "--project", paramLabel = "<project>",
+                    description = "The project (required): its id, slug or name.")
+            String project;
+
+            @Override
+            protected int execute(CliContext context) throws CliFailure, InterruptedException {
+                boolean json = json(agents.parent.options.output);
+                String wanted = RepositoriesCommand.required(project, RepositoriesCommand.NAME_THE_PROJECT);
+                ProjectsApi api = ProjectsApi.connect(context, agents.parent.options.projectsUrl);
+                JsonNode found = api.project(wanted);
+                JsonNode answer = api.agents(text(found, "id"));
+                if (json) {
+                    SafeJson.print(context.out(), answer);
+                    return 0;
+                }
+                String label = SafeText.line(ProjectsApi.projectLabel(found));
+                List<JsonNode> agentRows = new ArrayList<>();
+                answer.path("agents").forEach(agentRows::add);
+                if (agentRows.isEmpty()) {
+                    context.out().println("Project " + label + ": no named agents.");
+                    return 0;
+                }
+                context.out().println("Project " + label + ": named agents");
+                Table.print(context.out(), "", List.of("NAME", "SURFACE", "STATE", "SESSION", "COMMAND"),
+                        agentRows.stream().map(ListCommand::row).toList());
+                return 0;
+            }
+
+            private static List<String> row(JsonNode agent) {
+                return List.of(SafeText.line(text(agent, "name")), SafeText.line(text(agent, "surface")),
+                        SafeText.line(text(agent, "state")), dash(text(agent, "sessionId")),
+                        dash(text(agent, "commandId")));
+            }
+
+            private static String dash(String value) {
+                String line = SafeText.line(value);
+                return line.isEmpty() ? "-" : line;
+            }
+        }
+
+        @CommandLine.Command(name = "prompt", mixinStandardHelpOptions = true,
+                description = {"Type a turn into a named agent's kept session. The words after the options are "
+                        + "joined with spaces into the turn's text.",
+                        "Sends POST /projects/api/projects/{projectId}/agents/{name}/prompt. When the agent's "
+                                + "session is idle the turn is typed at once (delivered). While it is busy, the "
+                                + "turn waits in the agent's own queue and is typed once it is idle (queued, with "
+                                + "its position). When the desk container is stopped, prompting it starts the "
+                                + "container; the turn then waits and is delivered once the agent's session "
+                                + "first comes up. Either way it prints the command id; `qits projects agents "
+                                + "answer` shows what the agent answered.",
+                        "A named agent is a kept Claude session in the project's desk container (epic qits-2154): "
+                                + "`desk` is the front desk, `ui-builder` the UI builder's agent."},
+                footerHeading = HelpText.EXAMPLES,
+                footer = {"  qits projects agents prompt --project qits --name ui-builder Pitch a calmer header.",
+                        "  qits projects agents prompt --project qits --name ui-builder -o json Mock the empty state.",
+                        "",
+                        "- Takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with qits:agent alone "
+                                + "is refused (HTTP 403).",
+                        "- The turn goes to the named agent's own session, beside the desk's; prompting it never "
+                                + "disturbs the front desk's session or queue.",
+                        "- -o json prints the service's answer: commandId, state, delivered, queued, position."},
+                exitCodeListHeading = HelpText.EXIT_CODES,
+                exitCodeList = {"0:The agent took the turn: delivered, queued, or the desk container is starting "
+                        + "and the turn waits.",
+                        "1:The platform refused (for example your roles, HTTP 403, a project it does not know, or "
+                                + "an agent the project does not name, HTTP 404, a prompt already waiting or the "
+                                + "agent not running, HTTP 409, a full inbox, HTTP 429, or no projects daemon to "
+                                + "reach the desk container, HTTP 503), or cannot be reached.",
+                        "2:Used wrongly (for example no --project, one the platform does not know, no --name, or "
+                                + "no text), not signed in, or the session ended."})
+        @TuiCommand(effect = Effect.WRITE)
+        public static class PromptCommand extends PlatformCommand {
+
+            @CommandLine.ParentCommand
+            AgentsCommand agents;
+
+            @Completes(ProjectSource.class)
+            @CommandLine.Option(names = "--project", paramLabel = "<project>",
+                    description = "The project (required): its id, slug or name.")
+            String project;
+
+            @CommandLine.Option(names = "--name", paramLabel = "<name>",
+                    description = "The named agent (required): desk, ui-builder, or another the project declares.")
+            String name;
+
+            @CommandLine.Parameters(paramLabel = "<text>", arity = "0..*",
+                    description = "The turn's text (required). The words are joined with spaces.")
+            List<String> words;
+
+            @Override
+            protected int execute(CliContext context) throws CliFailure, InterruptedException {
+                boolean json = json(agents.parent.options.output);
+                String wanted = RepositoriesCommand.required(project, RepositoriesCommand.NAME_THE_PROJECT);
+                String wantedName = RepositoriesCommand.required(name, AgentsCommand.NAME_THE_AGENT);
+                String text = words == null ? "" : String.join(" ", words).strip();
+                if (text.isEmpty()) {
+                    throw new CliFailure("Name the turn's text: qits projects agents prompt --project <project> "
+                            + "--name <name> <text...>.", CliFailure.USAGE);
+                }
+                ProjectsApi api = ProjectsApi.connect(context, agents.parent.options.projectsUrl);
+                JsonNode found = api.project(wanted);
+                JsonNode answer = api.agentPrompt(text(found, "id"), wantedName, text);
+                if (json) {
+                    SafeJson.print(context.out(), answer);
+                    return 0;
+                }
+                String label = SafeText.line(ProjectsApi.projectLabel(found));
+                String agentLabel = SafeText.line(wantedName);
+                String command = SafeText.line(text(answer, "commandId"));
+                String to = command.isEmpty() ? "" : " (command " + command + ")";
+                String state = SafeText.line(text(answer, "state"));
+                boolean delivered = answer.path("delivered").asBoolean(false);
+                boolean queued = answer.path("queued").asBoolean(false);
+                if (delivered) {
+                    context.out().println("Project " + label + ": delivered to agent " + agentLabel + to + ".");
+                } else if (queued && command.isEmpty() && "STARTING".equals(state)) {
+                    // The desk container was stopped: the service started it (202), and the turn waits in the
+                    // agent's own inbox, with no command id yet, until that agent's session first reports
+                    // running.
+                    context.out().println("Project " + label + ": the desk container was stopped; it is starting. "
+                            + "The turn waits and is delivered to agent " + agentLabel
+                            + " once its session is up.");
+                } else if (queued) {
+                    JsonNode position = answer.path("position");
+                    context.out().println("Project " + label + ": queued for agent " + agentLabel + " at "
+                            + (position.isNumber() ? "position " + position.asInt() : "its inbox")
+                            + to + ". The agent is " + (state.isEmpty() ? "not idle" : state)
+                            + "; the turn is typed once it is idle.");
+                } else {
+                    context.out().println("Project " + label + ": agent " + agentLabel + " took the turn" + to
+                            + ", neither delivered nor queued by its own account.");
+                }
+                return 0;
+            }
+        }
+
+        @CommandLine.Command(name = "answer", mixinStandardHelpOptions = true,
+                description = {"Show a named agent's last answer: its text, when it was given, the command and "
+                        + "session it came from, and the session's state.",
+                        "Sends GET /projects/api/projects/{projectId}/agents/{name}/last-answer. An agent that "
+                                + "has not answered yet says so and exits with 0."},
+                footerHeading = HelpText.EXAMPLES,
+                footer = {"  qits projects agents answer --project qits --name ui-builder",
+                        "  qits projects agents answer --project qits --name ui-builder -o json",
+                        "",
+                        "- Takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with qits:agent alone "
+                                + "is refused (HTTP 403), although it changes nothing.",
+                        "- The last answer is that agent's own session's, whatever turn it answered: a prompt of "
+                                + "yours or somebody else's.",
+                        "- -o json prints the service's answer: commandId, sessionId, state, text, at."},
+                exitCodeListHeading = HelpText.EXIT_CODES,
+                exitCodeList = {"0:Done, also when the agent has not answered yet.",
+                        "1:The platform refused (for example your roles, HTTP 403, a project it does not know, or "
+                                + "an agent the project does not name, HTTP 404, or no projects daemon to reach "
+                                + "the desk container, HTTP 503), or cannot be reached.",
+                        "2:Used wrongly (for example no --project, one the platform does not know, or no --name), "
+                                + "not signed in, or the session ended."})
+        @TuiCommand(effect = Effect.READ)
+        public static class AnswerCommand extends PlatformCommand {
+
+            @CommandLine.ParentCommand
+            AgentsCommand agents;
+
+            @Completes(ProjectSource.class)
+            @CommandLine.Option(names = "--project", paramLabel = "<project>",
+                    description = "The project (required): its id, slug or name.")
+            String project;
+
+            @CommandLine.Option(names = "--name", paramLabel = "<name>",
+                    description = "The named agent (required): desk, ui-builder, or another the project declares.")
+            String name;
+
+            @Override
+            protected int execute(CliContext context) throws CliFailure, InterruptedException {
+                boolean json = json(agents.parent.options.output);
+                String wanted = RepositoriesCommand.required(project, RepositoriesCommand.NAME_THE_PROJECT);
+                String wantedName = RepositoriesCommand.required(name, AgentsCommand.NAME_THE_AGENT);
+                ProjectsApi api = ProjectsApi.connect(context, agents.parent.options.projectsUrl);
+                JsonNode found = api.project(wanted);
+                JsonNode answer = api.agentAnswer(text(found, "id"), wantedName);
+                if (json) {
+                    SafeJson.print(context.out(), answer);
+                    return 0;
+                }
+                String label = SafeText.line(ProjectsApi.projectLabel(found));
+                String agentLabel = SafeText.line(wantedName);
+                JsonNode text = answer.path("text");
+                if (!text.isTextual()) {
+                    context.out().println("Project " + label + ": agent " + agentLabel + " has not answered yet.");
+                    return 0;
+                }
+                context.out().println("Project " + label + ": agent " + agentLabel + "'s last answer");
+                List<List<String>> rows = new ArrayList<>();
+                for (String field : List.of("at", "state", "commandId", "sessionId")) {
+                    String value = SafeText.line(text(answer, field));
+                    rows.add(List.of(field, Table.cell(value.isEmpty() ? "-" : value, 80)));
+                }
+                Table.print(context.out(), "", List.of("FIELD", "VALUE"), rows);
+                context.out().println();
+                WorkEntities.lines(context.out(), "", text.asText());
+                return 0;
             }
         }
     }

@@ -654,6 +654,56 @@ public final class ProjectsApi {
         return client.get(uri(deskTriggersPath(projectId) + query(query)));
     }
 
+    // --- named agents (epic qits-2154) ---
+
+    /**
+     * {@code {"agents":[{"name","surface","state","sessionId","commandId"}]}}: every named agent
+     * kept in the project's desk container, generalising the front desk (epic qits-2154); the desk
+     * is listed first. {@code state} is one of STOPPED, STARTING, IDLE, BUSY or FAILED. The door
+     * takes the same roles as {@link #agentPrompt} and {@link #agentAnswer}, so an agent's own
+     * {@code qits:agent} credential is refused here too (403) despite this being a plain read.
+     */
+    public JsonNode agents(String projectId) throws CliFailure, InterruptedException {
+        return client.get(uri(agentsPath(projectId)), false);
+    }
+
+    /**
+     * {@code {"commandId", "state", "delivered", "queued", "position"}}: one turn handed to a
+     * named agent's kept session (epic qits-2154), the same shape {@link #deskPrompt} answers.
+     * {@code delivered} when it was typed at once, {@code queued} with its {@code position} when
+     * it waits for the session to be idle. With the desk container stopped (or not yet connected),
+     * the service starts it and answers 202 {@code {"commandId":null,"state":"STARTING",
+     * "delivered":false,"queued":true,"position":null}}: the turn waits in the agent's own inbox
+     * and is delivered once that agent's session first reports running. The door takes {@code
+     * qits:admin}, {@code qits:admin-agent} or {@code qits:desk-admin}; it answers {@code
+     * {"reason"}} on a refusal (404 an agent the project does not name, 409 a prompt already
+     * waits or the agent is not running, 429 a full inbox, 503 no projects daemon to reach the
+     * desk container).
+     */
+    public JsonNode agentPrompt(String projectId, String name, String text) throws CliFailure, InterruptedException {
+        ObjectNode body = JSON.createObjectNode();
+        body.put("text", text);
+        return client.post(uri(agentPath(projectId, name) + "/prompt"), body);
+    }
+
+    /**
+     * {@code {"commandId", "sessionId", "state", "text", "at"}}: the named agent's last answer;
+     * {@code text} and {@code at} are null while it has not answered. A read, but one {@code
+     * qits:agent} is refused as well, so its 403 carries no "reads but does not write" line, the
+     * same as {@link #deskAnswer}.
+     */
+    public JsonNode agentAnswer(String projectId, String name) throws CliFailure, InterruptedException {
+        return client.get(uri(agentPath(projectId, name) + "/last-answer"), false);
+    }
+
+    private static String agentsPath(String projectId) {
+        return "/projects/api/projects/" + segment(projectId) + "/agents";
+    }
+
+    private static String agentPath(String projectId, String name) {
+        return agentsPath(projectId) + "/" + segment(name);
+    }
+
     // --- branch deliveries ---
 
     /**

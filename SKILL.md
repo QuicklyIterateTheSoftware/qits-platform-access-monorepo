@@ -165,7 +165,7 @@ qits checkout sync --path ~/src/qits-qits
 
 ## qits projects
 
-The platform's projects: list shows them, delivery shows one's delivery desk, desk talks to one's front desk. Other commands take a project's id, slug or name as --project.
+The platform's projects: list shows them, delivery shows one's delivery desk, desk talks to one's front desk, agents talks to one's named agents. Other commands take a project's id, slug or name as --project.
 
 ## qits projects list
 
@@ -337,6 +337,118 @@ qits projects desk triggers --project qits -o json
 - `0` Done, also when there are no messages.
 - `1` The platform refused (for example a --limit outside 1..100, HTTP 400, or a project it does not know, HTTP 404), or cannot be reached.
 - `2` Used wrongly (for example no --project, or one the platform does not know), not signed in, or the session ended.
+
+## qits projects agents
+
+A project's named agents: list shows them, prompt types a turn into one's kept session, answer shows that session's last answer.
+
+A named agent is a kept Claude session in the project's desk container (epic qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent. Each runs only when prompted and stops when idle; prompting one starts the desk container when it is stopped.
+
+### Notes
+
+- Every subcommand takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with qits:agent alone is refused (HTTP 403), list and answer included, although neither writes.
+
+## qits projects agents list
+
+List the project's named agents: their surface, state, session and terminal command id.
+
+Sends GET /projects/api/projects/{projectId}/agents. state is one of STOPPED, STARTING, IDLE, BUSY or FAILED; the desk is listed first.
+
+```
+qits projects agents list [--output table|json] [--project <project>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project (required): its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits projects agents list --project qits
+qits projects agents list --project qits -o json
+```
+
+- -o json prints the service's answer: agents[].{name,surface,state,sessionId,commandId}.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits projects agents prompt
+
+Type a turn into a named agent's kept session. The words after the options are joined with spaces into the turn's text.
+
+Sends POST /projects/api/projects/{projectId}/agents/{name}/prompt. When the agent's session is idle the turn is typed at once (delivered). While it is busy, the turn waits in the agent's own queue and is typed once it is idle (queued, with its position). When the desk container is stopped, prompting it starts the container; the turn then waits and is delivered once the agent's session first comes up. Either way it prints the command id; `qits projects agents answer` shows what the agent answered.
+
+A named agent is a kept Claude session in the project's desk container (epic qits-2154): `desk` is the front desk, `ui-builder` the UI builder's agent.
+
+```
+qits projects agents prompt [--name <name>] [--output table|json] [--project <project>] [--projects-url <url>] [<text>]
+```
+
+| Name | What it does |
+|---|---|
+| `<text>` | The turn's text (required). The words are joined with spaces. |
+| `--name <name>` | The named agent (required): desk, ui-builder, or another the project declares. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project (required): its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits projects agents prompt --project qits --name ui-builder Pitch a calmer header.
+qits projects agents prompt --project qits --name ui-builder -o json Mock the empty state.
+```
+
+- Takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with qits:agent alone is refused (HTTP 403).
+- The turn goes to the named agent's own session, beside the desk's; prompting it never disturbs the front desk's session or queue.
+- -o json prints the service's answer: commandId, state, delivered, queued, position.
+
+### Exit codes
+
+- `0` The agent took the turn: delivered, queued, or the desk container is starting and the turn waits.
+- `1` The platform refused (for example your roles, HTTP 403, a project it does not know, or an agent the project does not name, HTTP 404, a prompt already waiting or the agent not running, HTTP 409, a full inbox, HTTP 429, or no projects daemon to reach the desk container, HTTP 503), or cannot be reached.
+- `2` Used wrongly (for example no --project, one the platform does not know, no --name, or no text), not signed in, or the session ended.
+
+## qits projects agents answer
+
+Show a named agent's last answer: its text, when it was given, the command and session it came from, and the session's state.
+
+Sends GET /projects/api/projects/{projectId}/agents/{name}/last-answer. An agent that has not answered yet says so and exits with 0.
+
+```
+qits projects agents answer [--name <name>] [--output table|json] [--project <project>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `--name <name>` | The named agent (required): desk, ui-builder, or another the project declares. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project (required): its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits projects agents answer --project qits --name ui-builder
+qits projects agents answer --project qits --name ui-builder -o json
+```
+
+- Takes qits:admin, qits:admin-agent or qits:desk-admin; an agent with qits:agent alone is refused (HTTP 403), although it changes nothing.
+- The last answer is that agent's own session's, whatever turn it answered: a prompt of yours or somebody else's.
+- -o json prints the service's answer: commandId, sessionId, state, text, at.
+
+### Exit codes
+
+- `0` Done, also when the agent has not answered yet.
+- `1` The platform refused (for example your roles, HTTP 403, a project it does not know, or an agent the project does not name, HTTP 404, or no projects daemon to reach the desk container, HTTP 503), or cannot be reached.
+- `2` Used wrongly (for example no --project, one the platform does not know, or no --name), not signed in, or the session ended.
 
 ## qits repositories
 

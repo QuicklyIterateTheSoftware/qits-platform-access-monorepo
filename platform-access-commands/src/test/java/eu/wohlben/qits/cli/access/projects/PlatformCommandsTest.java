@@ -2273,6 +2273,163 @@ class PlatformCommandsTest {
         assertThat(noProject.err()).contains("Name the project: --project <id, slug or name>.");
     }
 
+    // --- the named agents (epic qits-2154) ---
+
+    private static final String AGENTS = "/projects/api/projects/" + QITS + "/agents";
+    private static final String UI_BUILDER_PROMPT = "/projects/api/projects/" + QITS + "/agents/ui-builder/prompt";
+    private static final String UI_BUILDER_ANSWER = "/projects/api/projects/" + QITS + "/agents/ui-builder/last-answer";
+
+    @Test
+    void agentsListPrintsTheTableTheDeskFirstAndTakesJson() throws Exception {
+        answerProjects();
+        platform.answer("GET", AGENTS, """
+                {"agents":[
+                  {"name":"desk","surface":"project.work","state":"IDLE","sessionId":"s-1","commandId":"c-1"},
+                  {"name":"ui-builder","surface":"project.ui-builder","state":"STOPPED","sessionId":null,"commandId":null}
+                ]}
+                """);
+
+        Result r = run("projects", "agents", "list", "--project", "qits");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out().lines().toList()).startsWith("Project qits: named agents")
+                .anySatisfy(line -> assertThat(line).contains("NAME").contains("SURFACE").contains("STATE")
+                        .contains("SESSION").contains("COMMAND"))
+                .anySatisfy(line -> assertThat(line).contains("desk").contains("project.work").contains("IDLE")
+                        .contains("s-1").contains("c-1"))
+                .anySatisfy(line -> assertThat(line).contains("ui-builder").contains("project.ui-builder")
+                        .contains("STOPPED"));
+        assertThat(r.out()).contains("ui-builder  project.ui-builder  STOPPED  -        -");
+
+        String json = run("projects", "-o", "json", "agents", "list", "--project", "qits").out();
+        assertThat(JSON.readTree(json).path("agents")).hasSize(2);
+    }
+
+    @Test
+    void agentsListNeedsAProjectAndSaysWhenThereAreNone() {
+        Result noProject = run("projects", "agents", "list");
+        assertThat(noProject.exit()).isEqualTo(2);
+        assertThat(noProject.err()).contains("Name the project: --project <id, slug or name>.");
+
+        answerProjects();
+        platform.answer("GET", AGENTS, "{\"agents\":[]}");
+        Result none = run("projects", "agents", "list", "--project", "qits");
+        assertThat(none.exit()).as(none.err()).isZero();
+        assertThat(none.out().lines().toList()).containsExactly("Project qits: no named agents.");
+    }
+
+    @Test
+    void agentPromptJoinsTheWordsAndSaysWhetherDeliveredQueuedOrStarting() throws Exception {
+        answerProjects();
+        platform.answer("POST", UI_BUILDER_PROMPT, """
+                {"commandId":"c-7","state":"IDLE","delivered":true,"queued":false,"position":null}
+                """);
+
+        Result delivered = run("projects", "agents", "prompt", "--project", "qits", "--name", "ui-builder",
+                "Pitch", "a", "calmer", "header.");
+
+        assertThat(delivered.exit()).as(delivered.err()).isZero();
+        assertThat(JSON.readTree(platform.requests("POST", UI_BUILDER_PROMPT).getFirst().body()))
+                .isEqualTo(JSON.readTree("{\"text\":\"Pitch a calmer header.\"}"));
+        assertThat(delivered.out().lines().toList())
+                .containsExactly("Project qits: delivered to agent ui-builder (command c-7).");
+
+        platform.answer("POST", UI_BUILDER_PROMPT, """
+                {"commandId":"c-8","state":"BUSY","delivered":false,"queued":true,"position":2}
+                """);
+        Result queued = run("projects", "agents", "prompt", "--project", "qits", "--name", "ui-builder", "tick now");
+
+        assertThat(queued.exit()).as(queued.err()).isZero();
+        assertThat(queued.out().lines().toList()).containsExactly("Project qits: queued for agent ui-builder at "
+                + "position 2 (command c-8). The agent is BUSY; the turn is typed once it is idle.");
+
+        // The desk container was stopped: the service starts it (202) and the turn waits with no command id yet.
+        platform.answer("POST", UI_BUILDER_PROMPT, """
+                {"commandId":null,"state":"STARTING","delivered":false,"queued":true,"position":null}
+                """);
+        Result starting = run("projects", "agents", "prompt", "--project", "qits", "--name", "ui-builder", "x");
+
+        assertThat(starting.exit()).as(starting.err()).isZero();
+        assertThat(starting.out().lines().toList()).containsExactly("Project qits: the desk container was stopped; "
+                + "it is starting. The turn waits and is delivered to agent ui-builder once its session is up.");
+
+        assertThat(JSON.readTree(run("projects", "-o", "json", "agents", "prompt", "--project", "qits", "--name",
+                "ui-builder", "x").out())).isEqualTo(JSON.readTree("{\"commandId\":null,\"state\":\"STARTING\","
+                + "\"delivered\":false,\"queued\":true,\"position\":null}"));
+    }
+
+    @Test
+    void agentPromptNeedsAProjectANameAndTextAndSurfacesTheServicesReason() {
+        assertThat(run("projects", "agents", "prompt", "--name", "ui-builder", "hello").err())
+                .contains("Name the project: --project <id, slug or name>.");
+        assertThat(run("projects", "agents", "prompt", "--project", "qits", "hello").err())
+                .contains("Name the agent: --name <name>.");
+        Result noText = run("projects", "agents", "prompt", "--project", "qits", "--name", "ui-builder");
+        assertThat(noText.exit()).isEqualTo(2);
+        assertThat(noText.err()).contains("Name the turn's text");
+        assertThat(platform.requests).isEmpty();
+
+        answerProjects();
+        platform.answer("POST", UI_BUILDER_PROMPT, 409, "{\"reason\":\"a prompt already waits\"}");
+        Result conflict = run("projects", "agents", "prompt", "--project", "qits", "--name", "ui-builder",
+                "one", "more");
+
+        assertThat(conflict.exit()).isEqualTo(1);
+        assertThat(conflict.err()).contains("POST " + platform.url() + UI_BUILDER_PROMPT
+                + " answered HTTP 409: a prompt already waits");
+        assertThat(conflict.out()).isEmpty();
+    }
+
+    @Test
+    void agentAnswerPrintsTheLastAnswerCleanedAndSaysWhenThereIsNone() throws Exception {
+        answerProjects();
+        platform.answer("GET", UI_BUILDER_ANSWER, """
+                {"commandId":"c-7","sessionId":"s-1","state":"IDLE",
+                 "text":"Pitched one snapshot.\\n\\u001b[2Jthe header without its banner.",
+                 "at":"2026-10-24T08:00:00Z"}
+                """);
+
+        Result r = run("projects", "agents", "answer", "--project", "qits", "--name", "ui-builder");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out().lines().toList()).containsExactly(
+                "Project qits: agent ui-builder's last answer",
+                "FIELD      VALUE",
+                "at         2026-10-24T08:00:00Z",
+                "state      IDLE",
+                "commandId  c-7",
+                "sessionId  s-1",
+                "",
+                "Pitched one snapshot.",
+                "the header without its banner.");
+        String json = run("projects", "-o", "json", "agents", "answer", "--project", "qits", "--name",
+                "ui-builder").out();
+        assertThat(json).doesNotContain("\u001b").contains("\\u001B");
+        assertThat(JSON.readTree(json).path("commandId").asText()).isEqualTo("c-7");
+
+        platform.answer("GET", UI_BUILDER_ANSWER, """
+                {"commandId":null,"sessionId":null,"state":"STOPPED","text":null,"at":null}
+                """);
+        Result none = run("projects", "agents", "answer", "--project", "qits", "--name", "ui-builder");
+        assertThat(none.exit()).isZero();
+        assertThat(none.out().lines().toList())
+                .containsExactly("Project qits: agent ui-builder has not answered yet.");
+
+        platform.answer("GET", UI_BUILDER_ANSWER, 404, "{\"reason\":\"the project names no agent 'ui-builder'\"}");
+        Result unknown = run("projects", "agents", "answer", "--project", "qits", "--name", "ui-builder");
+        assertThat(unknown.exit()).isEqualTo(1);
+        assertThat(unknown.err()).contains("answered HTTP 404: the project names no agent 'ui-builder'");
+    }
+
+    @Test
+    void agentAnswerNeedsAProjectAndAName() {
+        assertThat(run("projects", "agents", "answer", "--name", "ui-builder").err())
+                .contains("Name the project: --project <id, slug or name>.");
+        answerProjects();
+        assertThat(run("projects", "agents", "answer", "--project", "qits").err())
+                .contains("Name the agent: --name <name>.");
+    }
+
     // --- refusals ---
 
     @Test
