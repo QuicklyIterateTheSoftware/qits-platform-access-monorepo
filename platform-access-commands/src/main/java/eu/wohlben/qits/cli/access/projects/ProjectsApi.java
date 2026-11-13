@@ -453,6 +453,64 @@ public final class ProjectsApi {
         return client.put(uri(ideaPath(idea) + "/priority"), body);
     }
 
+    // --- pitches (qits-2155) ---
+
+    /** The pitches' root: a named agent's mock snapshots of the UI builder's screenshots. */
+    public static final String PITCHES = "/projects/api/pitches";
+
+    static String pitchPath(String pitch) {
+        return PITCHES + "/" + segment(pitch);
+    }
+
+    /**
+     * {@code {"pitches":[summary…]}}, the most recently changed first, never with HTML. {@code project}
+     * (an id or a slug) is required; {@code agent}, {@code repository} (an id or a name), {@code route}
+     * and {@code screenshot} narrow, each left out when null. {@code archived} adds the archived pitches
+     * beside the others, so the query says it only when it is true.
+     */
+    public JsonNode pitches(String project, String agent, String repository, String route, String screenshot,
+                            boolean archived) throws CliFailure, InterruptedException {
+        List<String> query = new ArrayList<>();
+        addQuery(query, "project", project);
+        addQuery(query, "agent", agent);
+        addQuery(query, "repository", repository);
+        addQuery(query, "route", route);
+        addQuery(query, "screenshot", screenshot);
+        addQuery(query, "archived", archived ? "true" : null);
+        return client.get(uri(PITCHES + query(query)));
+    }
+
+    /** One pitch: the summary and its {@code versions[]} of {number, htmlBytes, note, createdAt}, no HTML. */
+    public JsonNode pitch(String pitch) throws CliFailure, InterruptedException {
+        return client.get(uri(pitchPath(pitch)));
+    }
+
+    /** {@code {number, html, htmlBytes, note, createdAt}}: one version; {@code version} is a number or {@code latest}. */
+    public JsonNode pitchVersion(String pitch, String version) throws CliFailure, InterruptedException {
+        return client.get(uri(pitchPath(pitch) + "/versions/" + segment(version)));
+    }
+
+    /**
+     * The new pitch in detail (201), with its version 1. The body is the caller's payload, sent as it
+     * was written. Only a named agent may create one, and the door words its own 403, so no role hint.
+     */
+    public JsonNode createPitch(JsonNode body) throws CliFailure, InterruptedException {
+        return client.post(uri(PITCHES), body, false);
+    }
+
+    /**
+     * The new version, without its HTML (201). The body is {@code {html, note?}}, sent as it was
+     * written. Only the pitch's agent may add one, and the door words its own 403, so no role hint.
+     */
+    public JsonNode addPitchVersion(String pitch, JsonNode body) throws CliFailure, InterruptedException {
+        return client.post(uri(pitchPath(pitch) + "/versions"), body, false);
+    }
+
+    /** The pitch in detail, archived. No body; archiving an archived pitch answers it as it is. */
+    public JsonNode archivePitch(String pitch) throws CliFailure, InterruptedException {
+        return client.post(uri(pitchPath(pitch) + "/archive"));
+    }
+
     // --- dossier ---
 
     /** {@code {"pages":[…]}}, in reading order, bodies included. */

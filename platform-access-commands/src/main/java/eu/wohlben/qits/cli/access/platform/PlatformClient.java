@@ -103,8 +103,8 @@ public final class PlatformClient {
      * no generic "this credential reads but does not write" line pasted above it. That line is
      * right for most doors, which admit a person and nothing else, but wrong for one that decides
      * eligibility itself and already named every admitted role in its own sentence — approve and
-     * decline (epic qits-1038), and the backup twin reset (qits-1885), the only callers that pass
-     * false. Every other write keeps the hint.
+     * decline (epic qits-1038), the backup twin reset (qits-1885), and a pitch's create and new
+     * version (qits-2155), the only callers that pass false. Every other write keeps the hint.
      */
     public JsonNode post(URI uri, JsonNode body, boolean roleHintOn403) throws CliFailure, InterruptedException {
         String json;

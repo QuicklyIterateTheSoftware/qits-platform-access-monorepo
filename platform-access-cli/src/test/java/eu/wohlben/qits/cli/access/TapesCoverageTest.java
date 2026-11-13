@@ -36,7 +36,10 @@ class TapesCoverageTest {
             "contracts", "a CI step's golden-master coverage, read from a repository's own files",
             "help", "the help, which every tape's commands already show; `help guide` is the platform's guide text",
             "network-access", "runs Docker on a workstation (the companion container), and the tapes' kit has no "
-                    + "docker; NetworkAccessCommandsTest drives it against a recording fake docker instead");
+                    + "docker; NetworkAccessCommandsTest drives it against a recording fake docker instead",
+            "pitches", "a named agent's mock snapshots (qits-2155), written and read by that agent; a person "
+                    + "looks at a pitch in the UI builder's Pitched tab, and PitchesCommandsTest drives the "
+                    + "commands");
 
     /** Integrations with a CLI tape only, and why there is no screen to show. */
     static final Map<String, String> CLI_ONLY = Map.of(
