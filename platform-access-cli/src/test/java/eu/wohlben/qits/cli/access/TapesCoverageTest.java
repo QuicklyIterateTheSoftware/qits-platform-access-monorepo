@@ -39,7 +39,9 @@ class TapesCoverageTest {
                     + "docker; NetworkAccessCommandsTest drives it against a recording fake docker instead",
             "pitches", "a named agent's mock snapshots (qits-2155), written and read by that agent; a person "
                     + "looks at a pitch in the UI builder's Pitched tab, and PitchesCommandsTest drives the "
-                    + "commands");
+                    + "commands",
+            "ui-builder", "reads for the ui-builder named agent (qits-2156); a person sees the same in the UI "
+                    + "builder page");
 
     /** Integrations with a CLI tape only, and why there is no screen to show. */
     static final Map<String, String> CLI_ONLY = Map.of(
