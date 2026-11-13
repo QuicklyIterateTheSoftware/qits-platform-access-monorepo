@@ -429,6 +429,7 @@ class McpToolCatalogTest {
                 "work_refinement_show", "work_design_list", "work_design_get",
                 "release-request_list", "ci_runs", "ci_run", "ci_report_show", "maintenance_automations",
                 "maintenance_bump", "deployments_settings_list", "deployments_settings_preview",
+                "deployments_database_moves", "deployments_database_move-status",
                 "agent-mcp_credentials_list",
                 "events", "events_query", "observe", "observe_query", "observe_sources", "observe_errors",
                 "observe_slow-spans", "observe_metrics", "help_skill", "help_guide", "agents_claude_hook_work-links",

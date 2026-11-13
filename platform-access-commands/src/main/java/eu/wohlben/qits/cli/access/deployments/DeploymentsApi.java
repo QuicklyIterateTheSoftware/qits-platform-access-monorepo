@@ -11,9 +11,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * The qits-deployments settings doors ({@code /deployments/api/settings}, epic qits-765): the
- * per-application, per-environment values the deployer hands a service, read as JSON trees like
- * every platform answer.
+ * The qits-deployments doors the CLI calls, read as JSON trees like every platform answer: the
+ * settings ({@code /deployments/api/settings}, epic qits-765), the per-application, per-environment
+ * values the deployer hands a service, and the database moves ({@code
+ * /deployments/api/database-moves}, qits-2175).
  * <p>
  * A secret's {@code value} is null in every answer: the service never sends one back.
  */
@@ -63,6 +64,41 @@ public final class DeploymentsApi {
             throws CliFailure, InterruptedException {
         return client.get(uri("/deployments/api/settings/preview/" + segment(application) + "/" + segment(environment)
                 + (extras ? "?extras=include" : "")));
+    }
+
+    /**
+     * {@code {move: {id, applicationName, resourceName, sourceServer, sourceDatabase, targetServer,
+     * targetDatabase, state, ...}, note}}: the move the service queued (202). {@code note} is not null
+     * when the target overrides the application's spec. A member left null is not sent, so the service
+     * defaults it from the live version's spec.
+     */
+    public JsonNode moveDatabase(String application, String resource, String server, String database)
+            throws CliFailure, InterruptedException {
+        ObjectNode body = JsonNodeFactory.instance.objectNode();
+        body.put("application", application);
+        putIfGiven(body, "resource", resource);
+        putIfGiven(body, "server", server);
+        putIfGiven(body, "database", database);
+        // The door admits qits:agent and names its own refusal: the generic "reads but does not write"
+        // line would say the opposite of what the door decides.
+        return client.post(uri("/deployments/api/database-moves"), body, false);
+    }
+
+    /** {@code {moves: [move, ...]}}, newest first, at most 200: of one application, or of every one. */
+    public JsonNode databaseMoves(String application) throws CliFailure, InterruptedException {
+        return client.get(uri("/deployments/api/database-moves"
+                + (application == null || application.isBlank() ? "" : "?application=" + query(application))));
+    }
+
+    /** {@code {move, note}}: one move in full, its per-table counts included; 404 when there is no such move. */
+    public JsonNode databaseMove(String id) throws CliFailure, InterruptedException {
+        return client.get(uri("/deployments/api/database-moves/" + segment(id)));
+    }
+
+    private static void putIfGiven(ObjectNode body, String name, String value) {
+        if (value != null && !value.isBlank()) {
+            body.put(name, value.strip());
+        }
     }
 
     private static String settingPath(String application, String environment, String key) {

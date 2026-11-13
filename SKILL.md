@@ -2717,7 +2717,7 @@ qits contracts coverage --no-golden-masters
 
 ## qits deployments
 
-The deployer, qits-deployments. `settings` reads and writes the values it hands each application in each environment.
+The deployer, qits-deployments. `settings` reads and writes the values it hands each application in each environment. `database` moves an application's database to another server or name, and lists every move.
 
 ## qits deployments settings
 
@@ -2855,6 +2855,121 @@ qits deployments settings preview --application qits-ci --environment dev --incl
 ```
 
 - Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:system or qits:agent.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments database
+
+An application's database, moved by qits-deployments to the other postgres server (public or private) or to another name, and the record of every move: a deployment's and an operator's.
+
+A move stops the application's service for its whole duration: it is a redeploy of the live version that copies the database, compares both sides' per-table row counts, and only then switches. The source is kept, closed, until its drop-after time.
+
+### Notes
+
+- --output and --deployments-url may come before or after the command.
+- Every door takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; qits:system is refused, move included.
+
+## qits deployments database move
+
+Move one database of an application to the other postgres server or to another name. It prints the queued move: its id, its state, source -> target, and the service's note when the target overrides the application's spec.
+
+POST /deployments/api/database-moves with {application, resource?, server?, database?} (HTTP 202 {move, note}). A member left out defaults to what the live version's spec resolves.
+
+THE APPLICATION'S SERVICE IS STOPPED FOR THE WHOLE MOVE: the move is a redeploy of its live version, whose provisioning copies the database, compares both sides' per-table counts and only then switches. Anything short of a match is undone, the source untouched. `move-status` follows it.
+
+A target that differs from the spec is moved back by the next deployment of the application, which provisions what its spec resolves to: change the spec to keep it.
+
+```
+qits deployments database move --application <application> [--database <name>] [--deployments-url <url>] [--output table|json] [--resource <name>] [--server public|private]
+```
+
+| Name | What it does |
+|---|---|
+| `--application <application>` | Required. The application, as qits-deployments names it: qits-ci. |
+| `--database <name>` | The database name to move it to. Default: the one the spec resolves. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--resource <name>` | Which of its databases, by the resource name its spec gives it: db. Required when it holds more than one. |
+| `--server public\|private` | The server to move it to. Default: the one the spec resolves. |
+
+### Examples
+
+```
+qits deployments database move --application qits-ci --server private
+qits deployments database move --application qits-ci --resource db --database qits_ci_new
+```
+
+- --resource is required when the application holds more than one database.
+- HTTP 400: a malformed name or an unknown server, or no --resource where several databases are held. HTTP 404: no such application, or it holds no such database. HTTP 409: refused (already there, the deployer's own database, a target another application holds, nothing serving to redeploy) or deferred (the target server is not deployed in the environment). Each is exit 1, and nothing was stopped.
+- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments database moves
+
+List the database moves, newest first (at most 200): of one application, or of every one. A deployment's own moves are listed with an operator's.
+
+GET /deployments/api/database-moves[?application=]. Columns: ID, APPLICATION, RESOURCE, SOURCE, TARGET (server/database), STATE, STARTED, FINISHED, DROP AFTER (when the kept source copy is dropped).
+
+```
+qits deployments database moves [--application <application>] [--deployments-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--application <application>` | Only this application's moves: qits-ci. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits deployments database moves
+qits deployments database moves --application qits-ci -o json
+```
+
+- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments database move-status
+
+One database move in full: where from and where to, its state, who asked, what the spec resolves to, the kept source copy and when it is dropped, the reason it stopped when it did, and both sides' per-table row counts once they were read.
+
+GET /deployments/api/database-moves/{id}. States: QUEUED, STOPPING, EXTRACTING, INGESTING, VERIFIED, SWITCHING, then MOVED, ABORTED or REFUSED (detail says why).
+
+```
+qits deployments database move-status --id <id> [--deployments-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--id <id>` | Required. The move's id, as `move` and `moves` print it. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f -o json
+```
+
+- In the counts, a table both sides counted differently is marked with !; a dash is a side not read yet.
+- HTTP 404 (exit 1): no move of that id.
+- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
 
 ### Exit codes
 

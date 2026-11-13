@@ -1388,6 +1388,26 @@ qits:system.
     qits deployments settings set --application qits-ci --environment dev --key API_TOKEN --secret < token.txt
     qits deployments settings preview --application qits-ci --environment dev
 
+### qits deployments database
+
+An application's database moved by qits-deployments to the other postgres server or to another
+name, and the record of every move, a deployment's and an operator's alike (qits-2175). `move
+--application <app> [--resource <name>] [--server public|private] [--database <name>]` POSTs
+`/deployments/api/database-moves`, sending only the members given (the service defaults the rest
+from the live version's spec), and prints the queued move: `move <id>: QUEUED`, then `<app>
+<resource>: source -> target` as server/database, then the service's `note:` when the target
+overrides the spec. The move is a redeploy of the live version, so the application's service is
+stopped for the whole move; a target that differs from the spec is moved back by the next
+deployment. A refusal or deferral is a 409, exit 1, with nothing stopped. `moves [--application
+<app>]` prints ID, APPLICATION, RESOURCE, SOURCE, TARGET, STATE, STARTED, FINISHED and DROP AFTER,
+newest first. `move-status --id <id>` prints one move in full and, once either side was counted,
+the per-table counts of both sides, a `!` where they differ. Every door takes qits:admin,
+qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; qits:system is refused.
+
+    qits deployments database move --application qits-ci --server private
+    qits deployments database moves --application qits-ci
+    qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+
 ### qits agent-mcp credentials
 
 The secrets the agent MCP catalog's servers are reached with, in qits-projects (epic qits-765).
