@@ -3999,6 +3999,1244 @@
         "references": {
           "qits-call": {
             "app": "qits-projects-service",
+            "operationId": "addPitchVersion"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches add-version",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches add-version: addPitchVersion",
+      "key": "700232d9",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "html": "<main><h1>Board</h1><nav>Filters</nav><p>Saved</p></main>",
+            "note": "Saved views under the filters"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/pitches/${pitchId}/versions",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-ui-builder"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/projects/api/pitches/00000000-0000-4000-8000-000000000002/versions"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "createdAt": "2026-01-01T00:00:00Z",
+            "htmlBytes": 57,
+            "note": "Saved views under the filters",
+            "number": 3
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.htmlBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.number": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "archivePitch"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches archive",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches archive: archivePitch",
+      "key": "4bfbe83c",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/pitches/${pitchId}/archive",
+            "type": "ProviderState"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/api/pitches/00000000-0000-4000-8000-000000000002/archive"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "agent": "ui-builder",
+            "archivedAt": "2026-01-01T00:00:00Z",
+            "colorScheme": "LIGHT",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "kind": "DATA",
+            "latestVersion": 2,
+            "manifestVersion": "2026.1113.1",
+            "note": "The banner folds into the toolbar.",
+            "repositoryId": "00000000-0000-4000-8000-000000000004",
+            "repositoryName": "contract-app",
+            "route": "/work",
+            "screenshot": "work/board-desktop-light.html",
+            "title": "A calmer board header",
+            "updatedAt": "2026-01-01T00:00:00Z",
+            "versions": [
+              {
+                "createdAt": "2026-01-01T00:00:00Z",
+                "htmlBytes": 27,
+                "note": "First cut",
+                "number": 1
+              }
+            ],
+            "viewport": "DESKTOP"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.agent": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.archivedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.colorScheme": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.manifestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.repositoryId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.repositoryName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.route": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.screenshot": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.versions[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions[*].htmlBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.versions[*].note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].number": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.viewport": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "createPitch"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches create",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches create: createPitch",
+      "key": "7a3d6690",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "colorScheme": "DARK",
+            "html": "<main><h1>Board</h1></main>",
+            "kind": "DATA",
+            "manifestVersion": "2026.1113.1",
+            "note": "The dark scheme's twin.",
+            "project": "00000000-0000-4000-8000-000000000003",
+            "repository": "00000000-0000-4000-8000-000000000004",
+            "route": "/work",
+            "screenshot": "work/board-desktop-dark.html",
+            "title": "A darker board header",
+            "versionNote": "First cut",
+            "viewport": "DESKTOP"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "body": {
+            "$.project": {
+              "dataType": "STRING",
+              "expression": "${projectId}",
+              "type": "ProviderState"
+            },
+            "$.repository": {
+              "dataType": "STRING",
+              "expression": "${repositoryId}",
+              "type": "ProviderState"
+            }
+          },
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-ui-builder"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.project": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.repository": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/projects/api/pitches"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "agent": "ui-builder",
+            "archivedAt": null,
+            "colorScheme": "DARK",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000005",
+            "kind": "DATA",
+            "latestVersion": 1,
+            "manifestVersion": "2026.1113.1",
+            "note": "The dark scheme's twin.",
+            "repositoryId": "00000000-0000-4000-8000-000000000004",
+            "repositoryName": "contract-app",
+            "route": "/work",
+            "screenshot": "work/board-desktop-dark.html",
+            "title": "A darker board header",
+            "updatedAt": "2026-01-01T00:00:00Z",
+            "versions": [
+              {
+                "createdAt": "2026-01-01T00:00:00Z",
+                "htmlBytes": 27,
+                "note": "First cut",
+                "number": 1
+              }
+            ],
+            "viewport": "DESKTOP"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.agent": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.colorScheme": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.manifestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.repositoryId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.repositoryName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.route": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.screenshot": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.versions[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions[*].htmlBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.versions[*].note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].number": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.viewport": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "listPitches"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches list: listPitches",
+      "key": "8b9b57de",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "query": {
+            "project": {
+              "dataType": "RAW",
+              "expression": "${projectId}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/projects/api/pitches",
+        "query": {
+          "project": [
+            "00000000-0000-4000-8000-000000000003"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "pitches": [
+              {
+                "agent": "ui-builder",
+                "archivedAt": null,
+                "id": "00000000-0000-4000-8000-000000000002",
+                "latestVersion": 2,
+                "repositoryName": "contract-app",
+                "route": "/work",
+                "screenshot": "work/board-desktop-light.html",
+                "title": "A calmer board header",
+                "updatedAt": "2026-01-01T00:00:00Z"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.pitches": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.pitches[*].agent": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.pitches[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.pitches[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.pitches[*].repositoryName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.pitches[*].route": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.pitches[*].screenshot": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.pitches[*].title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.pitches[*].updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "getPitch"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches show: getPitch",
+      "key": "16581d1b",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/pitches/${pitchId}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/projects/api/pitches/00000000-0000-4000-8000-000000000002"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "agent": "ui-builder",
+            "archivedAt": null,
+            "colorScheme": "LIGHT",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000002",
+            "kind": "DATA",
+            "latestVersion": 2,
+            "manifestVersion": "2026.1113.1",
+            "note": "The banner folds into the toolbar.",
+            "repositoryId": "00000000-0000-4000-8000-000000000004",
+            "repositoryName": "contract-app",
+            "route": "/work",
+            "screenshot": "work/board-desktop-light.html",
+            "title": "A calmer board header",
+            "updatedAt": "2026-01-01T00:00:00Z",
+            "versions": [
+              {
+                "createdAt": "2026-01-01T00:00:00Z",
+                "htmlBytes": 27,
+                "note": "First cut",
+                "number": 1
+              }
+            ],
+            "viewport": "DESKTOP"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.agent": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.colorScheme": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.manifestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.repositoryId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.repositoryName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.route": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.screenshot": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.versions[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.versions[*].htmlBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.versions[*].note": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].number": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.viewport": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "getPitchVersion"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits pitches show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits pitches show: getPitchVersion",
+      "key": "fe62d053",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project with a pitch",
+          "params": {
+            "archivedPitchId": "00000000-0000-4000-8000-000000000001",
+            "authorization": "Bearer contract-ui-builder",
+            "pitchId": "00000000-0000-4000-8000-000000000002",
+            "projectId": "00000000-0000-4000-8000-000000000003",
+            "repositoryId": "00000000-0000-4000-8000-000000000004"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/pitches/${pitchId}/versions/latest",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/projects/api/pitches/00000000-0000-4000-8000-000000000002/versions/latest"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "html": "<main><h1>Board</h1><nav>Filters</nav></main>",
+            "number": 2
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.html": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.number": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
             "operationId": "getAgentLastAnswer"
           },
           "qits-trigger": {
