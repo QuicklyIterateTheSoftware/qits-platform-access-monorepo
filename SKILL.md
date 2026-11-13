@@ -1,6 +1,6 @@
 ---
 name: qits
-description: "Use for any work on the qits platform from a terminal: signing in, projects and repositories, work items of every archetype (epics, tickets, features, tasks, issues) and their comment threads, ideas, release requests, CI runs and their logs, domain events, live telemetry, waiting on the platform, workspaces and their agents, execution targets and their leases, Git pushes to the platform's git host, and publishing release artifacts from a CI step."
+description: "Use for any work on the qits platform from a terminal: signing in, projects and repositories, work items of every archetype (epics, tickets, features, tasks, issues) and their comment threads, ideas, UI pitches, release requests, CI runs and their logs, domain events, live telemetry, waiting on the platform, workspaces and their agents, execution targets and their leases, Git pushes to the platform's git host, and publishing release artifacts from a CI step."
 ---
 
 # qits
@@ -1964,6 +1964,185 @@ echo '{"ticketType":"IMPROVEMENT","impetus":"Builds wait on downloads."}' | qits
 - `0` The item is filed, or nothing was put in and the schema is printed.
 - `1` The platform refused (for example an idea it does not know, HTTP 404, a payload it does not take, HTTP 400, or an agent, or the desk in another project, HTTP 403), or cannot be reached.
 - `2` Used wrongly (for example no --entity, an --archetype that is neither EPIC nor TICKET, or a payload that is not a JSON object), not signed in, or the session ended.
+
+## qits pitches
+
+A project's pitches: mock HTML snapshots a named agent (such as ui-builder) draws over one of the UI builder's screenshots, kept per agent with every version. list shows a project's pitches, show one with its versions or one version's HTML, create pitches a new one, add-version adds a version to one, and archive hides one from the list.
+
+A pitch names the repository, route and screenshot of the freeze it was drawn over, its kind (DATA, NO_DATA, PENDING or ERROR), viewport (PHONE, TABLET or DESKTOP), color scheme (LIGHT, DARK, or none) and the freeze's manifest version. Versions are never rewritten: each change is a new one.
+
+A write reads its payload, a JSON document, on stdin. With nothing on stdin (a terminal, or empty) it sends nothing and prints its usage and the payload's JSON schema instead, from the service's OpenAPI document.
+
+### Notes
+
+- --pitch, --output and --projects-url may come before or after the command.
+- --pitch is the pitch's id, as list and create print it.
+- Reading takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk, qits:agent or qits:system, in the pitch's project.
+- Only a named agent creates a pitch, in its own project, and only the pitch's agent adds a version; everybody else is refused (HTTP 403), an admin included. The pitch's agent, qits:admin or qits:desk-admin may archive it.
+- The HTML is not cleaned by the service: show it only in a sandboxed frame with no scripts.
+
+## qits pitches list
+
+A project's pitches, the most recently changed first, without their HTML. Each row is the id, the agent, the repository, the route, the screenshot, the latest version, whether archived, the title and when it last changed. The archived ones are left out unless --archived is given, which adds them beside the rest.
+
+Reads GET /projects/api/pitches?project=<project>, with each other option as a filter of the same name.
+
+```
+qits pitches list [--agent <agent>] [--archived] [--output table|json] [--pitch <pitch>] [--project <project>] [--projects-url <url>] [--repository <repository>] [--route <route>] [--screenshot <file>]
+```
+
+| Name | What it does |
+|---|---|
+| `--agent <agent>` | Only this named agent's pitches, such as ui-builder. |
+| `--archived` | Show the archived pitches too, beside the others. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--pitch <pitch>` | The pitch: its id, passed to the service as it is. |
+| `--project <project>` | The project (required): its id or its slug. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+| `--repository <repository>` | Only the pitches over this repository's screenshots: its id or its name. |
+| `--route <route>` | Only the pitches over this route, as the freeze names it (for example /work). |
+| `--screenshot <file>` | Only the pitches over this screenshot: its file in the freeze's manifest. |
+
+### Examples
+
+```
+qits pitches list --project qits
+qits pitches list --project qits --agent ui-builder --repository qits-landing-app --route /work
+qits pitches list --project qits --screenshot work/board-desktop-dark.html --archived -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (for example a project or repository it does not know, HTTP 404), or cannot be reached.
+- `2` Used wrongly (for example no --project), not signed in, or the session ended.
+
+## qits pitches show
+
+One pitch. Without --number: its fields and its versions (number, size, note, when), without their HTML, from GET /projects/api/pitches/{pitch}. With --number: that version's HTML alone, from GET /projects/api/pitches/{pitch}/versions/{n}, so it can go straight to a file; -o json then prints the version's number, html, htmlBytes, note and createdAt.
+
+```
+qits pitches show [--number <n|latest>] [--output table|json] [--pitch <pitch>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `--number <n\|latest>` | Print the HTML of the version with this number instead of the pitch: a number from 1, or latest. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--pitch <pitch>` | The pitch: its id, passed to the service as it is. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits pitches show --pitch 6f1c0e2a-...
+qits pitches show --pitch 6f1c0e2a-... --number latest > pitch.html
+qits pitches --pitch 6f1c0e2a-... show --number 1 -o json | jq -r .note
+```
+
+- --number is a version's number, from 1, or latest.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (for example a pitch or version it does not know, HTTP 404), or cannot be reached.
+- `2` Used wrongly (for example no --pitch, or a --number that is neither a number nor latest), not signed in, or the session ended.
+
+## qits pitches create
+
+Pitch a new mock of one of the UI builder's screenshots, as its first version.
+
+Reads the payload, a JSON object, on stdin and sends it unchanged to POST /projects/api/pitches: {"project", "repository", "route", "screenshot", "kind", "viewport", "colorScheme"?, "manifestVersion", "title", "note"?, "html", "versionNote"?}. "project" is the project's id or slug and "repository" the repository's id or name; "route", "screenshot" (the file in the freeze's manifest), "kind", "viewport", "colorScheme" and "manifestVersion" are the freeze's. "html" is a complete HTML document with inline styles and no scripts; "versionNote" says what version 1 is. The command prints the pitch, its id first.
+
+Only a named agent may create a pitch, in its own project; it becomes the pitch's owner.
+
+With nothing on stdin (a terminal, or empty) it sends nothing, prints this usage and the payload's JSON schema from the service's OpenAPI document (/projects/q/openapi), and exits with 0.
+
+```
+qits pitches create [--output table|json] [--pitch <pitch>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--pitch <pitch>` | The pitch: its id, passed to the service as it is. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits pitches create </dev/null
+jq -n --rawfile h board.html '{project:"qits", repository:"qits-landing-app", route:"/work", screenshot:"work/board-desktop-dark.html", kind:"DATA", viewport:"DESKTOP", colorScheme:"DARK", manifestVersion:"2026.1113.1", title:"A darker board header", html:$h}' | qits pitches create
+```
+
+- The first one prints the schema: nothing is sent.
+
+### Exit codes
+
+- `0` The pitch is written, or nothing was put in and the schema is printed.
+- `1` The platform refused (for example a field it does not take or an empty html, HTTP 400, a caller that is not a named agent of the project, HTTP 403, a project or repository it does not know, HTTP 404, or html too large, HTTP 413), or cannot be reached.
+- `2` Used wrongly (for example a payload that is not a JSON object), not signed in, or the session ended.
+
+## qits pitches add-version
+
+Add a version to a pitch: the next number after its latest. Earlier versions stay as they are.
+
+Reads the payload, {"html":"...","note"?:"..."}, on stdin and sends it unchanged to POST /projects/api/pitches/{pitch}/versions. "html" is a complete HTML document with inline styles and no scripts; "note" says what changed. The command prints the new version without its HTML.
+
+Only the pitch's own agent may add a version, and an archived pitch takes none.
+
+With nothing on stdin (a terminal, or empty) it sends nothing, prints this usage and the payload's JSON schema from the service's OpenAPI document (/projects/q/openapi), and exits with 0.
+
+```
+qits pitches add-version [--output table|json] [--pitch <pitch>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--pitch <pitch>` | The pitch: its id, passed to the service as it is. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits pitches add-version --pitch 6f1c0e2a-... </dev/null
+jq -n --rawfile h board.html '{html:$h, note:"Saved views under the filters"}' | qits pitches add-version --pitch 6f1c0e2a-...
+```
+
+### Exit codes
+
+- `0` The version is written, or nothing was put in and the schema is printed.
+- `1` The platform refused (for example an empty html, HTTP 400, a caller that is not the pitch's agent, HTTP 403, a pitch it does not know, HTTP 404, an archived pitch, HTTP 409, or html too large, HTTP 413), or cannot be reached.
+- `2` Used wrongly (for example no --pitch, or a payload that is not a JSON object), not signed in, or the session ended.
+
+## qits pitches archive
+
+Archive a pitch: hide it from the list. Nothing is deleted, and archiving an archived pitch changes nothing.
+
+Sends POST /projects/api/pitches/{pitch}/archive and prints the pitch. The pitch's agent, qits:admin or qits:desk-admin may archive it.
+
+```
+qits pitches archive [--output table|json] [--pitch <pitch>] [--projects-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--pitch <pitch>` | The pitch: its id, passed to the service as it is. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+
+### Examples
+
+```
+qits pitches archive --pitch 6f1c0e2a-...
+```
+
+### Exit codes
+
+- `0` The pitch is archived.
+- `1` The platform refused (for example a caller that is neither the pitch's agent nor an admin, HTTP 403, or a pitch it does not know, HTTP 404), or cannot be reached.
+- `2` Used wrongly (for example no --pitch), not signed in, or the session ended.
 
 ## qits release-request
 

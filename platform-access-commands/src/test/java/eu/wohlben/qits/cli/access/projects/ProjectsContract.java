@@ -206,6 +206,31 @@ public final class ProjectsContract {
             "inspired[].title", "enables[].id", "enables[].status", "enables[].archived", "enables[].title");
 
     /**
+     * {@code qits pitches} (qits-2155): the provider records every pitch door in this state, the
+     * ui-builder named agent with one pitch of two versions and one archived pitch. {@code
+     * createPitch} and {@code addPitchVersion} are recorded with that agent's bearer ({@code
+     * authorization}), since only a named agent pitches and only the pitch's agent adds a version, so
+     * those rows send it as their {@code Authorization} header; {@code archivePitch} as the admin
+     * caller. Pending until qits-maintenance bumps {@code qits.projects-golden-masters.version} past
+     * the qits-projects-service release that records this state; on that bump write the pact again
+     * with {@code -Dgolden.update=true}.
+     */
+    static final String PITCH = "a project with a pitch";
+
+    /** One pitch as a row of {@code qits pitches list}. {@code archivedAt} is bound only where recorded. */
+    static final List<String> PITCH_ROW = List.of("id", "agent", "repositoryName", "route", "screenshot",
+            "latestVersion", "archivedAt", "title", "updatedAt");
+
+    /** One pitch as {@code show}, {@code create} and {@code archive} print it, with its versions but no HTML. */
+    static final List<String> PITCH_DETAIL = List.of("id", "title", "agent", "repositoryName", "repositoryId",
+            "route", "screenshot", "kind", "viewport", "colorScheme", "manifestVersion", "latestVersion",
+            "archivedAt", "createdAt", "updatedAt", "note", "versions[].number", "versions[].htmlBytes",
+            "versions[].note", "versions[].createdAt");
+
+    /** One version as {@code add-version} prints it: no HTML. */
+    static final List<String> PITCH_VERSION = List.of("number", "htmlBytes", "note", "createdAt");
+
+    /**
      * The needs of {@code qits work list} and {@code details} (epic qits-1899, task qits-1905): the
      * provider records an item that needs another item at a status, not met yet, in this state
      * (qits-1903, qits-projects-service 2026.1106.140436), which the golden masters pinned in the
@@ -385,10 +410,10 @@ public final class ProjectsContract {
     }
 
     /**
-     * The same call as the person the state names: approve, decline and the backup twin reset are a
-     * person's decisions,
-     * and the provider records them with that person's CLI bearer ({@code authorization}), which
-     * the row sends as its {@code Authorization} header.
+     * The same call as the caller the state names: approve, decline and the backup twin reset are a
+     * person's decisions, and a pitch is written by its named agent alone (qits-2155). The provider
+     * records them with that caller's bearer ({@code authorization}), which the row sends as its
+     * {@code Authorization} header.
      */
     private static CliRow.Call asThePerson(Call call) {
         return (url, recorded) -> {
@@ -986,6 +1011,70 @@ public final class ProjectsContract {
         idea(archived);
         assertThat(archived.path("archived").asBoolean()).isTrue();
         assertThat(ProjectsApi.text(archived, "archiveReason")).isEqualTo(body(recorded).path("reason").asText());
+    };
+
+    /** A pitch as the list's row prints it. */
+    private static void pitchRow(JsonNode pitch) {
+        for (String field : List.of("id", "agent", "repositoryName", "route", "screenshot", "title", "updatedAt")) {
+            assertThat(ProjectsApi.text(pitch, field)).as(field).isNotBlank();
+        }
+        assertThat(pitch.path("latestVersion").isIntegralNumber()).isTrue();
+    }
+
+    /** A pitch in detail: the row, the freeze it was drawn over, and its versions without HTML. */
+    private static void pitchDetail(JsonNode pitch) {
+        pitchRow(pitch);
+        for (String field : List.of("repositoryId", "kind", "viewport", "manifestVersion", "createdAt")) {
+            assertThat(ProjectsApi.text(pitch, field)).as(field).isNotBlank();
+        }
+        assertThat(pitch.path("versions")).isNotEmpty().allSatisfy(v -> {
+            assertThat(v.path("number").isIntegralNumber()).isTrue();
+            assertThat(v.path("htmlBytes").isIntegralNumber()).isTrue();
+            assertThat(v.has("html")).isFalse();
+        });
+    }
+
+    /** {@code qits pitches list}: the project's pitches, without the archived ones. */
+    private static final Call LIST_PITCHES = (api, params, recorded) -> {
+        JsonNode pitches = api.pitches(params.get("projectId"), null, null, null, null, false).path("pitches");
+        assertThat(pitches).isNotEmpty().allSatisfy(ProjectsContract::pitchRow);
+    };
+
+    /** {@code qits pitches show}: the pitch and its versions. */
+    private static final Call GET_PITCH = (api, params, recorded) -> {
+        JsonNode pitch = api.pitch(params.get("pitchId"));
+        pitchDetail(pitch);
+        assertThat(ProjectsApi.text(pitch, "id")).isEqualTo(params.get("pitchId"));
+    };
+
+    /** {@code qits pitches show --number latest}: the version's HTML, which the table form prints alone. */
+    private static final Call GET_PITCH_VERSION = (api, params, recorded) -> {
+        JsonNode version = api.pitchVersion(params.get("pitchId"), PitchesCommand.ShowCommand.number("latest"));
+        assertThat(ProjectsApi.text(version, "html")).isNotBlank();
+        assertThat(version.path("number").isIntegralNumber()).isTrue();
+    };
+
+    /** {@code qits pitches create}, as the named agent: the new pitch, with its version 1. */
+    private static final Call CREATE_PITCH = (api, params, recorded) -> {
+        JsonNode created = api.createPitch(body(recorded));
+        pitchDetail(created);
+        assertThat(ProjectsApi.text(created, "title")).isEqualTo(body(recorded).path("title").asText());
+    };
+
+    /** {@code qits pitches add-version}, as the pitch's agent: the new version, without its HTML. */
+    private static final Call ADD_PITCH_VERSION = (api, params, recorded) -> {
+        JsonNode added = api.addPitchVersion(params.get("pitchId"), body(recorded));
+        assertThat(added.path("number").isIntegralNumber()).isTrue();
+        assertThat(added.path("htmlBytes").isIntegralNumber()).isTrue();
+        assertThat(ProjectsApi.text(added, "note")).isEqualTo(body(recorded).path("note").asText());
+        assertThat(added.has("html")).isFalse();
+    };
+
+    /** {@code qits pitches archive}: the pitch, archived. */
+    private static final Call ARCHIVE_PITCH = (api, params, recorded) -> {
+        JsonNode archived = api.archivePitch(params.get("pitchId"));
+        pitchDetail(archived);
+        assertThat(ProjectsApi.text(archived, "archivedAt")).isNotBlank();
     };
 
     /** {@code qits ideas update} with {@code {"priority":n}}: the idea, with the priority its PRIORITY column prints. */
@@ -1651,6 +1740,34 @@ public final class ProjectsContract {
                 .request("GET /projects/api/ideas/{ideaId}"));
         rows.add(row("qits ideas spawn", NO_WORK, "createWork", "createWork", CREATE)
                 .consumes(held(NO_WORK, "createWork", ROW)));
+
+        // qits pitches (qits-2155): pending until the pinned golden masters carry the pitches
+        rows.add(row("qits pitches list", PITCH, "listPitches", "pitches", LIST_PITCHES)
+                .consumes(held(PITCH, "listPitches", prefixed("pitches[].", PITCH_ROW)))
+                .anyLength("pitches")
+                .request("GET /projects/api/pitches?project={projectId}"));
+        rows.add(row("qits pitches show", PITCH, "getPitch", "pitch", GET_PITCH)
+                .consumes(held(PITCH, "getPitch", PITCH_DETAIL))
+                .anyLength("versions")
+                .request("GET /projects/api/pitches/{pitchId}"));
+        rows.add(row("qits pitches show", PITCH, "getPitchVersion", "pitchVersion", GET_PITCH_VERSION)
+                .consumes(held(PITCH, "getPitchVersion", List.of("number", "html")))
+                .request("GET /projects/api/pitches/{pitchId}/versions/latest"));
+        rows.add(CliRow.of("qits pitches create", PITCH, "createPitch", "ProjectsApi#createPitch",
+                asThePerson(CREATE_PITCH))
+                .consumes(held(PITCH, "createPitch", PITCH_DETAIL))
+                .anyLength("versions")
+                .header("Authorization", "{authorization}")
+                .request("POST /projects/api/pitches"));
+        rows.add(CliRow.of("qits pitches add-version", PITCH, "addPitchVersion", "ProjectsApi#addPitchVersion",
+                asThePerson(ADD_PITCH_VERSION))
+                .consumes(held(PITCH, "addPitchVersion", PITCH_VERSION))
+                .header("Authorization", "{authorization}")
+                .request("POST /projects/api/pitches/{pitchId}/versions"));
+        rows.add(row("qits pitches archive", PITCH, "archivePitch", "archivePitch", ARCHIVE_PITCH)
+                .consumes(held(PITCH, "archivePitch", PITCH_DETAIL))
+                .anyLength("versions")
+                .request("POST /projects/api/pitches/{pitchId}/archive"));
 
         // the NEEDS of work list and details (epic qits-1899)
         rows.add(row("qits work list", NEEDS_ANOTHER, "listProjectWork", "projectWork", LIST_NEEDING)

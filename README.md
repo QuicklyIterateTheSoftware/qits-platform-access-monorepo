@@ -652,6 +652,12 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits ideas --entity <idea id> archive --reason <text>
     qits ideas --entity <idea id> unarchive
     <payload> | qits ideas --entity <idea id> spawn --archetype EPIC|TICKET
+    qits pitches list --project <project> [--agent <agent>] [--repository <repository>] \
+        [--route <route>] [--screenshot <file>] [--archived]
+    qits pitches --pitch <pitch id> show [--number <n|latest>]
+    <payload> | qits pitches create
+    <payload> | qits pitches --pitch <pitch id> add-version
+    qits pitches --pitch <pitch id> archive
     qits release-request --project <project> [--repository <repository>] list \
         [--state <STATE|all>] [--limit <n>]
     qits release-request --project <project> --repository <repository> create \
@@ -1011,6 +1017,22 @@ in, what is still missing and the archetype's create schema. `qits work create` 
     qits ideas --entity <idea id> details
     qits ideas --entity <idea id> archive --reason 'Folded into the cache epic.'
     echo '{}' | qits ideas --entity <idea id> spawn --archetype epic
+
+### qits pitches
+
+`qits pitches` is a named agent's mock snapshots of the UI builder's screenshots (qits-2155), on the
+service's `/projects/api/pitches` doors. A pitch names the repository, route and screenshot of the
+freeze it was drawn over, and keeps every version of its HTML: a change is a new version, never a
+rewrite. `list` leaves the archived ones out unless `--archived` adds them; `show` prints the pitch
+and its versions without HTML, and `show --number <n|latest>` that version's HTML alone. `create`
+(`{project, repository, route, screenshot, kind, viewport, colorScheme?, manifestVersion, title,
+note?, html, versionNote?}`) and `add-version` (`{html, note?}`) take their payload on stdin, and with
+none print its schema. Only a named agent creates a pitch and only the pitch's agent adds a version;
+the pitch's agent or an admin archives it. The HTML is not cleaned by the service.
+
+    qits pitches list --project qits --agent ui-builder
+    jq -n --rawfile h p.html '{project:"qits", ..., html:$h}' | qits pitches create
+    qits pitches --pitch <pitch id> show --number latest > pitch.html
 
 ### qits release-request
 

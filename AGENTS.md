@@ -5,7 +5,7 @@
 The `qits` command: access to the qits platform from a Linux or WSL workstation. A Quarkus
 command-mode CLI with picocli, built as a GraalVM native binary. Its commands: `qits login`
 (browser sign-in, session stored in `$XDG_CONFIG_HOME/qits/t.json`), `qits session-daemon` (keeps
-that session fresh), `qits projects|repositories|work|ideas|release-request` (the projects service;
+that session fresh), `qits projects|repositories|work|ideas|pitches|release-request` (the projects service;
 `work` is every work item, of every archetype), `qits ci runs|run|retry|cancel|report` (qits-ci's runs, a
 run's step logs, a retry, a cancel, a run's release reports), `qits database diagram` (a repository's entity
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
@@ -172,7 +172,7 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                the HTTP client and its error messages, which address a service has (PlatformUrls),
                the aligned table (Table), and the --since/--until/--limit window both query
                commands share (QueryWindow, a picocli mixin)
-    projects/  qits projects, repositories, work, ideas and release-request. `qits work` is one group for
+    projects/  qits projects, repositories, work, ideas, pitches and release-request. `qits work` is one group for
                every archetype (WorkCommand; WorkEntities holds the transition's full-state merge
                and the tables). Its writes take a JSON payload on stdin and, with none, print the
                usage and the schema the service serves per archetype and door (entity doors) or
@@ -193,6 +193,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                same shape: --entity is the idea's id, the writes' schemas come from the OpenAPI
                document through WorkPayload, and `spawn` files work through createWork with the
                idea's project, title, description and inspiredBy filled in
+               `qits pitches` (PitchesCommand, qits-2155) is a named agent's mock snapshots on
+               /projects/api/pitches, the same shape with --pitch; create and add-version are a
+               named agent's doors, which word their own 403, so they post with no role hint.
+               `show --number <n|latest>` prints that version's HTML alone (not --version: the
+               MCP catalog refuses a property of that name, and the help mixin owns it)
                What an item needs (epic qits-1899) is its `needs`, written whole by create and
                update; the NEEDS column and the details' needs lines read the work reads' `needs`
                and `unmetNeeds` (WorkEntities.needs, needsCell, needLine). Campaigns, their members
@@ -631,7 +636,10 @@ release-request approve` / `decline` (qits-1287): the project's door that finds 
 logical id (`getProjectReleaseRequest`, state `a project with release requests in every state`) and
 the two decisions (`approveReleaseRequest` in `a release request awaiting approval while its build
 runs`, `declineReleaseRequest` in `a release request awaiting approval`); the needs of `qits work list` / `details` (epic qits-1899): `listProjectWork` and `getWork` in `a ticket
-that needs another`, recorded since the pin reached qits-projects-service 2026.1106.140436; `qits repositories
+that needs another`, recorded since the pin reached qits-projects-service 2026.1106.140436; `qits pitches`
+(qits-2155): list, get, get version (`latest`), create, add version and archive in `a project with a
+pitch`, create and add version sent with the ui-builder agent's bearer (`authorization`), pending until a
+golden-masters pin records that state; `qits repositories
 backup reset` (qits-1885): `backupResetRepository` in `a repository whose backup twin holds unrelated
 history`, as the person that state names (its `authorization` bearer), pending until a golden-masters
 pin records that state; and `qits projects desk prompt` /
