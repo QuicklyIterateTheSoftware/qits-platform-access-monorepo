@@ -657,7 +657,7 @@
  │   list              ▸ List the projects: slug, name and id.                                     │
  │   delivery            A project's delivery desk: whether its front desk holds the delivery righ │
  │   desk                A project's front desk: prompt types a turn into its kept front desk sess │
- │                                                                                                 │
+ │   agents              A project's named agents: list shows them, prompt types a turn into one's │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -688,7 +688,7 @@
  │   list              ▸ List the projects: slug, name and id.                                     │
  │   delivery            A project's delivery desk: whether its front desk holds the delivery righ │
  │   desk                A project's front desk: prompt types a turn into its kept front desk sess │
- │                                                                                                 │
+ │   agents              A project's named agents: list shows them, prompt types a turn into one's │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -717,7 +717,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ projects ─────────────────────────────────────────────────────────────────────────────── /list  ┐
  │   list              ▸ List the projects: slug, name and id.                                     │
- │                                                                                                 │
+ │   agents              A project's named agents: list shows them, prompt types a turn into one's │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -748,7 +748,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ projects ─────────────────────────────────────────────────────────────────────────────── /list  ┐
  │   list              ▸ List the projects: slug, name and id.                                     │
- │                                                                                                 │
+ │   agents              A project's named agents: list shows them, prompt types a turn into one's │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │

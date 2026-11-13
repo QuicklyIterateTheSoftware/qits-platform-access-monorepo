@@ -24,3 +24,11 @@ host: mcp
 # readiness at /q/health/ready. Readiness waits on nothing: the idp's keys are fetched on the first
 # token, never at boot.
 health_path: /q/health/ready
+
+# PRIVATE (qits-1980, task qits-2136): served by qits-edge-private only, reached through the
+# WireGuard tunnel or the qits-private overlay; the public edge answers 404 for mcp. Nothing on the
+# platform calls this service server-side: its callers are agents, whose containers reach the
+# private edge over the tunnel or the overlay. It holds no database. The deployer gives it the
+# private edge as first resolver, so the platform calls it makes by public name reach private apps
+# through the private edge and public ones through the public edge. Revert: delete this line.
+exposure: private
