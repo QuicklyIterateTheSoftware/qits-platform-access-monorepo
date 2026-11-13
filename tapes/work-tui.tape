@@ -2,8 +2,9 @@
 # platform fills in, run with Ctrl+R, and quit. The output box shows the table the CLI tape shows.
 #
 # Against the fake platform tapes/prepare.sh starts (FakePlatformMain). Every key is pressed while
-# hidden and the screen is shown once it has painted what the key does, so every frame of the text
-# golden is a finished screen and the golden is the same on every play.
+# hidden, the tape waits for what the key paints, then lets the screen settle for 500ms while still
+# hidden before Show: a Wait+Screen match proves only the row it matched, and vhs writes a text
+# frame the instant Show runs (qits-2221).
 Set Shell bash
 Set FontFamily "DejaVu Sans Mono"
 Set FontSize 14
@@ -28,65 +29,76 @@ Hide
 Type "qits tui"
 Enter
 Wait+Screen /⌃R run · q quit/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Type "/work "
 Wait+Screen /(?s)\/work  ┐.*│ . work +▸/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Enter
 Wait+Screen /┌ work ─/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Type "/list "
 Wait+Screen /(?s)\/list  ┐.*│ . list +▸/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Enter
 Wait+Screen /┌ work ▸ list ─/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Type "/--project "
 Wait+Screen /(?s)\/--project  ┐.*--project +▸/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Enter
 Wait+Screen /contract-00000001/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Enter
 Wait+Screen /--project\s+contract-00000001/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Escape
 Wait+Screen /\/ search/
+Sleep 500ms
 Show
 Sleep 1s
 
 Hide
 Ctrl+R
 Wait+Screen /exit 0/
+Sleep 500ms
 Show
 Sleep 2s
 
 Hide
 Type "q"
 Wait /^\$$/
+Sleep 500ms
 Show
 Sleep 500ms
