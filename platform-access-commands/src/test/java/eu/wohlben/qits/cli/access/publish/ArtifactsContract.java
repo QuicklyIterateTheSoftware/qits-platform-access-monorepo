@@ -6,6 +6,7 @@ import eu.wohlben.qits.cli.access.artifacts.FetchRows;
 import eu.wohlben.qits.cli.access.changelog.BumpMessageRows;
 import eu.wohlben.qits.cli.access.contracts.CliPact;
 import eu.wohlben.qits.cli.access.contracts.CliRow;
+import eu.wohlben.qits.cli.access.uibuilder.UiBuilderRows;
 import eu.wohlben.qits.cli.access.update.UpdateRows;
 import eu.wohlben.qits.pact.consumer.GoldenMasters.Operation;
 
@@ -30,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * store doors (sboms, daemon binaries, docs bundles, content hashes, the hosted Maven repository
  * and npm registry), {@code qits update}'s daemon reads ({@link UpdateRows}), {@code qits
  * changelog bump-message}'s changelog read ({@link BumpMessageRows}) and {@code qits artifacts fetch
- * deployed-pacts}' pact jar ({@link FetchRows}), written to {@code
+ * deployed-pacts}' pact jar ({@link FetchRows}) and {@code qits ui-builder}'s docs store reads ({@link
+ * UiBuilderRows}), written to {@code
  * pacts/qits-platform-access-monorepo_qits-artifacts-service.json}.
  * <p>
  * <b>One row per (command, request).</b> A row runs the client method the command calls, over the
@@ -332,10 +334,12 @@ public final class ArtifactsContract {
             .client(UpdateRows.CLIENT, UpdateRows.DOORS)
             .client(BumpMessageRows.CLIENT, BumpMessageRows.DOORS)
             .client(FetchRows.CLIENT, FetchRows.DOORS)
+            .client(UiBuilderRows.CLIENT, UiBuilderRows.DOORS)
             .rows(ROWS)
             .rows(UpdateRows.ROWS)
             .rows(BumpMessageRows.ROWS)
-            .rows(FetchRows.ROWS);
+            .rows(FetchRows.ROWS)
+            .rows(UiBuilderRows.ROWS);
 
     private static List<CliRow> rows() {
         List<CliRow> rows = new ArrayList<>();

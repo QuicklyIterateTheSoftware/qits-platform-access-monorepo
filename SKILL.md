@@ -1,6 +1,6 @@
 ---
 name: qits
-description: "Use for any work on the qits platform from a terminal: signing in, projects and repositories, work items of every archetype (epics, tickets, features, tasks, issues) and their comment threads, ideas, UI pitches, release requests, CI runs and their logs, domain events, live telemetry, waiting on the platform, workspaces and their agents, execution targets and their leases, Git pushes to the platform's git host, and publishing release artifacts from a CI step."
+description: "Use for any work on the qits platform from a terminal: signing in, projects and repositories, work items of every archetype (epics, tickets, features, tasks, issues) and their comment threads, ideas, UI pitches and what the UI builder reads, release requests, CI runs and their logs, domain events, live telemetry, waiting on the platform, workspaces and their agents, execution targets and their leases, Git pushes to the platform's git host, and publishing release artifacts from a CI step."
 ---
 
 # qits
@@ -2143,6 +2143,148 @@ qits pitches archive --pitch 6f1c0e2a-...
 - `0` The pitch is archived.
 - `1` The platform refused (for example a caller that is neither the pitch's agent nor an admin, HTTP 403, or a pitch it does not know, HTTP 404), or cannot be reached.
 - `2` Used wrongly (for example no --pitch), not signed in, or the session ended.
+
+## qits ui-builder
+
+The reads for the project's ui-builder named agent (qits-2156): what the UI builder page shows, read from the same place. routes prints a frontend's frozen routes (its manifest.json), freeze one screenshot's entry in it or its frozen HTML, golden-masters a service's recorded provider states or one recorded response, and entities a service's entity map.
+
+Everything comes from qits-artifacts' docs store, repository docs, under /artifacts/docs/docs: a frontend's release publishes @routes/<application> and a service's @contracts/<application>. Which site belongs to a repository is read from the git.repository.name its newest version records, as the page does. Without --bundle-version each command reads that newest version.
+
+### Notes
+
+- --output, --bundle-version and --artifacts-url may come before or after the command.
+- Reads only. The command sends the caller's own credential, as the UI builder page sends the person's.
+- A repository, screenshot, provider, state or operation the bundle does not have is exit 1, with one line naming it.
+
+## qits ui-builder routes
+
+A frontend repository's frozen routes: the manifest.json of the @routes/<application> site whose newest version was released from the repository. It holds the routes, every freeze (a screenshot's frozen HTML, its route, kind, viewport, color scheme and the provider states it recorded), the freezes by route, and the color schemes and outcomes.
+
+Reads GET /artifacts/docs/docs, then GET /artifacts/docs/docs/{site} of each @routes/ site until one names the repository, then GET /artifacts/docs/docs/{site}/-/{version}/manifest.json. The table shows the site, the version, and one line per freeze; -o json prints the site, the version and the manifest as it was published.
+
+```
+qits ui-builder routes [--artifacts-url <url>] [--bundle-version <version>] [--output table|json] [--repository <repository>]
+```
+
+| Name | What it does |
+|---|---|
+| `--artifacts-url <url>` | qits-artifacts' base URL, without /artifacts. Default: QITS_ARTIFACTS_URL, else https://registry.qits.<domain>. |
+| `--bundle-version <version>` | Read this version of the bundle instead of its newest: a version the site published, such as 2026.1113.154308. |
+| `-o, --output table\|json` | table (the default): a readable summary. json: the published document as it was read. |
+| `--repository <repository>` | The frontend repository (required), by name, such as qits-landing-app. |
+
+### Examples
+
+```
+qits ui-builder routes --repository qits-landing-app
+qits ui-builder routes --repository qits-landing-app --bundle-version 2026.1113.154308 -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` No routes bundle names the repository, the version holds no manifest, or the platform refused or cannot be reached.
+- `2` Used wrongly (for example no --repository), not signed in, or the session ended.
+
+## qits ui-builder freeze
+
+One screenshot of a frontend's frozen routes: its entry in the manifest.json of the repository's @routes/<application> site (file, name, route, the provider states it recorded, triggers, kind, viewport, color scheme, data marks, connectivity), or with --html its frozen HTML.
+
+Finds the site and reads the manifest as routes does, then, with --html, GET /artifacts/docs/docs/{site}/-/{version}/{file}. The HTML is printed as it was published, so it can go straight to a file; -o has no effect on it.
+
+```
+qits ui-builder freeze [--artifacts-url <url>] [--bundle-version <version>] [--html] [--output table|json] [--repository <repository>] [--screenshot <file>]
+```
+
+| Name | What it does |
+|---|---|
+| `--artifacts-url <url>` | qits-artifacts' base URL, without /artifacts. Default: QITS_ARTIFACTS_URL, else https://registry.qits.<domain>. |
+| `--bundle-version <version>` | Read this version of the bundle instead of its newest: a version the site published, such as 2026.1113.154308. |
+| `--html` | Print the freeze's frozen HTML instead of its entry. |
+| `-o, --output table\|json` | table (the default): a readable summary. json: the published document as it was read. |
+| `--repository <repository>` | The frontend repository (required), by name, such as qits-landing-app. |
+| `--screenshot <file>` | The screenshot (required): the freeze's file in the manifest. |
+
+### Examples
+
+```
+qits ui-builder freeze --repository qits-landing-app --screenshot src/app/routes/work/work.page.browser.spec.ts/board-desktop.html
+qits ui-builder freeze --repository qits-landing-app --screenshot src/app/routes/work/work.page.browser.spec.ts/board-desktop.html --html > board.html
+```
+
+- --screenshot is a freeze's file as routes lists it.
+
+### Exit codes
+
+- `0` Done.
+- `1` No routes bundle names the repository, its manifest has no such screenshot, or the platform refused or cannot be reached.
+- `2` Used wrongly (for example no --screenshot), not signed in, or the session ended.
+
+## qits ui-builder golden-masters
+
+A service's golden masters: the golden-masters/index.json of its @contracts/<application> site (formatVersion, provider, and each provider state with its slug, params and recorded operations). With --state, that state alone; with --state and --operation, the response the state recorded for that operation.
+
+Reads GET /artifacts/docs/docs, then (when no @contracts/<provider> site is listed) GET /artifacts/docs/docs/{site} of each @contracts/ site until one names the provider as its repository, then GET /artifacts/docs/docs/{site}/-/{version}/golden-masters/index.json and, for a recorded response, golden-masters/<file> as the index names it. A recorded response is JSON in both forms.
+
+```
+qits ui-builder golden-masters [--artifacts-url <url>] [--bundle-version <version>] [--operation <operationId>] [--output table|json] [--provider <application>] [--state <slug>]
+```
+
+| Name | What it does |
+|---|---|
+| `--artifacts-url <url>` | qits-artifacts' base URL, without /artifacts. Default: QITS_ARTIFACTS_URL, else https://registry.qits.<domain>. |
+| `--bundle-version <version>` | Read this version of the bundle instead of its newest: a version the site published, such as 2026.1113.154308. |
+| `--operation <operationId>` | With --state: print the response the state recorded for this operation. |
+| `-o, --output table\|json` | table (the default): a readable summary. json: the published document as it was read. |
+| `--provider <application>` | The service (required): its application, such as qits-projects, or its repository, such as qits-projects-service. |
+| `--state <slug>` | Only this provider state: its slug, or its name. |
+
+### Examples
+
+```
+qits ui-builder golden-masters --provider qits-projects
+qits ui-builder golden-masters --provider qits-projects-service --state a-project-exists
+qits ui-builder golden-masters --provider qits-projects --state a-project-exists --operation listProjects
+```
+
+- --provider is the application (qits-projects) or the repository (qits-projects-service), as a freeze's records name it.
+- --state is a state's slug or its name.
+
+### Exit codes
+
+- `0` Done.
+- `1` No contracts bundle for the provider, the index has no such state or the state no such operation, it recorded no response file, or the platform refused or cannot be reached.
+- `2` Used wrongly (for example --operation without --state), not signed in, or the session ended.
+
+## qits ui-builder entities
+
+A service's entity map: the entities.json of its @contracts/<application> site (formatVersion, application, and each persisted entity with its table, its marking (domain, technical or projection), the DTOs it is exposed through and the operations that return or take them).
+
+Finds the site as golden-masters does, then reads GET /artifacts/docs/docs/{site}/-/{version}/entities.json. The table shows one line per entity; -o json prints the map as it was published.
+
+```
+qits ui-builder entities [--artifacts-url <url>] [--bundle-version <version>] [--output table|json] [--provider <application>]
+```
+
+| Name | What it does |
+|---|---|
+| `--artifacts-url <url>` | qits-artifacts' base URL, without /artifacts. Default: QITS_ARTIFACTS_URL, else https://registry.qits.<domain>. |
+| `--bundle-version <version>` | Read this version of the bundle instead of its newest: a version the site published, such as 2026.1113.154308. |
+| `-o, --output table\|json` | table (the default): a readable summary. json: the published document as it was read. |
+| `--provider <application>` | The service (required): its application, such as qits-projects, or its repository, such as qits-projects-service. |
+
+### Examples
+
+```
+qits ui-builder entities --provider qits-projects
+qits ui-builder entities --provider qits-projects-service -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` No contracts bundle for the provider, its version publishes no entity map, or the platform refused or cannot be reached.
+- `2` Used wrongly (for example no --provider), not signed in, or the session ended.
 
 ## qits release-request
 

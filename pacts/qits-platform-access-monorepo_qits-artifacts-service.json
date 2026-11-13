@@ -4201,6 +4201,1958 @@
         "references": {
           "qits-call": {
             "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder entities",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder entities: getDocsFile",
+      "key": "cfaad016",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with an entity map",
+          "params": {
+            "path": "entities.json",
+            "site": "@contracts/qits-projects",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@contracts/qits-projects/-/2100.1.0/entities.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "entities": [
+              {
+                "entity": "eu.wohlben.qits.entities.domain.Project"
+              },
+              {
+                "entity": "eu.wohlben.qits.entities.domain.Project"
+              },
+              {
+                "entity": "eu.wohlben.qits.entities.domain.Project"
+              },
+              {
+                "entity": "eu.wohlben.qits.entities.domain.Project"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.entities": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 4,
+                  "min": 4
+                }
+              ]
+            },
+            "$.entities[*].entity": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder entities",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder entities: listDocsSites",
+      "key": "45ab8098",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with an entity map",
+          "params": {
+            "path": "entities.json",
+            "site": "@contracts/qits-projects",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2100.1.0",
+                "name": "@contracts/qits-projects"
+              },
+              {
+                "latestVersion": "2100.1.0",
+                "name": "@contracts/qits-projects"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 2,
+                  "min": 2
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder entities",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder entities: listDocsVersions",
+      "key": "2323fb6b",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with an entity map",
+          "params": {
+            "path": "entities.json",
+            "site": "@contracts/qits-projects",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@contracts/qits-projects"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "git.commit.hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "git.repository.name": "qits-projects-service"
+                },
+                "version": "2100.1.0"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: getDocsFile",
+      "key": "d59bf5fb",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing/-/2026.1109.73025/manifest.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "freezes": [
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.freezes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 3,
+                  "min": 3
+                }
+              ]
+            },
+            "$.freezes[*].file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: getDocsFile",
+      "key": "8a91891b",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing/-/2026.1111.50732/manifest.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "freezes": [
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.freezes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 6,
+                  "min": 6
+                }
+              ]
+            },
+            "$.freezes[*].file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: listDocsSites",
+      "key": "bef0cafd",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2026.1109.73025",
+                "name": "@routes/qits-landing"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: listDocsSites",
+      "key": "73e65e1d",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2026.1111.50732",
+                "name": "@routes/qits-landing"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: listDocsVersions",
+      "key": "58a3b974",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "git.commit.hash": "ffffffffffffffffffffffffffffffffffffffff",
+                  "git.repository.name": "qits-landing-app"
+                },
+                "version": "2026.1109.73025"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder freeze",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder freeze: listDocsVersions",
+      "key": "d994c94",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "git.commit.hash": "ffffffffffffffffffffffffffffffffffffffff",
+                  "git.repository.name": "qits-landing-app"
+                },
+                "version": "2026.1111.50732"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder golden-masters",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder golden-masters: getDocsFile",
+      "key": "49abc94e",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with a golden-master index",
+          "params": {
+            "path": "golden-masters/index.json",
+            "site": "@contracts/qits-githost",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@contracts/qits-githost/-/2100.1.0/golden-masters/index.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "states": [
+              {
+                "name": "a git project exists",
+                "operations": [
+                  {
+                    "file": "a-git-project-exists/listGitProjects.json",
+                    "operationId": "listGitProjects"
+                  }
+                ],
+                "slug": "a-git-project-exists"
+              },
+              {
+                "name": "a git project exists",
+                "operations": [
+                  {
+                    "file": "a-git-project-exists/listGitProjects.json",
+                    "operationId": "listGitProjects"
+                  }
+                ],
+                "slug": "a-git-project-exists"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.states": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 2,
+                  "min": 2
+                }
+              ]
+            },
+            "$.states[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.states[*].operations": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.states[*].operations[*].file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.states[*].operations[*].operationId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.states[*].slug": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder golden-masters",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder golden-masters: listDocsSites",
+      "key": "8556ad0",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with a golden-master index",
+          "params": {
+            "path": "golden-masters/index.json",
+            "site": "@contracts/qits-githost",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2100.1.0",
+                "name": "@contracts/qits-githost"
+              },
+              {
+                "latestVersion": "2100.1.0",
+                "name": "@contracts/qits-githost"
+              },
+              {
+                "latestVersion": "2100.1.0",
+                "name": "@contracts/qits-githost"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 3,
+                  "min": 3
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder golden-masters",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder golden-masters: listDocsVersions",
+      "key": "7c4da2b",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published contracts bundle with a golden-master index",
+          "params": {
+            "path": "golden-masters/index.json",
+            "site": "@contracts/qits-githost",
+            "version": "2100.1.0"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@contracts/qits-githost"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                  "git.commit.hash": "9999999999999999999999999999999999999999",
+                  "git.repository.name": "qits-githost-service"
+                },
+                "version": "2100.1.0"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: getDocsFile",
+      "key": "2ce341ea",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing/-/2026.1109.73025/manifest.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "freezes": [
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.freezes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 3,
+                  "min": 3
+                }
+              ]
+            },
+            "$.freezes[*].file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "getDocsFile"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: getDocsFile",
+      "key": "e1d8d50a",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}/-/${version}/${path}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing/-/2026.1111.50732/manifest.json"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "freezes": [
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              },
+              {
+                "file": "src/app/layout/page-layout/page-layout.browser.spec.ts/slots.html"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.freezes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 6,
+                  "min": 6
+                }
+              ]
+            },
+            "$.freezes[*].file": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: listDocsSites",
+      "key": "6194d72c",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2026.1109.73025",
+                "name": "@routes/qits-landing"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsSites"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: listDocsSites",
+      "key": "168a6a4c",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/artifacts/docs/docs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "sites": [
+              {
+                "latestVersion": "2026.1111.50732",
+                "name": "@routes/qits-landing"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.sites": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$.sites[*].latestVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sites[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: listDocsVersions",
+      "key": "9098ae5",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1109.73025"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "git.commit.hash": "ffffffffffffffffffffffffffffffffffffffff",
+                  "git.repository.name": "qits-landing-app"
+                },
+                "version": "2026.1109.73025"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
+            "operationId": "listDocsVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits ui-builder routes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits ui-builder routes: listDocsVersions",
+      "key": "bdff1e05",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a published routes bundle with kinds and viewports",
+          "params": {
+            "path": "manifest.json",
+            "site": "@routes/qits-landing",
+            "version": "2026.1111.50732"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/artifacts/docs/docs/${site}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/artifacts/docs/docs/@routes/qits-landing"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "versions": [
+              {
+                "metadata": {
+                  "content.hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                  "git.commit.hash": "ffffffffffffffffffffffffffffffffffffffff",
+                  "git.repository.name": "qits-landing-app"
+                },
+                "version": "2026.1111.50732"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.versions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.versions[*].metadata['content.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.commit.hash']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].metadata['git.repository.name']": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.versions[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-artifacts-service",
             "operationId": "getDaemon"
           },
           "qits-trigger": {

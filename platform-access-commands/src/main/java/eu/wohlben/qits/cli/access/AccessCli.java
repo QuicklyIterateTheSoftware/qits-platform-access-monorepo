@@ -31,6 +31,7 @@ import eu.wohlben.qits.cli.access.projects.WorkCommand;
 import eu.wohlben.qits.cli.access.remembered.RememberedDevicesCommand;
 import eu.wohlben.qits.cli.access.targets.TargetsCommand;
 import eu.wohlben.qits.cli.access.update.QitsVersion;
+import eu.wohlben.qits.cli.access.uibuilder.UiBuilderCommand;
 import eu.wohlben.qits.cli.access.update.UpdateCommand;
 import eu.wohlben.qits.cli.access.users.UsersCommand;
 import eu.wohlben.qits.cli.access.waits.WaitCommand;
@@ -54,7 +55,7 @@ import picocli.CommandLine;
         versionProvider = QitsVersion.Provider.class,
         subcommands = {LoginCommand.class, SessionDaemonCommand.class, CheckoutDaemonCommand.class, CheckoutCommand.class,
                 ProjectsCommand.class,
-                RepositoriesCommand.class, WorkCommand.class, IdeasCommand.class, PitchesCommand.class,
+                RepositoriesCommand.class, WorkCommand.class, IdeasCommand.class, PitchesCommand.class, UiBuilderCommand.class,
                 ReleaseRequestCommand.class, CiCommand.class, DatabaseCommand.class, ContractsCommand.class, DeploymentsCommand.class, MaintenanceCommand.class, UsersCommand.class,
                 RememberedDevicesCommand.class,
                 EventsCommand.class,
@@ -66,7 +67,7 @@ import picocli.CommandLine;
         description = {
                 "Use for any work on the qits platform from a terminal: signing in, projects and repositories, "
                         + "work items of every archetype (epics, tickets, features, tasks, issues) and their comment "
-                        + "threads, ideas, UI pitches, release requests, CI runs and their logs, "
+                        + "threads, ideas, UI pitches and what the UI builder reads, release requests, CI runs and their logs, "
                         + "domain events, live telemetry, waiting on the platform, workspaces and their agents, "
                         + "execution targets and their leases, Git pushes to the platform's git host, and "
                         + "publishing release artifacts from a CI step.",

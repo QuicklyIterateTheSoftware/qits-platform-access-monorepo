@@ -6,7 +6,8 @@ The `qits` command: access to the qits platform from a Linux or WSL workstation.
 command-mode CLI with picocli, built as a GraalVM native binary. Its commands: `qits login`
 (browser sign-in, session stored in `$XDG_CONFIG_HOME/qits/t.json`), `qits session-daemon` (keeps
 that session fresh), `qits projects|repositories|work|ideas|pitches|release-request` (the projects service;
-`work` is every work item, of every archetype), `qits ci runs|run|retry|cancel|report` (qits-ci's runs, a
+`work` is every work item, of every archetype), `qits ui-builder` (the UI builder page's reads of
+qits-artifacts' docs store, for the ui-builder named agent; qits-2156), `qits ci runs|run|retry|cancel|report` (qits-ci's runs, a
 run's step logs, a retry, a cancel, a run's release reports), `qits database diagram` (a repository's entity
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
 golden master records), `qits users` (the idp's users: invite, register, list,
@@ -321,6 +322,15 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                listDeployedPacts in MaintenanceContract, pending until a pinned
                qits-maintenance-golden-masters records `a provider whose deployed consumers publish
                pacts`; the jar GET in ArtifactsContract (FetchRows)
+    uibuilder/ qits ui-builder routes|freeze|golden-masters|entities (qits-2156): the landing app's UI
+               builder reads, for the ui-builder named agent. DocsStore is the client (the docs store's
+               listDocsSites, listDocsVersions and getDocsFile, a site's `/` and `@` literal on the wire,
+               the rest percent-encoded as the page's literalDocsUrl does); Bundles finds a repository's
+               @routes/ site and a provider's @contracts/ site from the versions' git.repository.name, as
+               the page does. Its rows are ArtifactsContract's (UiBuilderRows). `freeze --html`'s read is
+               bound to the manifest's path: the only recorded freeze path holds `[slug]`, which the
+               recorded request names literally while the store needs it encoded. The version option is
+               --bundle-version, for the reason pitches' --number is not --version
     changelog/ qits changelog bump-message, and the two grammars a changelog shares with its
                readers: CommitSubjects (the ids a `type(qits-9, qits-10):` subject names, and their
                order) and AssociatedTickets (the changelog's last line, written and read back).

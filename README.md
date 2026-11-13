@@ -658,6 +658,11 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     <payload> | qits pitches create
     <payload> | qits pitches --pitch <pitch id> add-version
     qits pitches --pitch <pitch id> archive
+    qits ui-builder routes --repository <repository> [--bundle-version <version>]
+    qits ui-builder freeze --repository <repository> --screenshot <file> [--html]
+    qits ui-builder golden-masters --provider <application|repository> [--state <slug>] \
+        [--operation <operationId>]
+    qits ui-builder entities --provider <application|repository>
     qits release-request --project <project> [--repository <repository>] list \
         [--state <STATE|all>] [--limit <n>]
     qits release-request --project <project> --repository <repository> create \
@@ -1033,6 +1038,21 @@ the pitch's agent or an admin archives it. The HTML is not cleaned by the servic
     qits pitches list --project qits --agent ui-builder
     jq -n --rawfile h p.html '{project:"qits", ..., html:$h}' | qits pitches create
     qits pitches --pitch <pitch id> show --number latest > pitch.html
+
+### qits ui-builder
+
+`qits ui-builder` is what the landing app's UI builder page reads, for the project's ui-builder named
+agent (qits-2156). Every read is qits-artifacts' docs store, repository `docs`: a frontend's frozen
+routes in `@routes/<application>` (`routes` prints its `manifest.json`, `freeze` one screenshot's entry
+or, with `--html`, its frozen HTML) and a service's `@contracts/<application>` (`golden-masters` its
+`golden-masters/index.json`, one state of it, or one recorded response; `entities` its
+`entities.json`). Which site is a repository's is read from the `git.repository.name` its newest
+version records, as the page does; `--provider` takes the application or the repository.
+`--bundle-version` reads another version than the newest (not `--version`, which the help owns).
+
+    qits ui-builder routes --repository qits-landing-app
+    qits ui-builder freeze --repository qits-landing-app --screenshot <file> --html > freeze.html
+    qits ui-builder golden-masters --provider qits-projects --state a-project-exists --operation listProjects
 
 ### qits release-request
 
