@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * qits-deployments, and why</b> (epic qits-765, qits-1390; qits-2175): settings list, set, delete and
  * preview, and database move, moves and move-status, through {@link DeploymentsApi}, written to
  * {@code pacts/qits-platform-access-monorepo_qits-deployments-service.json} once the provider
- * records them.
+ * records them. {@code abort} (qits-2243) is excluded for now: no golden-masters pin records its
+ * ABORTED state yet, so it has no row here until one does.
  * <p>
  * Every row is pending until a pinned {@code qits-deployments-golden-masters} records its state.
  * The set row sends the recorded body ({@code {"value", "secret"}}) through the client, so the pact
@@ -151,7 +152,13 @@ public final class DeploymentsContract {
                             java.util.stream.Stream.concat(MOVE.stream(), MOVE_IN_FULL.stream()).map(p -> "move." + p).toList()))
                     .request("GET /deployments/api/database-moves/{id}"));
 
-    public static final CliPact CONTRACT = BASE.client(DeploymentsApi.class).rows(ROWS);
+    public static final CliPact CONTRACT = BASE.client(DeploymentsApi.class)
+            // qits-2243: no golden-masters pin records ABORTED yet. Add the row (POST
+            // /deployments/api/database-moves/{id}/abort) once one does; this is not a door that
+            // sends no request, only one with no state to bind to yet.
+            .excluded("DeploymentsApi#abortDatabaseMove", "qits deployments database abort (qits-2243): pending "
+                    + "until a pinned qits-deployments-golden-masters records ABORTED; add its row then")
+            .rows(ROWS);
 
     private static CliRow row(String command, String state, String operationId, String method, Call call) {
         return CliRow.of(command, state, operationId, "DeploymentsApi#" + method, api(call));

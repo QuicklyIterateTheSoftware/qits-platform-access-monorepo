@@ -27,10 +27,11 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
  * to another name, and the record of every move, a deployment's and an operator's alike (qits-2175).
  * A move is a redeploy of the live version whose provisioning copies, verifies and switches the
  * database, so the service is stopped while it runs, and the answer is only that it was queued.
+ * {@code abort} stops one before its switch (qits-2243).
  */
 @CommandLine.Command(name = "database", mixinStandardHelpOptions = true,
         subcommands = {DatabaseCommand.MoveCommand.class, DatabaseCommand.MovesCommand.class,
-                DatabaseCommand.MoveStatusCommand.class},
+                DatabaseCommand.MoveStatusCommand.class, DatabaseCommand.AbortCommand.class},
         description = {"An application's database, moved by qits-deployments to the other postgres server (public "
                 + "or private) or to another name, and the record of every move: a deployment's and an operator's.",
                 "A move stops the application's service for its whole duration: it is a redeploy of the live "
@@ -38,8 +39,9 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "then switches. The source is kept, closed, until its drop-after time."},
         footerHeading = "%nNotes:%n",
         footer = {"- --output and --deployments-url may come before or after the command.",
-                "- Every door takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; "
-                        + "qits:system is refused, move included."})
+                "- Every door but `abort` takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or "
+                        + "qits:agent; qits:system is refused, move included. `abort` refuses qits:agent too "
+                        + "(HTTP 403)."})
 public class DatabaseCommand implements Runnable {
 
     /** The servers a database can be held on, as the service names them. */
@@ -310,6 +312,9 @@ public class DatabaseCommand implements Runnable {
         rows.add(List.of("drop after", Table.time(text(move, "dropAfter"))));
         rows.add(List.of("dropped", Table.time(text(move, "droppedAt"))));
         rows.add(List.of("rows", count(move.get("sourceRows")) + " -> " + count(move.get("targetRows"))));
+        bytesRow(rows, "source bytes", move.get("sourceBytes"));
+        bytesRow(rows, "target free bytes", move.get("targetFreeBytes"));
+        bytesRow(rows, "volume free bytes", move.get("volumeFreeBytes"));
         Table.print(out, "", null, rows);
         JsonNode source = move.path("sourceCounts");
         JsonNode target = move.path("targetCounts");
@@ -331,5 +336,52 @@ public class DatabaseCommand implements Runnable {
     /** A count as a number, or a dash when that side was not read. */
     private static String count(JsonNode value) {
         return value == null || value.isNull() || value.isMissingNode() ? "-" : Long.toString(value.asLong());
+    }
+
+    /** A byte count row, only when the service sent one. */
+    private static void bytesRow(List<List<String>> rows, String label, JsonNode value) {
+        if (value != null && !value.isNull() && !value.isMissingNode()) {
+            rows.add(List.of(label, Long.toString(value.asLong())));
+        }
+    }
+
+    // --- abort ---
+
+    @CommandLine.Command(name = "abort", mixinStandardHelpOptions = true,
+            description = {"Stop a running database move before its switch: the extract or ingest container is "
+                    + "stopped, the move ends ABORTED, and the application's service is scaled back up on the "
+                    + "source. Prints the stopped move, the same way `move-status` does.",
+                    "POST /deployments/api/database-moves/{id}/abort with no body (HTTP 202, the same move shape "
+                            + "`move-status` reads)."},
+            footerHeading = HelpText.EXAMPLES,
+            footer = {"  qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+                    "",
+                    "- HTTP 404: no move of that id. HTTP 409: the move is QUEUED, already finished, or at "
+                            + "SWITCHING or later; there is nothing left to stop.",
+                    "- Takes qits:admin, qits:admin-agent, qits:desk-admin or qits:desk; qits:agent is refused "
+                            + "(HTTP 403)."},
+            exitCodeListHeading = HelpText.EXIT_CODES,
+            exitCodeList = {HelpText.DONE, HelpText.REFUSED, HelpText.USAGE})
+    public static class AbortCommand extends PlatformCommand {
+
+        @CommandLine.ParentCommand
+        DatabaseCommand parent;
+
+        @CommandLine.Option(names = "--id", paramLabel = "<id>", required = true,
+                description = "The move's id, as `move` and `moves` print it.")
+        String id;
+
+        @Override
+        protected int execute(CliContext context) throws CliFailure, InterruptedException {
+            boolean json = parent.json();
+            String move = SettingsCommand.required(id, "Name the move: --id <id>.");
+            JsonNode answer = parent.deployments(context).abortDatabaseMove(move);
+            if (json) {
+                ProjectsApi.printJson(context.out(), answer);
+                return 0;
+            }
+            printMove(context.out(), answer.path("move"));
+            return 0;
+        }
     }
 }

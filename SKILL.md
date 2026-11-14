@@ -3192,7 +3192,7 @@ A move stops the application's service for its whole duration: it is a redeploy 
 ### Notes
 
 - --output and --deployments-url may come before or after the command.
-- Every door takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; qits:system is refused, move included.
+- Every door but `abort` takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; qits:system is refused, move included. `abort` refuses qits:agent too (HTTP 403).
 
 ## qits deployments database move
 
@@ -3291,6 +3291,37 @@ qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f 
 - In the counts, a table both sides counted differently is marked with !; a dash is a side not read yet.
 - HTTP 404 (exit 1): no move of that id.
 - Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments database abort
+
+Stop a running database move before its switch: the extract or ingest container is stopped, the move ends ABORTED, and the application's service is scaled back up on the source. Prints the stopped move, the same way `move-status` does.
+
+POST /deployments/api/database-moves/{id}/abort with no body (HTTP 202, the same move shape `move-status` reads).
+
+```
+qits deployments database abort --id <id> [--deployments-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--id <id>` | Required. The move's id, as `move` and `moves` print it. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+```
+
+- HTTP 404: no move of that id. HTTP 409: the move is QUEUED, already finished, or at SWITCHING or later; there is nothing left to stop.
+- Takes qits:admin, qits:admin-agent, qits:desk-admin or qits:desk; qits:agent is refused (HTTP 403).
 
 ### Exit codes
 

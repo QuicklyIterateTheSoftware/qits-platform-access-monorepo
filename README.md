@@ -1443,12 +1443,17 @@ stopped for the whole move; a target that differs from the spec is moved back by
 deployment. A refusal or deferral is a 409, exit 1, with nothing stopped. `moves [--application
 <app>]` prints ID, APPLICATION, RESOURCE, SOURCE, TARGET, STATE, STARTED, FINISHED and DROP AFTER,
 newest first. `move-status --id <id>` prints one move in full and, once either side was counted,
-the per-table counts of both sides, a `!` where they differ. Every door takes qits:admin,
-qits:admin-agent, qits:desk-admin, qits:desk or qits:agent; qits:system is refused.
+the per-table counts of both sides, a `!` where they differ. `abort --id <id>` stops a running move
+before its switch: the extract or ingest container is stopped, the move ends ABORTED, and the
+application's service is scaled back up on the source; it prints the stopped move the same way
+`move-status` does. A 404 means no such move, a 409 means it is QUEUED, already finished, or at
+SWITCHING or later. Every door but `abort` takes qits:admin, qits:admin-agent, qits:desk-admin,
+qits:desk or qits:agent; qits:system is refused, move included. `abort` also refuses qits:agent.
 
     qits deployments database move --application qits-ci --server private
     qits deployments database moves --application qits-ci
     qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+    qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ### qits agent-mcp credentials
 
