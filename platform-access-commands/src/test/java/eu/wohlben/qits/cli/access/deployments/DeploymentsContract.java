@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * <b>What {@code qits deployments settings} and {@code qits deployments database} ask
  * qits-deployments, and why</b> (epic qits-765, qits-1390; qits-2175): settings list, set, delete and
- * preview, and database move, moves and move-status, through {@link DeploymentsApi}, written to
- * {@code pacts/qits-platform-access-monorepo_qits-deployments-service.json} once the provider
- * records them.
+ * preview, and database move, moves, move-status and abort (qits-2243), through {@link
+ * DeploymentsApi}, written to {@code pacts/qits-platform-access-monorepo_qits-deployments-service.json}
+ * once the provider records them.
  * <p>
  * Every row is pending until a pinned {@code qits-deployments-golden-masters} records its state.
  * The set row sends the recorded body ({@code {"value", "secret"}}) through the client, so the pact
@@ -39,6 +39,8 @@ public final class DeploymentsContract {
     static final String HOLDING_A_DATABASE = "an application holding a database";
     /** A deployment's move that finished: both sides counted, the source kept until its drop-after. */
     static final String MOVE_FINISHED = "a database move that finished";
+    /** A move still running, as the golden master names the state abort asks against. */
+    static final String MOVE_RUNNING = "a database move that is running";
 
     private static final CliPact BASE = CliPact.of("qits-deployments-service", "qits-deployments");
 
@@ -50,10 +52,13 @@ public final class DeploymentsContract {
     static final List<String> MOVE = java.util.stream.Stream.concat(MOVE_LINE.stream(),
             java.util.stream.Stream.of("startedAt", "finishedAt", "dropAfter")).toList();
 
-    /** What move-status reads besides {@link #MOVE}: the counts, the kept copy and who asked. */
+    /**
+     * What move-status (and abort, the same {@code printMove}) reads besides {@link #MOVE}: the
+     * counts, the kept copy, who asked, and the disk space a move or its abort reports.
+     */
     static final List<String> MOVE_IN_FULL = List.of("environmentName", "specServer", "specDatabase",
             "keptDatabase", "origin", "requestedBy", "detail", "createdAt", "droppedAt", "sourceRows", "targetRows",
-            "sourceCounts", "targetCounts");
+            "sourceCounts", "targetCounts", "sourceBytes", "targetFreeBytes", "volumeFreeBytes");
 
     /** The settings table, and the mask that needs `secret`. */
     static final List<String> SETTING = List.of("application", "environment", "key", "value", "secret", "updatedBy");
@@ -123,6 +128,19 @@ public final class DeploymentsContract {
         assertThat(bytes.toString(StandardCharsets.UTF_8)).contains("TABLE");
     };
 
+    /**
+     * The door answers with the move as it stood when the abort was asked (its own state here,
+     * not yet ABORTED): the provider undoes the running step after it answers.
+     */
+    private static final Call ABORT_MOVE = (api, params, recorded) -> {
+        JsonNode answer = api.abortDatabaseMove(params.get("id"));
+        assertThat(answer.path("move").path("id").asText()).isEqualTo(params.get("id"));
+        assertThat(answer.path("move").path("state").asText()).isNotEqualTo("ABORTED");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        DatabaseCommand.printMove(new PrintStream(bytes, true, StandardCharsets.UTF_8), answer.path("move"));
+        assertThat(bytes.toString(StandardCharsets.UTF_8)).contains(answer.path("move").path("state").asText());
+    };
+
     static final List<CliRow> ROWS = List.of(
             row("qits deployments settings list", WITH_SETTINGS, "listSettings", "settings", LIST)
                     .consumes(BASE.held(WITH_SETTINGS, "listSettings", SETTING.stream().map(p -> "settings[]." + p).toList()))
@@ -149,7 +167,11 @@ public final class DeploymentsContract {
             row("qits deployments database move-status", MOVE_FINISHED, "getDatabaseMove", "databaseMove", GET_MOVE)
                     .consumes(BASE.held(MOVE_FINISHED, "getDatabaseMove",
                             java.util.stream.Stream.concat(MOVE.stream(), MOVE_IN_FULL.stream()).map(p -> "move." + p).toList()))
-                    .request("GET /deployments/api/database-moves/{id}"));
+                    .request("GET /deployments/api/database-moves/{id}"),
+            row("qits deployments database abort", MOVE_RUNNING, "abortDatabaseMove", "abortDatabaseMove", ABORT_MOVE)
+                    .consumes(BASE.held(MOVE_RUNNING, "abortDatabaseMove",
+                            java.util.stream.Stream.concat(MOVE.stream(), MOVE_IN_FULL.stream()).map(p -> "move." + p).toList()))
+                    .request("POST /deployments/api/database-moves/{id}/abort"));
 
     public static final CliPact CONTRACT = BASE.client(DeploymentsApi.class).rows(ROWS);
 

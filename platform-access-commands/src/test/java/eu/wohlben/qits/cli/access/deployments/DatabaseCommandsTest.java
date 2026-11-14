@@ -26,7 +26,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** `qits deployments database move|moves|move-status` against a fake edge and a fake idp (qits-2175). */
+/** `qits deployments database move|moves|move-status|abort` against a fake edge and a fake idp (qits-2175, qits-2243). */
 class DatabaseCommandsTest {
 
     private static final Instant T0 = Instant.parse("2026-11-13T10:00:00Z");
@@ -53,6 +53,19 @@ class DatabaseCommandsTest {
              "sourceRows":16,"targetRows":16,"detail":null,"createdAt":"2026-11-13T10:00:00Z",
              "startedAt":"2026-11-13T10:00:05Z","finishedAt":"2026-11-13T10:01:00Z",
              "dropAfter":"2026-11-20T10:01:00Z","droppedAt":null}
+            """.formatted(ID, ID);
+
+    // The door answers with the move as it stood when the abort was asked, not yet ABORTED: the
+    // service undoes the running step (here, the extract) only after it answers (qits-2243).
+    private static final String ABORTING = """
+            {"id":"%s","batchId":"%s","applicationName":"qits-ci","environmentName":"dev","resourceName":"db",
+             "sourceServer":"public","sourceDatabase":"qits_ci","targetServer":"private","targetDatabase":"qits_ci",
+             "specServer":null,"specDatabase":null,"keptDatabase":null,"origin":"DEPLOYMENT",
+             "requestedBy":null,"state":"EXTRACTING","sourceCounts":null,"targetCounts":null,
+             "sourceRows":null,"targetRows":null,"sourceBytes":1048576,"targetFreeBytes":2097152,
+             "volumeFreeBytes":4194304,"detail":null,"createdAt":"2026-11-13T10:00:00Z",
+             "startedAt":"2026-11-13T10:00:05Z","finishedAt":null,
+             "dropAfter":null,"droppedAt":null}
             """.formatted(ID, ID);
 
     @TempDir
@@ -224,5 +237,72 @@ class DatabaseCommandsTest {
 
         assertThat(r.exit()).isEqualTo(1);
         assertThat(r.err()).contains("404");
+    }
+
+    @Test
+    void abortPostsNoBodyAndPrintsTheMoveAsItStoodNotYetAborted() throws Exception {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTING + "}");
+
+        Result r = run("deployments", "database", "abort", "--id", ID);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        FakePlatform.Request sent = platform.requests("POST", MOVES + "/" + ID + "/abort").getFirst();
+        assertThat(sent.body()).isEmpty();
+        assertThat(r.out()).contains(ID).contains("EXTRACTING").doesNotContain("ABORTED")
+                .contains("public/qits_ci").contains("private/qits_ci")
+                .contains("source bytes").contains("1048576")
+                .contains("target free bytes").contains("2097152")
+                .contains("volume free bytes").contains("4194304");
+    }
+
+    @Test
+    void abortJsonIsTheServicesAnswer() {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTING + "}");
+
+        Result r = run("deployments", "database", "abort", "--id", ID, "-o", "json");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).contains("\"state\" : \"EXTRACTING\"");
+    }
+
+    @Test
+    void abortRequiresAnId() {
+        Result r = run("deployments", "database", "abort");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(platform.requests("POST", MOVES + "/" + ID + "/abort")).isEmpty();
+    }
+
+    @Test
+    void anUnknownMoveRefusesAbortWithExitOne() {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 404, "{\"message\":\"no database move " + ID + "\"}");
+
+        Result r = run("deployments", "database", "abort", "--id", ID);
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("404");
+    }
+
+    @Test
+    void aMoveNotAbortableRefusesWithExitOneAndTheServicesWords() {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 409,
+                "{\"message\":\"the move is QUEUED, nothing to stop yet\"}");
+
+        Result r = run("deployments", "database", "abort", "--id", ID);
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("409").contains("nothing to stop yet");
+        assertThat(r.out()).isEmpty();
+    }
+
+    @Test
+    void anAgentIsRefusedAbortWithTheGenericHint() {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 403,
+                "{\"message\":\"this credential is qits:agent, which reads but does not write\"}");
+
+        Result r = run("deployments", "database", "abort", "--id", ID);
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("403");
     }
 }

@@ -95,6 +95,16 @@ public final class DeploymentsApi {
         return client.get(uri("/deployments/api/database-moves/" + segment(id)));
     }
 
+    /**
+     * {@code {move, note}}: the move stopped before its switch, the same shape {@link #databaseMove}
+     * reads (202). 404 when there is no such move; 409 when it is QUEUED, already finished, or at
+     * SWITCHING or later. Unlike {@link #moveDatabase}, this door refuses {@code qits:agent}, so the
+     * generic "reads but does not write" 403 hint is correct here and kept.
+     */
+    public JsonNode abortDatabaseMove(String id) throws CliFailure, InterruptedException {
+        return client.post(uri("/deployments/api/database-moves/" + segment(id) + "/abort"));
+    }
+
     private static void putIfGiven(ObjectNode body, String name, String value) {
         if (value != null && !value.isBlank()) {
             body.put(name, value.strip());

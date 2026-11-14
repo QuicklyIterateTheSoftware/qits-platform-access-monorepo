@@ -8,6 +8,226 @@
         "references": {
           "qits-call": {
             "app": "qits-deployments-service",
+            "operationId": "abortDatabaseMove"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments database abort",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments database abort: abortDatabaseMove",
+      "key": "615a82fd",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a database move that is running",
+          "params": {
+            "application": "contract-app-00000001",
+            "id": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/database-moves/${id}/abort",
+            "type": "ProviderState"
+          }
+        },
+        "method": "POST",
+        "path": "/deployments/api/database-moves/00000000-0000-4000-8000-000000000001/abort"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "move": {
+              "applicationName": "contract-app-00000001",
+              "createdAt": "2026-01-01T00:00:00Z",
+              "detail": null,
+              "dropAfter": null,
+              "droppedAt": null,
+              "environmentName": "contract-00000001",
+              "finishedAt": null,
+              "id": "00000000-0000-4000-8000-000000000001",
+              "keptDatabase": null,
+              "origin": "DEPLOYMENT",
+              "requestedBy": null,
+              "resourceName": "db",
+              "sourceBytes": 20401094656,
+              "sourceCounts": null,
+              "sourceDatabase": "qits_contract_app_00000001",
+              "sourceRows": null,
+              "sourceServer": "public",
+              "specDatabase": null,
+              "specServer": null,
+              "startedAt": "2026-01-01T00:00:00Z",
+              "state": "EXTRACTING",
+              "targetCounts": null,
+              "targetDatabase": "qits_contract_app_00000001",
+              "targetFreeBytes": 64424509440,
+              "targetRows": null,
+              "targetServer": "private",
+              "volumeFreeBytes": 64424509440
+            }
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.move.applicationName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.move.environmentName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.move.origin": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.resourceName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.sourceBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.move.sourceDatabase": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.sourceServer": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.startedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.move.state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.targetDatabase": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.targetFreeBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.move.targetServer": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.move.volumeFreeBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
             "operationId": "getDatabaseMove"
           },
           "qits-trigger": {
@@ -56,6 +276,7 @@
               "origin": "DEPLOYMENT",
               "requestedBy": null,
               "resourceName": "db",
+              "sourceBytes": null,
               "sourceCounts": {
                 "public.flyway_schema_history": 4,
                 "public.items": 12
@@ -72,8 +293,10 @@
                 "public.items": 12
               },
               "targetDatabase": "qits_contract_app_00000001",
+              "targetFreeBytes": null,
               "targetRows": 16,
-              "targetServer": "private"
+              "targetServer": "private",
+              "volumeFreeBytes": null
             }
           },
           "contentType": "application/json",
