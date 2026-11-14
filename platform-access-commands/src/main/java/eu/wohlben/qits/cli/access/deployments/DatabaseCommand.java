@@ -350,7 +350,10 @@ public class DatabaseCommand implements Runnable {
     @CommandLine.Command(name = "abort", mixinStandardHelpOptions = true,
             description = {"Stop a running database move before its switch: the extract or ingest container is "
                     + "stopped, the move ends ABORTED, and the application's service is scaled back up on the "
-                    + "source. Prints the stopped move, the same way `move-status` does.",
+                    + "source. Prints the move as it stood when the abort was asked, the same way `move-status` "
+                    + "does: the service answers before undoing the running step, so the state printed here is "
+                    + "still the one the move was in (EXTRACTING or INGESTING); run `move-status` once it is "
+                    + "done to see it ABORTED.",
                     "POST /deployments/api/database-moves/{id}/abort with no body (HTTP 202, the same move shape "
                             + "`move-status` reads)."},
             footerHeading = HelpText.EXAMPLES,

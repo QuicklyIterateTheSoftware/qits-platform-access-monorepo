@@ -354,8 +354,9 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                (DatabaseCommand, qits-2175; abort qits-2243), on its database-move doors. Its rows are
                DeploymentsContract; the database rows (moveDatabase in `an application holding a database`,
                listDatabaseMoves and getDatabaseMove in `a database move that finished`) are pending until a
-               pinned qits-deployments-golden-masters records those states; abortDatabaseMove is excluded
-               there until one records ABORTED too
+               pinned qits-deployments-golden-masters records those states; abortDatabaseMove is live since
+               2026.1114.112916, in `a database move that is running`, and answers with the move as it stood
+               when the abort was asked (its own running state, not yet ABORTED)
     agentmcp/  qits agent-mcp credentials list|set|delete, on qits-projects' agent MCP catalog
                (AgentMcpApi; epic qits-765). Its rows belong to ProjectsContract (AgentMcpContract)
     remembered/ qits remembered-devices list and revoke (qits-1944), on the idp's

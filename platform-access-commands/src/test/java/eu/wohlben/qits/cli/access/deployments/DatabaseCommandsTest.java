@@ -55,14 +55,16 @@ class DatabaseCommandsTest {
              "dropAfter":"2026-11-20T10:01:00Z","droppedAt":null}
             """.formatted(ID, ID);
 
-    private static final String ABORTED = """
+    // The door answers with the move as it stood when the abort was asked, not yet ABORTED: the
+    // service undoes the running step (here, the extract) only after it answers (qits-2243).
+    private static final String ABORTING = """
             {"id":"%s","batchId":"%s","applicationName":"qits-ci","environmentName":"dev","resourceName":"db",
              "sourceServer":"public","sourceDatabase":"qits_ci","targetServer":"private","targetDatabase":"qits_ci",
-             "specServer":"public","specDatabase":"qits_ci","keptDatabase":null,"origin":"OPERATOR",
-             "requestedBy":"an-operator","state":"ABORTED","sourceCounts":null,"targetCounts":null,
+             "specServer":null,"specDatabase":null,"keptDatabase":null,"origin":"DEPLOYMENT",
+             "requestedBy":null,"state":"EXTRACTING","sourceCounts":null,"targetCounts":null,
              "sourceRows":null,"targetRows":null,"sourceBytes":1048576,"targetFreeBytes":2097152,
-             "volumeFreeBytes":4194304,"detail":"stopped by an-operator","createdAt":"2026-11-13T10:00:00Z",
-             "startedAt":"2026-11-13T10:00:05Z","finishedAt":"2026-11-13T10:00:30Z",
+             "volumeFreeBytes":4194304,"detail":null,"createdAt":"2026-11-13T10:00:00Z",
+             "startedAt":"2026-11-13T10:00:05Z","finishedAt":null,
              "dropAfter":null,"droppedAt":null}
             """.formatted(ID, ID);
 
@@ -238,15 +240,16 @@ class DatabaseCommandsTest {
     }
 
     @Test
-    void abortPostsNoBodyAndPrintsTheStoppedMoveAndItsByteCounts() throws Exception {
-        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTED + "}");
+    void abortPostsNoBodyAndPrintsTheMoveAsItStoodNotYetAborted() throws Exception {
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTING + "}");
 
         Result r = run("deployments", "database", "abort", "--id", ID);
 
         assertThat(r.exit()).as(r.err()).isZero();
         FakePlatform.Request sent = platform.requests("POST", MOVES + "/" + ID + "/abort").getFirst();
         assertThat(sent.body()).isEmpty();
-        assertThat(r.out()).contains(ID).contains("ABORTED").contains("public/qits_ci").contains("private/qits_ci")
+        assertThat(r.out()).contains(ID).contains("EXTRACTING").doesNotContain("ABORTED")
+                .contains("public/qits_ci").contains("private/qits_ci")
                 .contains("source bytes").contains("1048576")
                 .contains("target free bytes").contains("2097152")
                 .contains("volume free bytes").contains("4194304");
@@ -254,12 +257,12 @@ class DatabaseCommandsTest {
 
     @Test
     void abortJsonIsTheServicesAnswer() {
-        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTED + "}");
+        platform.answer("POST", MOVES + "/" + ID + "/abort", 202, "{\"move\":" + ABORTING + "}");
 
         Result r = run("deployments", "database", "abort", "--id", ID, "-o", "json");
 
         assertThat(r.exit()).as(r.err()).isZero();
-        assertThat(r.out()).contains("\"state\" : \"ABORTED\"");
+        assertThat(r.out()).contains("\"state\" : \"EXTRACTING\"");
     }
 
     @Test
