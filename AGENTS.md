@@ -356,7 +356,9 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                listDatabaseMoves and getDatabaseMove in `a database move that finished`) are pending until a
                pinned qits-deployments-golden-masters records those states; abortDatabaseMove is live since
                2026.1114.112916, in `a database move that is running`, and answers with the move as it stood
-               when the abort was asked (its own running state, not yet ABORTED)
+               when the abort was asked (its own running state, not yet ABORTED). qits deployments requests approve
+               (RequestsCommand, qits-2268) is approveDeploymentRequest in `a deployment request held for
+               approval`, pending until a pinned qits-deployments-golden-masters records that state
     agentmcp/  qits agent-mcp credentials list|set|delete, on qits-projects' agent MCP catalog
                (AgentMcpApi; epic qits-765). Its rows belong to ProjectsContract (AgentMcpContract)
     remembered/ qits remembered-devices list and revoke (qits-1944), on the idp's
@@ -659,7 +661,10 @@ backup reset` (qits-1885): `backupResetRepository` in `a repository whose backup
 history`, as the person that state names (its `authorization` bearer), pending until a golden-masters
 pin records that state; and `qits projects desk prompt` /
 `answer` (qits-1572): `promptFrontDesk` and `getFrontDeskLastAnswer` in `a project whose front desk
-is running`, both pending until a golden-masters pin records that state. A path the recorder froze
+is running`, both pending until a golden-masters pin records that state; and `qits release-request
+hold-deploy` (qits-2268): `setReleaseRequestDeployHold` with `hold: true` in `a release request
+awaiting approval` and with `hold: false` (`--off`) in `a release request whose deploy is held`,
+pending until a golden-masters pin records them. A path the recorder froze
 under both `ids` and `strings` (`qualityGates[*].checks[*].runId`) holds a whole UUID in some
 elements only, so no row consumes it: qits-pact-consumer would match it as a UUID.
 

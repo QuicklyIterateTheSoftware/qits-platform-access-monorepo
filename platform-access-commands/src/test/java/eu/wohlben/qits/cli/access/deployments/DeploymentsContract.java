@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * <b>What {@code qits deployments settings} and {@code qits deployments database} ask
  * qits-deployments, and why</b> (epic qits-765, qits-1390; qits-2175): settings list, set, delete and
- * preview, and database move, moves, move-status and abort (qits-2243), through {@link
+ * preview, database move, moves, move-status and abort (qits-2243), and requests approve (qits-2268), through {@link
  * DeploymentsApi}, written to {@code pacts/qits-platform-access-monorepo_qits-deployments-service.json}
  * once the provider records them.
  * <p>
@@ -42,6 +42,9 @@ public final class DeploymentsContract {
     /** A move still running, as the golden master names the state abort asks against. */
     static final String MOVE_RUNNING = "a database move that is running";
 
+    /** A deployment request whose release request held its deploy, waiting for a person to approve it (qits-2268). */
+    static final String HELD_FOR_APPROVAL = "a deployment request held for approval";
+
     private static final CliPact BASE = CliPact.of("qits-deployments-service", "qits-deployments");
 
     /** What {@code move}'s line reads of the queued move. */
@@ -59,6 +62,13 @@ public final class DeploymentsContract {
     static final List<String> MOVE_IN_FULL = List.of("environmentName", "specServer", "specDatabase",
             "keptDatabase", "origin", "requestedBy", "detail", "createdAt", "droppedAt", "sourceRows", "targetRows",
             "sourceCounts", "targetCounts", "sourceBytes", "targetFreeBytes", "volumeFreeBytes");
+
+    /** What {@code requests approve} prints of the approved request, and of the deployment it queued. */
+    static final List<String> APPROVED = List.of("deploymentRequest.id", "deploymentRequest.applicationName",
+            "deploymentRequest.version", "deploymentRequest.releaseRequestQualifiedId", "deploymentRequest.qualityGate",
+            "deploymentRequest.gateDetail", "deploymentRequest.approvedBy", "deploymentRequest.approvedAt",
+            "deploymentRequest.deploymentId", "deploymentRequest.deploymentStatus", "deployment.id",
+            "deployment.status");
 
     /** The settings table, and the mask that needs `secret`. */
     static final List<String> SETTING = List.of("application", "environment", "key", "value", "secret", "updatedBy");
@@ -141,6 +151,17 @@ public final class DeploymentsContract {
         assertThat(bytes.toString(StandardCharsets.UTF_8)).contains(answer.path("move").path("state").asText());
     };
 
+    /** The approval queues the deployment: the gate is MET, and the deployment the request now names is QUEUED. */
+    private static final Call APPROVE_REQUEST = (api, params, recorded) -> {
+        JsonNode answer = api.approveDeploymentRequest(params.get("id"));
+        assertThat(answer.path("deploymentRequest").path("id").asText()).isEqualTo(params.get("id"));
+        assertThat(answer.path("deploymentRequest").path("qualityGate").asText()).isEqualTo("MET");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        RequestsCommand.printApproved(new PrintStream(bytes, true, StandardCharsets.UTF_8), answer);
+        assertThat(bytes.toString(StandardCharsets.UTF_8)).contains("approved by")
+                .contains("deployment " + answer.path("deployment").path("id").asText() + ": ");
+    };
+
     static final List<CliRow> ROWS = List.of(
             row("qits deployments settings list", WITH_SETTINGS, "listSettings", "settings", LIST)
                     .consumes(BASE.held(WITH_SETTINGS, "listSettings", SETTING.stream().map(p -> "settings[]." + p).toList()))
@@ -171,7 +192,11 @@ public final class DeploymentsContract {
             row("qits deployments database abort", MOVE_RUNNING, "abortDatabaseMove", "abortDatabaseMove", ABORT_MOVE)
                     .consumes(BASE.held(MOVE_RUNNING, "abortDatabaseMove",
                             java.util.stream.Stream.concat(MOVE.stream(), MOVE_IN_FULL.stream()).map(p -> "move." + p).toList()))
-                    .request("POST /deployments/api/database-moves/{id}/abort"));
+                    .request("POST /deployments/api/database-moves/{id}/abort"),
+            row("qits deployments requests approve", HELD_FOR_APPROVAL, "approveDeploymentRequest",
+                    "approveDeploymentRequest", APPROVE_REQUEST)
+                    .consumes(BASE.held(HELD_FOR_APPROVAL, "approveDeploymentRequest", APPROVED))
+                    .request("POST /deployments/api/deployment-requests/{id}/approve"));
 
     public static final CliPact CONTRACT = BASE.client(DeploymentsApi.class).rows(ROWS);
 

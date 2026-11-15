@@ -233,6 +233,21 @@ public final class ProjectsApi {
     }
 
     /**
+     * {@code {"request":{…}}} (qits-2268): the request with its deploy held for a person's approval
+     * ({@code hold} true) or released ({@code hold} false); {@code deployHold}, {@code deployHoldBy}
+     * and {@code deployHoldAt} on it say which, and who switched it last. The body is {@code
+     * {"hold"}}; asking for the value the request already has changes nothing. 409 for a request
+     * that is no longer PENDING, READY, REJECTED or CONFLICTED.
+     */
+    public JsonNode setReleaseRequestDeployHold(String repoId, String requestId, boolean hold)
+            throws CliFailure, InterruptedException {
+        ObjectNode body = JSON.createObjectNode();
+        body.put("hold", hold);
+        return client.put(uri("/projects/api/repositories/" + segment(repoId) + "/release-requests/"
+                + segment(requestId) + "/deploy-hold"), body);
+    }
+
+    /**
      * {@code {"id"}}: the run qits-maintenance accepted for one release-request automation on the
      * request's current fold (202). No body: the address names the request and the kind.
      */

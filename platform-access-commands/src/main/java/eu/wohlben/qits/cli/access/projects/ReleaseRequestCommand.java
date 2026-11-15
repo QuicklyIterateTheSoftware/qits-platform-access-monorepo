@@ -33,7 +33,7 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                 ReleaseRequestCommand.WithdrawCommand.class,
                 ReleaseRequestCommand.ApproveCommand.class, ReleaseRequestCommand.DeclineCommand.class,
                 ReleaseRequestCommand.RegenerateCommand.class, ReleaseRequestCommand.OverrideCommand.class,
-                ReleaseRequestCommand.RerunCommand.class},
+                ReleaseRequestCommand.RerunCommand.class, ReleaseRequestCommand.HoldDeployCommand.class},
         description = {"Release requests: the one way to release a repository. list shows them (of the whole project, "
                         + "or of one repository), create "
                         + "asks for a branch to be released, join adds a branch to an open request, move "
@@ -42,7 +42,8 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "decline sends it back, regenerate runs one release output again, override lifts the "
                         + "upstream-in-flight gate for one upstream request that is itself still building, and rerun "
                         + "fires one pipeline phase again: QA or PUBLISH re-fire that phase's CI run, DEPLOY "
-                        + "redeploys the already-released version.",
+                        + "redeploys the already-released version, and hold-deploy holds the request's deploy "
+                        + "for a person's approval at qits-deployments once it releases.",
                 "A request folds main and its branches into one commit, and the builds of that commit are its gate. "
                         + "States: PENDING (waiting for its builds), READY, RELEASED (the tag is cut, waiting on its "
                         + "remaining gates), FINALIZED (the tag is merged into main, done), REJECTED (a gating build "
@@ -157,6 +158,27 @@ public class ReleaseRequestCommand implements Runnable {
         return ReleaseRequestRefs.find(target.api().releaseRequests(target.repoId(), ALL).path("requests"), wanted,
                 target.repoName(), "`qits release-request --project " + target.projectLabel() + " --repository "
                         + target.repoName() + " list --state all` shows them.");
+    }
+
+    /** The repository's one request that is still open; anything else needs --request. */
+    private static JsonNode onlyOpen(Target target) throws CliFailure, InterruptedException {
+        List<JsonNode> open = new ArrayList<>();
+        target.api().releaseRequests(target.repoId(), null).path("requests").forEach(r -> {
+            if (!CLOSED.contains(text(r, "state").toUpperCase(Locale.ROOT))) {
+                open.add(r);
+            }
+        });
+        if (open.isEmpty()) {
+            throw new CliFailure("Repository " + target.repoName() + " has no open release request. "
+                    + "Name one with --request.", CliFailure.USAGE);
+        }
+        if (open.size() > 1) {
+            throw new CliFailure("Repository " + target.repoName() + " has more than one open release request: "
+                    + open.stream().map(r -> ReleaseRequestRefs.label(r) + " (" + text(r, "state") + ")")
+                            .collect(Collectors.joining(", "))
+                    + ". Name one with --request.", CliFailure.USAGE);
+        }
+        return open.getFirst();
     }
 
     /** The state the list showed, when it already takes no more branches; else every state that would. */
@@ -914,27 +936,6 @@ public class ReleaseRequestCommand implements Runnable {
             return 0;
         }
 
-        /** The repository's one request that is still open; anything else needs --request. */
-        private static JsonNode onlyOpen(Target target) throws CliFailure, InterruptedException {
-            List<JsonNode> open = new ArrayList<>();
-            target.api().releaseRequests(target.repoId(), null).path("requests").forEach(r -> {
-                if (!CLOSED.contains(text(r, "state").toUpperCase(Locale.ROOT))) {
-                    open.add(r);
-                }
-            });
-            if (open.isEmpty()) {
-                throw new CliFailure("Repository " + target.repoName() + " has no open release request. "
-                        + "Name one with --request.", CliFailure.USAGE);
-            }
-            if (open.size() > 1) {
-                throw new CliFailure("Repository " + target.repoName() + " has more than one open release request: "
-                        + open.stream().map(r -> ReleaseRequestRefs.label(r) + " (" + text(r, "state") + ")")
-                                .collect(Collectors.joining(", "))
-                        + ". Name one with --request.", CliFailure.USAGE);
-            }
-            return open.getFirst();
-        }
-
         /** The four refusals the door names get a sentence that says what to do next. */
         private static CliFailure explain(CliFailure refused, String requestName, String requestLabel, String kind) {
             return switch (refused.status()) {
@@ -1035,6 +1036,84 @@ public class ReleaseRequestCommand implements Runnable {
         }
     }
 
+    @CommandLine.Command(name = "hold-deploy", mixinStandardHelpOptions = true,
+            description = {"Hold a release request's deploy for a person's approval, or release the hold with --off.",
+                    "A held request is tagged and published as ever when it releases, but its deployment request "
+                            + "at qits-deployments waits until somebody approves it there: `qits deployments "
+                            + "requests approve --request <deployment request id>`. The hold is read when the "
+                            + "request releases, so it may be switched while the request is PENDING, READY, "
+                            + "REJECTED or CONFLICTED. Nothing is folded again and no state moves.",
+                    "The first line says whether the deploy is now held; the request follows, its `deploy hold` "
+                            + "row naming who switched it last and when."},
+            footerHeading = HelpText.EXAMPLES,
+            footer = {
+                    "  qits release-request --project qits --repository qits-ci-service hold-deploy",
+                    "  qits release-request --project qits --repository qits-ci-service hold-deploy "
+                            + "--request qits-ci-service-rr-12 --off",
+                    "",
+                    "- Without --request it takes the repository's one open request.",
+                    "- Asking for the hold the request already has changes nothing.",
+                    "- Every person and every agent may switch it.",
+                    "- HTTP 409 means the request is no longer PENDING, READY, REJECTED or CONFLICTED: it has "
+                            + "released, or it is done for. HTTP 404 means no such request."},
+            exitCodeListHeading = HelpText.EXIT_CODES,
+            exitCodeList = {HelpText.DONE, HelpText.REFUSED,
+                    "2:Used wrongly (for example no --request when the repository has no open request or more "
+                            + "than one, or a --request that fits no request), not signed in, or the session ended."})
+    public static class HoldDeployCommand extends PlatformCommand {
+
+        @CommandLine.ParentCommand
+        ReleaseRequestCommand parent;
+
+        @Completes(ReleaseRequestSource.class)
+        @CommandLine.Option(names = "--request", paramLabel = "<id>",
+                description = "The request: its id as list shows it (qits-ci-service-rr-12), its uuid, or the start "
+                        + "of the uuid. Default: the repository's one open request.")
+        String request;
+
+        @CommandLine.Option(names = "--off",
+                description = "Release the hold instead: the request deploys as soon as it releases.")
+        boolean off;
+
+        @Override
+        protected int execute(CliContext context) throws CliFailure, InterruptedException {
+            boolean json = json(parent.options.output);
+            if (request != null && request.isBlank()) {
+                throw new CliFailure("--request must not be empty.", CliFailure.USAGE);
+            }
+            Target target = parent.target(context);
+            JsonNode found = request == null ? onlyOpen(target) : find(target, request.strip());
+            String requestName = ReleaseRequestRefs.name(found);
+            JsonNode answer;
+            try {
+                answer = target.api().setReleaseRequestDeployHold(target.repoId(), text(found, "id"), !off);
+            } catch (CliFailure refused) {
+                throw explain(refused, requestName);
+            }
+            if (json) {
+                SafeJson.print(context.out(), answer);
+                return 0;
+            }
+            JsonNode held = answer.path("request");
+            boolean holds = held.has("deployHold") ? held.path("deployHold").asBoolean() : !off;
+            context.out().println(holds
+                    ? "The deploy of " + requestName + " is held: once it releases, its deployment waits for "
+                            + "`qits deployments requests approve`."
+                    : "The deploy of " + requestName + " is not held: it deploys as soon as it releases.");
+            printRequest(context.out(), held);
+            return 0;
+        }
+
+        /** 404 gets a sentence of its own; a 409 is the door's own sentence, printed as it came. */
+        private static CliFailure explain(CliFailure refused, String requestName) {
+            if (refused.status() == 404) {
+                return new CliFailure("No such release request " + requestName + " (HTTP 404). "
+                        + refused.getMessage(), CliFailure.FAILED);
+            }
+            return refused;
+        }
+    }
+
     static void printRequest(PrintStream out, JsonNode request) {
         out.println("Release request " + ReleaseRequestRefs.name(request));
         List<List<String>> rows = new ArrayList<>();
@@ -1059,7 +1138,12 @@ public class ReleaseRequestCommand implements Runnable {
                 List.of("superseded by", Table.cell(supersededBy(request), 200)),
                 List.of("priority", Table.cell(text(request, "priority"), 200)),
                 List.of("participants", Table.cell(participants(request), 200)),
-                List.of("approval", Table.cell(text(request, "approvalState"), 200)),
+                List.of("approval", Table.cell(text(request, "approvalState"), 200))));
+        String hold = deployHold(request);
+        if (hold != null) {
+            rows.add(List.of("deploy hold", Table.cell(hold, 200)));
+        }
+        rows.addAll(List.of(
                 List.of("merged sha", Table.cell(text(request, "mergedSha"), 200)),
                 List.of("version", Table.cell(text(request, "version"), 200)),
                 List.of("detail", Table.cell(text(request, "detail"), 200)),
@@ -1114,6 +1198,23 @@ public class ReleaseRequestCommand implements Runnable {
             out.println("Moves:");
             Table.print(out, "  ", List.of("BRANCH", "FROM", "TO", "BY", "AT", "REASON"), rows);
         }
+    }
+
+    /**
+     * The request's deploy-hold row (qits-2268): "on (by dana.weber at ...)" or "off", with who
+     * switched it last whenever the service names them, off as well as on. Null when the platform
+     * sent no deployHold, an older one, so the row is left out.
+     */
+    static String deployHold(JsonNode request) {
+        JsonNode hold = request.path("deployHold");
+        if (!hold.isBoolean()) {
+            return null;
+        }
+        String by = text(request, "deployHoldBy");
+        String at = text(request, "deployHoldAt");
+        String who = (by.isBlank() ? "" : "by " + by) + (at.isBlank() ? "" : (by.isBlank() ? "" : " ") + "at "
+                + Table.time(at));
+        return (hold.asBoolean() ? "on" : "off") + (who.isEmpty() ? "" : " (" + who + ")");
     }
 
     /** Everyone who asked for the request, comma-joined; blank (a dash) from an older platform. */

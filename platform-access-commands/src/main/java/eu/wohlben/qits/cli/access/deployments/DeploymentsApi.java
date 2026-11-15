@@ -14,7 +14,8 @@ import java.nio.charset.StandardCharsets;
  * The qits-deployments doors the CLI calls, read as JSON trees like every platform answer: the
  * settings ({@code /deployments/api/settings}, epic qits-765), the per-application, per-environment
  * values the deployer hands a service, and the database moves ({@code
- * /deployments/api/database-moves}, qits-2175).
+ * /deployments/api/database-moves}, qits-2175), and a held deployment request's approval ({@code
+ * /deployments/api/deployment-requests/{id}/approve}, qits-2268).
  * <p>
  * A secret's {@code value} is null in every answer: the service never sends one back.
  */
@@ -103,6 +104,18 @@ public final class DeploymentsApi {
      */
     public JsonNode abortDatabaseMove(String id) throws CliFailure, InterruptedException {
         return client.post(uri("/deployments/api/database-moves/" + segment(id) + "/abort"));
+    }
+
+    /**
+     * {@code {deploymentRequest: {id, applicationName, version, qualityGate, gateDetail, approvedBy,
+     * approvedAt, deploymentId, deploymentStatus, ...}, deployment: {id, status, ...}}} (qits-2268):
+     * a deployment request held for a person's approval, approved, and the deployment it queued.
+     * 404 when there is no such request; 409 when it is not held, its gate already settled, or its
+     * version is no longer the application's newest release. No body: the address names the
+     * request, as the provider records it.
+     */
+    public JsonNode approveDeploymentRequest(String id) throws CliFailure, InterruptedException {
+        return client.post(uri("/deployments/api/deployment-requests/" + segment(id) + "/approve"));
     }
 
     private static void putIfGiven(ObjectNode body, String name, String value) {

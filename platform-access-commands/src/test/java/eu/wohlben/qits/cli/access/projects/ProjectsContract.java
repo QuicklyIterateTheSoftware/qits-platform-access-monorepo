@@ -87,6 +87,11 @@ public final class ProjectsContract {
     /** {@code qits release-request rerun --phase PUBLISH}: the provider's recording for that phase's rerun. */
     static final String PUBLISH_FAILED = "a release request whose publish failed";
     /**
+     * {@code qits release-request hold-deploy --off} (qits-2268): a request whose deploy a person
+     * held, released again. {@code hold-deploy} itself is recorded in {@link #AWAITING_REQUEST}.
+     */
+    static final String DEPLOY_HELD = "a release request whose deploy is held";
+    /**
      * The soft feature freeze (epic qits-1580): the active request holds its threshold of counted
      * branches, and a second request waits behind it. The one state that records {@code
      * queuedBehind} set, so the only one whose rows bind it: everywhere else the field is null, and
@@ -339,6 +344,9 @@ public final class ProjectsContract {
             "sources[].name", "sources[].ref", "sources[].implicit", "sources[].feature", "sources[].explicitJoin",
             "sources[].priority", "sources[].addedBy", "sourceMoves[].branch", "sourceMoves[].fromQualifiedId",
             "sourceMoves[].toQualifiedId", "sourceMoves[].movedBy", "sourceMoves[].reason", "sourceMoves[].movedAt");
+
+    /** The deploy hold (qits-2268): whether it is on, and who switched it last and when. */
+    static final List<String> DEPLOY_HOLD = List.of("deployHold", "deployHoldBy", "deployHoldAt");
 
     /** Where create and join put the branch: the first line of the table form (epic qits-1580). */
     static final List<String> PLACEMENT = List.of("placement.outcome", "placement.queued", "placement.detail");
@@ -1344,6 +1352,19 @@ public final class ProjectsContract {
             params.get("repositoryId"), params.get("requestId"), segmentAfter(recorded, "/pipeline/"))
             .path("request"));
 
+    /**
+     * {@code qits release-request hold-deploy [--off]}: the hold is the recording's body; the answer
+     * holds what was sent, and the request's detail view prints it as its deploy-hold row.
+     */
+    private static final Call HOLD_DEPLOY = (api, params, recorded) -> {
+        boolean hold = body(recorded).path("hold").asBoolean();
+        JsonNode held = api.setReleaseRequestDeployHold(params.get("repositoryId"), params.get("requestId"), hold)
+                .path("request");
+        request(held);
+        assertThat(held.path("deployHold").asBoolean()).isEqualTo(hold);
+        assertThat(ReleaseRequestCommand.deployHold(held)).startsWith(hold ? "on (by " : "off (by ");
+    };
+
     // --- the table ------------------------------------------------------------------------------
 
     /** Every command that looks a project up by its id, slug or name before it calls anything else. */
@@ -1353,7 +1374,7 @@ public final class ProjectsContract {
             "qits repositories archive", "qits repositories unarchive", "qits repositories backup reset",
             "qits release-request list", "qits release-request create", "qits release-request join",
             "qits release-request move", "qits release-request withdraw", "qits release-request regenerate", "qits release-request override",
-            "qits release-request rerun",
+            "qits release-request rerun", "qits release-request hold-deploy",
             "qits release-request approve", "qits release-request decline", "qits ci runs", "qits ci run",
             "qits ci retry", "qits ci report show", "qits maintenance automations", "qits maintenance automation run",
             "qits workspaces list", "qits tui", "qits wait branch");
@@ -1369,7 +1390,7 @@ public final class ProjectsContract {
     static final List<String> REQUEST_SCOPED = List.of("qits release-request join", "qits release-request move",
             "qits release-request withdraw",
             "qits release-request regenerate", "qits release-request override", "qits release-request rerun",
-            "qits maintenance automations", "qits maintenance automation run");
+            "qits release-request hold-deploy", "qits maintenance automations", "qits maintenance automation run");
 
     /** Every command outside {@code qits work} that names a work item by its qualified id and sends its id. */
     static final List<String> WORK_ITEM_SCOPED = List.of("qits agents list", "qits agents prompt", "qits wait work");
@@ -1580,6 +1601,17 @@ public final class ProjectsContract {
                 "rerunReleasePipelinePhase", RERUN_PHASE)
                 .consumes(held(RELEASED_REQUEST, "rerunReleasePipelinePhase", prefixed("request.", REQUEST)))
                 .anyLength(openEndedRequest()));
+        rows.add(row("qits release-request hold-deploy", AWAITING_REQUEST, "listRepositoryReleaseRequests",
+                "releaseRequests", OPEN_REQUESTS).consumes(held(AWAITING_REQUEST, "listRepositoryReleaseRequests",
+                List.of("requests[].id", "requests[].qualifiedId", "requests[].state"))));
+        for (String state : List.of(AWAITING_REQUEST, DEPLOY_HELD)) {
+            rows.add(row("qits release-request hold-deploy", state, "setReleaseRequestDeployHold",
+                    "setReleaseRequestDeployHold", HOLD_DEPLOY)
+                    .consumes(held(state, "setReleaseRequestDeployHold",
+                            prefixed("request.", concat(REQUEST, DEPLOY_HOLD))))
+                    .anyLength(openEndedRequest())
+                    .request("PUT /projects/api/repositories/{repositoryId}/release-requests/{requestId}/deploy-hold"));
+        }
 
         // qits tui: the dropdowns
         rows.add(row("qits tui", REPOSITORIES_IN_COMPONENTS, "listProjectRepositories", "repositories",

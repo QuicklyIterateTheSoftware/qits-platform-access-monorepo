@@ -1994,6 +1994,114 @@ class PlatformCommandsTest {
         assertThat(r.out()).isEmpty();
     }
 
+    // --- holding a request's deploy (qits-2268) ---
+
+    private static String deployHoldOf(String id) {
+        return REQUESTS + "/" + id + "/deploy-hold";
+    }
+
+    /** The request answered with the hold as {@code hold} asks, switched by dana.weber. */
+    private void answerDeployHold(String id, boolean hold) {
+        platform.answer("PUT", deployHoldOf(id), """
+                {"request":{"id":"%s","repoId":"%s","repoName":"qits-ci-service",
+                  "state":"PENDING","priority":"HIGH","items":[{"source":"feature/x","label":"Ship the log view","workItem":null}],"participants":["wohlben"],
+                  "approvalState":"NOT_REQUIRED","mergedSha":"abc123","version":null,"detail":null,
+                  "deployHold":%s,"deployHoldBy":"dana.weber","deployHoldAt":"2026-09-12T10:00:00Z",
+                  "createdAt":"2026-09-12T09:00:00Z","updatedAt":"2026-09-12T10:00:00Z",
+                  "sources":[{"kind":"BRANCH","name":"main","ref":"refs/heads/main","implicit":false,"priority":"MEDIUM","addedBy":null}]}}
+                """.formatted(id, CI, hold));
+    }
+
+    @Test
+    void holdDeployFindsTheRequestByTheStartOfItsIdAndSendsHoldTrue() throws Exception {
+        answerDeployHold(PENDING_ID, true);
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "hold-deploy",
+                "--request", "1111");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", REQUESTS).getFirst().query()).isEqualTo("state=all");
+        FakePlatform.Request sent = platform.requests("PUT", deployHoldOf(PENDING_ID)).getFirst();
+        assertThat(JSON.readTree(sent.body())).isEqualTo(JSON.readTree("{\"hold\":true}"));
+        assertThat(r.out()).startsWith("The deploy of " + PENDING_ID + " is held: once it releases, its deployment "
+                        + "waits for `qits deployments requests approve`.\nRelease request " + PENDING_ID + "\n")
+                .contains("  deploy hold    on (by dana.weber at ")
+                .contains("Sources:");
+    }
+
+    @Test
+    void holdDeployOffSendsHoldFalseAndTakesTheOneOpenRequestWithoutARequest() throws Exception {
+        answerOneOpenRequest();
+        answerDeployHold(REJECTED_ID, false);
+
+        Result r = run("release-request", "hold-deploy", "--off", "--project", "qits", "--repository", CI);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", REQUESTS).getFirst().query()).isNull();
+        assertThat(JSON.readTree(platform.requests("PUT", deployHoldOf(REJECTED_ID)).getFirst().body()))
+                .isEqualTo(JSON.readTree("{\"hold\":false}"));
+        assertThat(r.out()).startsWith("The deploy of " + REJECTED_ID + " is not held: it deploys as soon as it "
+                        + "releases.\n")
+                .contains("  deploy hold    off (by dana.weber at ");
+    }
+
+    @Test
+    void holdDeployJsonIsTheServicesAnswer() throws Exception {
+        answerDeployHold(PENDING_ID, true);
+
+        Result r = run("release-request", "hold-deploy", "--request", PENDING_ID, "--project", "qits",
+                "--repository", CI, "-o", "json");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(JSON.readTree(r.out()).path("request").path("deployHold").asBoolean()).isTrue();
+    }
+
+    @Test
+    void holdDeployWithoutARequestRefusesWhenMoreThanOneIsOpen() {
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "hold-deploy");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(r.err()).contains("Repository qits-ci-service has more than one open release request: "
+                + "11111111 (PENDING), 33333333 (REJECTED). Name one with --request.");
+        assertThat(platform.requests).noneMatch(req -> req.method().equals("PUT"));
+    }
+
+    @Test
+    void a409OnHoldDeployPrintsTheDoorsSentence() {
+        platform.answer("PUT", deployHoldOf(RELEASED_ID), 409,
+                "{\"message\":\"Release request qits-ci-service-rr-3 is RELEASED: its deploy hold can no longer change\"}");
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "hold-deploy",
+                "--request", "2222");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("409").contains("its deploy hold can no longer change");
+        assertThat(r.out()).isEmpty();
+    }
+
+    @Test
+    void a404OnHoldDeploySaysThereIsNoSuchRequest() {
+        platform.answer("PUT", deployHoldOf(PENDING_ID), 404,
+                "{\"message\":\"Release request not found: " + PENDING_ID + "\"}");
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "hold-deploy",
+                "--request", "1111");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("No such release request " + PENDING_ID + " (HTTP 404). ");
+    }
+
+    @Test
+    void theRequestViewLeavesTheDeployHoldOutWhenThePlatformSendsNone() {
+        answerRerun("QA");
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "rerun",
+                "--request", "1111", "--phase", "QA");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).doesNotContain("deploy hold");
+    }
+
     // --- dispatching work, and the delivery desk ---
 
     private static final String DISPATCH = "/projects/api/work/qits-100/dispatch";

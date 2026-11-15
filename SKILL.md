@@ -2288,7 +2288,7 @@ qits ui-builder entities --provider qits-projects-service -o json
 
 ## qits release-request
 
-Release requests: the one way to release a repository. list shows them (of the whole project, or of one repository), create asks for a branch to be released, join adds a branch to an open request, move takes one branch off it onto the request queued after it, withdraw ends a request that must not ship, approve lets the fold a request is on go ahead, decline sends it back, regenerate runs one release output again, override lifts the upstream-in-flight gate for one upstream request that is itself still building, and rerun fires one pipeline phase again: QA or PUBLISH re-fire that phase's CI run, DEPLOY redeploys the already-released version.
+Release requests: the one way to release a repository. list shows them (of the whole project, or of one repository), create asks for a branch to be released, join adds a branch to an open request, move takes one branch off it onto the request queued after it, withdraw ends a request that must not ship, approve lets the fold a request is on go ahead, decline sends it back, regenerate runs one release output again, override lifts the upstream-in-flight gate for one upstream request that is itself still building, and rerun fires one pipeline phase again: QA or PUBLISH re-fire that phase's CI run, DEPLOY redeploys the already-released version, and hold-deploy holds the request's deploy for a person's approval at qits-deployments once it releases.
 
 A request folds main and its branches into one commit, and the builds of that commit are its gate. States: PENDING (waiting for its builds), READY, RELEASED (the tag is cut, waiting on its remaining gates), FINALIZED (the tag is merged into main, done), REJECTED (a gating build was red), FAILED (the release itself failed), CONFLICTED (the branches do not merge), WITHDRAWN, OBSOLETE (a later request for the repository superseded this one before it finished).
 
@@ -2689,6 +2689,45 @@ qits release-request --project qits --repository qits-ci-service rerun --request
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly (for example a --request that fits no request, or more than one, or a --phase that is none of QA, PUBLISH or DEPLOY), not signed in, or the session ended.
 
+## qits release-request hold-deploy
+
+Hold a release request's deploy for a person's approval, or release the hold with --off.
+
+A held request is tagged and published as ever when it releases, but its deployment request at qits-deployments waits until somebody approves it there: `qits deployments requests approve --request <deployment request id>`. The hold is read when the request releases, so it may be switched while the request is PENDING, READY, REJECTED or CONFLICTED. Nothing is folded again and no state moves.
+
+The first line says whether the deploy is now held; the request follows, its `deploy hold` row naming who switched it last and when.
+
+```
+qits release-request hold-deploy [--off] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>] [--request <id>]
+```
+
+| Name | What it does |
+|---|---|
+| `--off` | Release the hold instead: the request deploys as soon as it releases. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project: its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
+| `--repository <repository>` | The repository: its id or name. |
+| `--request <id>` | The request: its id as list shows it (qits-ci-service-rr-12), its uuid, or the start of the uuid. Default: the repository's one open request. |
+
+### Examples
+
+```
+qits release-request --project qits --repository qits-ci-service hold-deploy
+qits release-request --project qits --repository qits-ci-service hold-deploy --request qits-ci-service-rr-12 --off
+```
+
+- Without --request it takes the repository's one open request.
+- Asking for the hold the request already has changes nothing.
+- Every person and every agent may switch it.
+- HTTP 409 means the request is no longer PENDING, READY, REJECTED or CONFLICTED: it has released, or it is done for. HTTP 404 means no such request.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly (for example no --request when the repository has no open request or more than one, or a --request that fits no request), not signed in, or the session ended.
+
 ## qits ci
 
 The builds of qits-ci: runs lists a repository's runs, run shows one run with its steps and their logs, retry runs a finished run again, cancel stops a queued or running one, and report shows a run's release reports (report submit is the CI step's side, which collects and uploads them).
@@ -3038,7 +3077,7 @@ qits contracts coverage --no-golden-masters
 
 ## qits deployments
 
-The deployer, qits-deployments. `settings` reads and writes the values it hands each application in each environment. `database` moves an application's database to another server or name, and lists every move.
+The deployer, qits-deployments. `settings` reads and writes the values it hands each application in each environment. `database` moves an application's database to another server or name, and lists every move. `requests` approves a deployment request held for a person's approval.
 
 ## qits deployments settings
 
@@ -3322,6 +3361,45 @@ qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 - HTTP 404: no move of that id. HTTP 409: the move is QUEUED, already finished, or at SWITCHING or later; there is nothing left to stop.
 - Takes qits:admin, qits:admin-agent, qits:desk-admin or qits:desk; qits:agent is refused (HTTP 403).
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments requests
+
+Deployment requests at qits-deployments: what a release asks to deploy, and the gate it waits behind. `approve` lets one held for a person's approval deploy.
+
+### Notes
+
+- --output and --deployments-url may come before or after the command.
+
+## qits deployments requests approve
+
+Approve a deployment request held for a person's approval, so its deployment is queued and runs. It prints the request's gate (MET once approved, with who approved it and when) and the deployment it queued.
+
+POST /deployments/api/deployment-requests/{id}/approve with no body (HTTP 200 {deploymentRequest, deployment}). A request is held when its release request held its deploy: `qits release-request hold-deploy`.
+
+```
+qits deployments requests approve --request <id> [--deployments-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--request <id>` | Required. The deployment request's id, as qits-deployments names it. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits deployments requests approve --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+```
+
+- HTTP 404: no deployment request of that id. HTTP 409: the request is not held, its gate already settled, or its version is no longer the application's newest release (approving it would be a rollback). Each is exit 1, and nothing was queued.
+- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
 
 ### Exit codes
 

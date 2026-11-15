@@ -9,7 +9,7 @@ Commands:
 - `qits session-daemon` keeps that session fresh for as long as it runs.
 - `qits projects list`, `qits repositories … list`,
   `qits work list|details|create|update|transition|status|comment` (work items of every archetype)
-  and `qits release-request … list|create|join|move|withdraw|approve|decline|regenerate|rerun` read from and ask the projects service;
+  and `qits release-request … list|create|join|move|withdraw|approve|decline|regenerate|rerun|hold-deploy` read from and ask the projects service;
   `qits repositories remote-login` attaches this terminal to a repository's backup-remote sign-in, and
   `qits repositories backup reset` makes a backup twin whose main holds unrelated history ours.
 - `qits ci runs|run|retry|cancel` lists a repository's CI runs, shows a run with its steps and their logs,
@@ -1187,6 +1187,15 @@ shows the previous run's outcome.
   message says why. HTTP 503 means qits-ci cannot be reached, or this repository is not set up with
   it, and nothing ran. Each is exit code 1, with a sentence.
 
+`hold-deploy [--request <id>] [--off]` (qits-2268) PUTs `{"hold": true}` (`false` with `--off`) to
+`/projects/api/repositories/{repoId}/release-requests/{requestId}/deploy-hold`. A held request is
+tagged and published as ever when it releases, but its deployment request at qits-deployments waits
+until somebody approves it with `qits deployments requests approve`. Without `--request` it takes the
+repository's one open request, as `regenerate` does. The first line says whether the deploy is now
+held, then the request is printed; its `deploy hold` row (`on (by <who> at <when>)`, or `off`) is
+shown wherever the platform sends `deployHold`. A 409 (the request has released or is done for) is
+the door's own sentence, exit 1.
+
     qits release-request --project qits list
     qits release-request --project qits list --state all --limit 20
     qits release-request --project qits --repository qits-ci-service list
@@ -1205,6 +1214,9 @@ shows the previous run's outcome.
         --kind screenshot-baselines
     qits release-request --project qits --repository qits-ci-service rerun \
         --request qits-ci-service-rr-12 --phase QA
+    qits release-request --project qits --repository qits-ci-service hold-deploy
+    qits release-request --project qits --repository qits-ci-service hold-deploy \
+        --request qits-ci-service-rr-12 --off
 
 A red gating build that was the platform's fault and not the code's (a flaked container, a registry
 that was down) is retried with `qits ci retry`, not with a new request and not with `withdraw`.
@@ -1456,6 +1468,17 @@ qits:system is refused, move included. `abort` also refuses qits:agent.
     qits deployments database moves --application qits-ci
     qits deployments database move-status --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
     qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+
+`qits deployments requests approve --request <id>` (qits-2268) POSTs
+`/deployments/api/deployment-requests/{id}/approve` with no body: a deployment request held for a
+person's approval (its release request held its deploy, `qits release-request hold-deploy`) is
+approved and its deployment queued. It prints `deployment request <id>: <gate>`, the application,
+version, release request, gate, gate detail, who approved it and when, then `deployment <id>:
+<status>`. A 404 means no such request; a 409 means it is not held, its gate already settled, or its
+version is no longer the application's newest release. Takes qits:admin, qits:admin-agent,
+qits:desk-admin, qits:desk or qits:agent.
+
+    qits deployments requests approve --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ### qits agent-mcp credentials
 
