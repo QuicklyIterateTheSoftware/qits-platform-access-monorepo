@@ -656,7 +656,7 @@
  ┌ deployments ────────────────────────────────────────────────────────────────────────────────────┐
  │   settings          ▸ The settings qits-deployments hands an application in an environment: one │
  │   database            An application's database, moved by qits-deployments to the other postgre │
- │                                                                                                 │
+ │   requests            Deployment requests at qits-deployments: what a release asks to deploy, a │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -687,7 +687,7 @@
  ┌ deployments ────────────────────────────────────────────────────────────────────────────────────┐
  │   settings          ▸ The settings qits-deployments hands an application in an environment: one │
  │   database            An application's database, moved by qits-deployments to the other postgre │
- │                                                                                                 │
+ │   requests            Deployment requests at qits-deployments: what a release asks to deploy, a │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
