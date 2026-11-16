@@ -13,6 +13,9 @@ import eu.wohlben.qits.cli.access.platform.PlatformUrls;
 import eu.wohlben.qits.cli.session.Mode;
 import eu.wohlben.qits.cli.tui.api.Interaction;
 import eu.wohlben.qits.cli.tui.api.TuiCommand;
+import eu.wohlben.qits.containers.driver.docker.DockerArgv;
+import eu.wohlben.qits.containers.driver.docker.HostRunArgv;
+import eu.wohlben.qits.containers.driver.spec.HostRunSpec;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -70,6 +73,13 @@ public class NetworkAccessCommand implements Runnable {
 
     static final Duration HEALTHY_WITHIN = Duration.ofSeconds(20);
     static final Duration HEALTH_POLL = Duration.ofMillis(500);
+
+    /**
+     * How long one docker call may take before it is killed and the command fails: the pull, which
+     * may move a whole image, and every other call. Not final so a test can shorten them.
+     */
+    static Duration PULL_WITHIN = Duration.ofMinutes(10);
+    static Duration DOCKER_WITHIN = Duration.ofSeconds(60);
 
     static final String NOT_HERE = "qits network-access is for a workstation: host containers reach the "
             + "private edge over the overlay.";
@@ -140,12 +150,20 @@ public class NetworkAccessCommand implements Runnable {
         }
     }
 
-    /** The arguments every companion run takes before its image: its user, its entrypoint, its volume. */
-    static List<String> companionRun(List<String> head, Companion companion, String mode) {
-        List<String> args = new ArrayList<>(head);
-        args.addAll(List.of("--user", companion.user(), "--entrypoint", companion.entrypoint(),
-                "-v", VOLUME + ":/state", companion.reference(), mode));
-        return args;
+    /**
+     * A companion run as the driver renders it: {@code head}'s mode and options, then what every
+     * companion run takes before its image (its user, its entrypoint, its volume), then {@code mode}.
+     * The driver's belts refuse a served user, entrypoint or image that could be read as a flag.
+     */
+    static List<String> companionRun(String bin, HostRunSpec.Builder head, Companion companion, String mode)
+            throws CliFailure {
+        try {
+            return HostRunArgv.render(bin, head.user(companion.user()).entrypoint(companion.entrypoint())
+                    .volume(VOLUME + ":/state").args(mode).build());
+        } catch (IllegalArgumentException refused) {
+            throw new CliFailure("GET /network-access/api/companion answered a companion this command will not "
+                    + "run: " + SafeText.line(refused.getMessage()) + ".", CliFailure.FAILED);
+        }
     }
 
     /** What GET /companion answers. */
@@ -240,7 +258,7 @@ public class NetworkAccessCommand implements Runnable {
                         + "at most 63.", CliFailure.USAGE);
             }
             Docker docker = Docker.of(context.env());
-            Docker.Result version = docker.run(List.of("version"));
+            Docker.Result version = docker.run(DockerArgv.version(docker.bin(), null), null, DOCKER_WITHIN);
             if (!version.ok()) {
                 throw new CliFailure("Docker does not answer (`docker version`: " + version.said()
                         + "): install or start Docker.", Docker.NOT_READY);
@@ -248,18 +266,25 @@ public class NetworkAccessCommand implements Runnable {
 
             NetworkAccessApi api = parent.api(context);
             Companion companion = Companion.of(api.companion());
+            // Rendered before anything runs, so a companion the belts refuse is refused before a pull.
+            String ref = companion.reference();
+            List<String> keygen = companionRun(docker.bin(), HostRunSpec.removed(ref), companion, "keygen");
+            List<String> configure = companionRun(docker.bin(), HostRunSpec.removed(ref).interactive(), companion,
+                    "configure");
+            List<String> start = companionRun(docker.bin(), HostRunSpec.detached(CONTAINER, ref)
+                    .restart("unless-stopped").publish(PUBLISH), companion, "run");
 
-            Docker.Result pull = docker.run(List.of("pull", companion.reference()));
+            List<String> pullArgv = DockerArgv.pull(docker.bin(), ref);
+            Docker.Result pull = docker.run(pullArgv, null, PULL_WITHIN);
             if (!pull.ok()) {
                 if (REGISTRY_REFUSED.matcher(pull.said()).find()) {
                     throw new CliFailure("The registry refused to pull " + companion.reference()
                             + ": run `qits registry-login --configure` so Docker gets its login from your qits "
                             + "session, then run `qits network-access up` again.", Docker.NOT_READY);
                 }
-                throw failed(List.of("pull", companion.reference()), pull);
+                throw failed(pullArgv, pull);
             }
-            must(docker, List.of("volume", "create", VOLUME));
-            List<String> keygen = companionRun(List.of("run", "--rm"), companion, "keygen");
+            must(docker, DockerArgv.volumeCreate(docker.bin(), VOLUME));
             Docker.Result key = must(docker, keygen);
             String publicKey = lastLine(key.out());
             if (!PUBLIC_KEY.matcher(publicKey).matches()) {
@@ -288,22 +313,20 @@ public class NetworkAccessCommand implements Runnable {
                 throw new CliFailure("The network-access service answered a peer with no id.", CliFailure.FAILED);
             }
             JsonNode tunnel = api.peerTunnel(peerId);
-            byte[] tunnelJson;
+            String tunnelJson;
             try {
-                tunnelJson = JSON.writeValueAsBytes(tunnel);
+                tunnelJson = JSON.writeValueAsString(tunnel);
             } catch (IOException impossible) {
                 throw new CliFailure("cannot write the tunnel answer", CliFailure.FAILED);
             }
-            List<String> configure = companionRun(List.of("run", "--rm", "-i"), companion, "configure");
-            Docker.Result configured = docker.run(configure, tunnelJson);
+            Docker.Result configured = docker.run(configure, tunnelJson, DOCKER_WITHIN);
             if (!configured.ok()) {
                 throw failed(configure, configured);
             }
 
             // Absent is fine: the first `up` has nothing to remove.
-            docker.run(List.of("rm", "-f", CONTAINER));
-            must(docker, companionRun(List.of("run", "-d", "--name", CONTAINER, "--restart", "unless-stopped",
-                    "-p", PUBLISH), companion, "run"));
+            docker.run(DockerArgv.rm(docker.bin(), CONTAINER), null, DOCKER_WITHIN);
+            must(docker, start);
 
             String address = address(context);
             boolean healthy = awaitHealthy(context, address);
@@ -403,16 +426,18 @@ public class NetworkAccessCommand implements Runnable {
                     context.out().println("peer " + SafeText.line(peerId) + " is gone already");
                 }
             }
-            Docker.Result removed = docker.run(List.of("rm", "-f", CONTAINER));
+            List<String> rm = DockerArgv.rm(docker.bin(), CONTAINER);
+            Docker.Result removed = docker.run(rm, null, DOCKER_WITHIN);
             if (!removed.ok() && !removed.said().toLowerCase(Locale.ROOT).contains("no such container")) {
-                throw failed(List.of("rm", "-f", CONTAINER), removed);
+                throw failed(rm, removed);
             }
             Path directory = directory(context);
             try {
                 if (revoke) {
-                    Docker.Result volume = docker.run(List.of("volume", "rm", VOLUME));
+                    List<String> volumeRm = DockerArgv.volumeRm(docker.bin(), VOLUME);
+                    Docker.Result volume = docker.run(volumeRm, null, DOCKER_WITHIN);
                     if (!volume.ok() && !volume.said().toLowerCase(Locale.ROOT).contains("no such volume")) {
-                        throw failed(List.of("volume", "rm", VOLUME), volume);
+                        throw failed(volumeRm, volume);
                     }
                     AccessState.delete(directory);
                 } else if (saved.isPresent()) {
@@ -454,8 +479,9 @@ public class NetworkAccessCommand implements Runnable {
             context.out().println("companion  " + SafeText.line(state.image() + ":" + state.version()));
             String container = "unknown (no docker on PATH)";
             if (Docker.find(context.env()).isPresent()) {
-                Docker.Result inspect = Docker.of(context.env())
-                        .run(List.of("inspect", "-f", "{{.State.Status}}", CONTAINER));
+                Docker docker = Docker.of(context.env());
+                Docker.Result inspect = docker.run(DockerArgv.inspect(docker.bin(), CONTAINER, "{{.State.Status}}"),
+                        null, DOCKER_WITHIN);
                 container = inspect.ok() ? SafeText.line(inspect.out().strip()) : "absent";
             }
             context.out().println("container  " + container);
@@ -473,17 +499,18 @@ public class NetworkAccessCommand implements Runnable {
         }
     }
 
-    private static Docker.Result must(Docker docker, List<String> args) throws CliFailure, InterruptedException {
-        Docker.Result result = docker.run(args);
+    /** The whole {@code argv}, under {@link #DOCKER_WITHIN}; a non-zero exit fails the command. */
+    private static Docker.Result must(Docker docker, List<String> argv) throws CliFailure, InterruptedException {
+        Docker.Result result = docker.run(argv, null, DOCKER_WITHIN);
         if (!result.ok()) {
-            throw failed(args, result);
+            throw failed(argv, result);
         }
         return result;
     }
 
-    private static CliFailure failed(List<String> args, Docker.Result result) {
+    private static CliFailure failed(List<String> argv, Docker.Result result) {
         String said = result.said();
-        return new CliFailure("`" + Docker.line(args) + "` failed (exit code " + result.exit() + ")"
+        return new CliFailure("`" + Docker.line(argv) + "` failed (exit code " + result.exit() + ")"
                 + (said.isEmpty() ? "" : ": " + SafeText.line(said)), CliFailure.FAILED);
     }
 }

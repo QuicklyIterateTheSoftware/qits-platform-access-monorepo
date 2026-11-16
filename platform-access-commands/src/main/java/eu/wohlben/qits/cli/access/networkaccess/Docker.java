@@ -2,25 +2,21 @@ package eu.wohlben.qits.cli.access.networkaccess;
 
 import eu.wohlben.qits.cli.access.git.GitSetup;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
+import eu.wohlben.qits.containers.driver.docker.ContainerProcess;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
- * The {@code docker} CLI, as a subprocess: the argv is a list and never goes through a shell, the
- * way {@link GitSetup} runs git. The executable is looked up on the command's own {@code PATH}
- * rather than the JVM's, so a test puts a recording fake first on it.
+ * The {@code docker} CLI, run through qits-containers-driver (qits-2213): the argv comes whole
+ * from its {@code DockerArgv}/{@code HostRunArgv}, never through a shell, and {@link
+ * ContainerProcess} runs it under a deadline. The executable is looked up on the command's own
+ * {@code PATH} rather than the JVM's, so a test puts a recording fake first on it.
  */
 final class Docker {
 
@@ -39,11 +35,11 @@ final class Docker {
         }
     }
 
-    private final Path executable;
+    private final String bin;
     private final Map<String, String> env;
 
     private Docker(Path executable, Map<String, String> env) {
-        this.executable = executable;
+        this.bin = executable.toString();
         this.env = env;
     }
 
@@ -70,62 +66,39 @@ final class Docker {
         return Optional.empty();
     }
 
-    Result run(List<String> args) throws CliFailure, InterruptedException {
-        return run(args, null);
+    /** The binary every argv starts with: element 0 of what the driver renders. */
+    String bin() {
+        return bin;
     }
 
-    /** {@code docker <args>}, with {@code stdin} written to it when given, and both outputs read whole. */
-    Result run(List<String> args, byte[] stdin) throws CliFailure, InterruptedException {
-        List<String> argv = new ArrayList<>();
-        argv.add(executable.toString());
-        argv.addAll(args);
-        ProcessBuilder builder = new ProcessBuilder(argv);
-        builder.environment().clear();
-        builder.environment().putAll(env);
-        if (stdin == null) {
-            builder.redirectInput(ProcessBuilder.Redirect.from(Path.of("/dev/null").toFile()));
+    /**
+     * The whole {@code argv}, with the command's env added to the child's, {@code stdin} written to it
+     * when given (closed at once when null), and the run killed past {@code deadline}.
+     */
+    Result run(List<String> argv, String stdin, Duration deadline) throws CliFailure, InterruptedException {
+        ContainerProcess.Separated run = ContainerProcess.runSeparate(argv, env, stdin, deadline,
+                ContainerProcess.STDOUT_CAP);
+        if (Thread.interrupted()) {
+            throw new InterruptedException("interrupted while `" + line(argv) + "` ran");
         }
-        Process process;
-        try {
-            process = builder.start();
-        } catch (IOException e) {
-            throw new CliFailure("Cannot run docker: " + e.getMessage() + ". Install or start Docker.", NOT_READY);
+        if (run.exitCode() == 127 && run.stderrTail().startsWith("cannot start ")) {
+            // "cannot start <argv0>: <the IOException's message>": the reason is the message.
+            String said = run.stderrTail();
+            String prefix = "cannot start " + argv.getFirst() + ": ";
+            String reason = said.startsWith(prefix) ? said.substring(prefix.length()) : said;
+            throw new CliFailure("Cannot run docker: " + reason + ". Install or start Docker.", NOT_READY);
         }
-        CompletableFuture<String> out = drain(process.getInputStream());
-        CompletableFuture<String> err = drain(process.getErrorStream());
-        if (stdin != null) {
-            try (OutputStream in = process.getOutputStream()) {
-                in.write(stdin);
-            } catch (IOException closed) {
-                // docker went away before reading it all; its exit code says why.
-            }
+        if (run.timedOut()) {
+            throw new CliFailure("`" + line(argv) + "` did not finish within " + deadline.toSeconds()
+                    + " s and was stopped.", CliFailure.FAILED);
         }
-        try {
-            int exit = process.waitFor();
-            return new Result(exit, out.join(), err.join());
-        } catch (InterruptedException e) {
-            process.destroy();
-            throw e;
-        }
+        return new Result(run.exitCode(), run.stdout(), run.stderrTail());
     }
 
-    /** The command as a person would paste it: for a failure message. */
-    static String line(List<String> args) {
-        List<String> argv = new ArrayList<>();
-        argv.add("docker");
-        argv.addAll(args);
-        return GitSetup.shellLine(argv);
-    }
-
-    private static CompletableFuture<String> drain(InputStream stream) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (InputStream in = stream) {
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                in.transferTo(bytes);
-                return bytes.toString(StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+    /** The command as a person would paste it, {@code docker} for the binary's path: for a failure message. */
+    static String line(List<String> argv) {
+        List<String> shown = new ArrayList<>(argv);
+        shown.set(0, "docker");
+        return GitSetup.shellLine(shown);
     }
 }

@@ -2285,7 +2285,9 @@ companion's `configure`, and starts it as `qits-network-access-companion` with `
 unless-stopped`, **published on `127.0.0.1:47813` only**: its proxy is unauthenticated, so it must
 never be reachable from another machine. After `/healthz` answers 200 (it waits 20 s) it writes
 `$XDG_CONFIG_HOME/qits/access.json` (`peerId`, `proxy`, `image`, `version`; no secret). Running
-`up` again upgrades the companion. Docker always runs as a subprocess with an argv list.
+`up` again upgrades the companion. Docker always runs as a subprocess with an argv list, through
+qits-containers-driver (qits-2213), which renders and belts every argv and runs each call under a
+deadline (10 min for the pull, 60 s for every other call).
 
 From then on every command dials the platform's hosts through it (`CompanionProxy`, the
 `ProxySelector` of every `HttpClient` the commands build): https and wss to a host under the

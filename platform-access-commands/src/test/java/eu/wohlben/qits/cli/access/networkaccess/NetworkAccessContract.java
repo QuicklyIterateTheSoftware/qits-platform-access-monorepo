@@ -5,6 +5,7 @@ import eu.wohlben.qits.cli.access.contracts.CliPact;
 import eu.wohlben.qits.cli.access.contracts.CliRow;
 import eu.wohlben.qits.cli.access.contracts.Reached;
 import eu.wohlben.qits.cli.access.platform.PlatformClient;
+import eu.wohlben.qits.containers.driver.spec.HostRunSpec;
 import eu.wohlben.qits.pact.consumer.GoldenMasters.Operation;
 
 import java.util.List;
@@ -47,7 +48,9 @@ public final class NetworkAccessContract {
     private static final Call COMPANION = (api, params, recorded) -> {
         NetworkAccessCommand.Companion companion = NetworkAccessCommand.Companion.of(api.companion());
         assertThat(companion.reference()).contains(":");
-        assertThat(NetworkAccessCommand.companionRun(List.of("run", "--rm"), companion, "keygen"))
+        // Through the driver's belts, as `up` renders it: the answer must be a companion it will run.
+        assertThat(NetworkAccessCommand.companionRun("docker", HostRunSpec.removed(companion.reference()),
+                companion, "keygen"))
                 .containsSubsequence("--user", companion.user(), "--entrypoint", companion.entrypoint());
     };
 

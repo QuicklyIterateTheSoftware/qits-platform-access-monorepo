@@ -67,6 +67,8 @@ class NetworkAccessCommandsTest {
             printf '%s\\n' "$line" >> "$FAKE_DOCKER_LOG"
             set -- $line
             last=""; for a in "$@"; do last="$a"; done
+            # exec, so the deadline's kill lands on the sleep itself and leaves nothing behind.
+            if [ -n "$FAKE_DOCKER_HANG" ] && [ "$1" = "$FAKE_DOCKER_HANG" ]; then exec sleep 30; fi
             case "$1" in
               version) exit "${FAKE_DOCKER_VERSION_EXIT:-0}" ;;
               pull) if [ "$FAKE_DOCKER_PULL_DENIED" = "realm" ]; then
@@ -131,6 +133,7 @@ class NetworkAccessCommandsTest {
 
     @AfterEach
     void stop() {
+        NetworkAccessCommand.DOCKER_WITHIN = Duration.ofSeconds(60);
         platform.close();
         idp.close();
     }
@@ -246,6 +249,37 @@ class NetworkAccessCommandsTest {
         assertThat(run("network-access", "up", "--name", "laptop").exit()).isZero();
 
         assertThat(platform.requests("POST", "/network-access/api/peers")).hasSize(3);
+    }
+
+    /** Every docker call runs under a deadline (qits-2213): one that hangs fails `up` instead of hanging it. */
+    @Test
+    void aDockerCallThatHangsPastItsDeadlineFailsUp() throws Exception {
+        NetworkAccessCommand.DOCKER_WITHIN = Duration.ofSeconds(1);
+        env.put("FAKE_DOCKER_HANG", "volume");
+
+        long started = System.nanoTime();
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("`docker volume create qits-network-access-companion` did not finish "
+                + "within 1 s");
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(20));
+        assertThat(dockerCalls()).noneMatch(argv -> argv.getFirst().equals("run"));
+        assertThat(platform.requests("POST", "/network-access/api/peers")).isEmpty();
+    }
+
+    /** The driver's belts refuse a served entrypoint docker would read as a flag, before anything runs. */
+    @Test
+    void aServedEntrypointThatIsAFlagIsRefusedBeforeAnyRun() throws Exception {
+        platform.answer("GET", "/network-access/api/companion",
+                COMPANION.replace("/work/companion/qits-access-companion", "--privileged"));
+
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("Invalid entrypoint").contains("--privileged");
+        assertThat(dockerCalls()).noneMatch(argv -> argv.getFirst().equals("run"));
+        assertThat(platform.requests("POST", "/network-access/api/peers")).isEmpty();
     }
 
     @Test
