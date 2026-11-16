@@ -890,6 +890,191 @@
         "references": {
           "qits-call": {
             "app": "qits-deployments-service",
+            "operationId": "approveDeploymentRequest"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments requests approve",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments requests approve: approveDeploymentRequest",
+      "key": "cf70b8d8",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a deployment request held for approval",
+          "params": {
+            "applicationName": "contract-app-00000001",
+            "environmentId": "00000000-0000-4000-8000-000000000001",
+            "id": "00000000-0000-4000-8000-000000000002"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/deployment-requests/${id}/approve",
+            "type": "ProviderState"
+          }
+        },
+        "method": "POST",
+        "path": "/deployments/api/deployment-requests/00000000-0000-4000-8000-000000000002/approve"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "deployment": {
+              "id": "00000000-0000-4000-8000-000000000003",
+              "status": "QUEUED"
+            },
+            "deploymentRequest": {
+              "applicationName": "contract-app-00000001",
+              "approvedAt": "2026-01-01T00:00:00Z",
+              "approvedBy": "an-operator",
+              "deploymentId": "00000000-0000-4000-8000-000000000003",
+              "deploymentStatus": "QUEUED",
+              "gateDetail": "approved by an-operator",
+              "id": "00000000-0000-4000-8000-000000000002",
+              "qualityGate": "MET",
+              "releaseRequestQualifiedId": "contract-app-rr-1",
+              "version": "2026.101.120000"
+            }
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.deployment.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.deployment.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.applicationName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.approvedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.deploymentRequest.approvedBy": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.deploymentId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.deploymentRequest.deploymentStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.gateDetail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.deploymentRequest.qualityGate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.releaseRequestQualifiedId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
             "operationId": "deleteSetting"
           },
           "qits-trigger": {
