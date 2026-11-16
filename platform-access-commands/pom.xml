@@ -50,6 +50,8 @@
              as that agent (qits-ci's archetypes pin it), so the exec format matches; 0.8.14 is the
              first that reads JDK 25 class files. Not in any BOM, so it is pinned here. -->
         <jacoco.version>0.8.14</jacoco.version>
+        <!-- qits-containers-javalib's driver jar, the house's docker layer: a released calver. -->
+        <qits.containers-driver.version>2026.1116.82048</qits.containers-driver.version>
 
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
@@ -78,6 +80,15 @@
                  needs no reflection config for it. -->
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <!-- `qits network-access` runs docker through it (qits-2213): every argv rendered and
+                 belted by DockerArgv/HostRunArgv, every call run by ContainerProcess under a deadline.
+                 Plain Java with jboss-logging only, nothing serialised, so the native binary needs no
+                 configuration for it. -->
+            <groupId>eu.wohlben.qits</groupId>
+            <artifactId>qits-containers-driver</artifactId>
+            <version>${qits.containers-driver.version}</version>
         </dependency>
         <dependency>
             <!-- @ApplicationScoped, @Singleton and @RegisterForReflection; see the header. -->
