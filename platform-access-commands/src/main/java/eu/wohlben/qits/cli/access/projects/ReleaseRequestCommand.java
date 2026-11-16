@@ -43,7 +43,7 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "upstream-in-flight gate for one upstream request that is itself still building, and rerun "
                         + "fires one pipeline phase again: QA or PUBLISH re-fire that phase's CI run, DEPLOY "
                         + "redeploys the already-released version, and hold-deploy holds the request's deploy "
-                        + "for a person's approval at qits-deployments once it releases.",
+                        + "for a person's approval once it releases.",
                 "A request folds main and its branches into one commit, and the builds of that commit are its gate. "
                         + "States: PENDING (waiting for its builds), READY, RELEASED (the tag is cut, waiting on its "
                         + "remaining gates), FINALIZED (the tag is merged into main, done), REJECTED (a gating build "
