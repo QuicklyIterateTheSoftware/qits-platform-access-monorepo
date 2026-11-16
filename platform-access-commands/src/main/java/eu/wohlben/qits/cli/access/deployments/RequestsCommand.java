@@ -25,9 +25,10 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
  * {@code approve} is that approval, and the deployment it queues.
  */
 @CommandLine.Command(name = "requests", mixinStandardHelpOptions = true,
-        subcommands = {RequestsCommand.ApproveCommand.class},
+        subcommands = {RequestsCommand.ApproveCommand.class, RequestsCommand.DeclineCommand.class},
         description = {"Deployment requests at qits-deployments: what a release asks to deploy, and the gate it "
-                + "waits behind. `approve` lets one held for a person's approval deploy."},
+                + "waits behind. `approve` lets one held for a person's approval deploy; `decline` refuses it for "
+                + "good."},
         footerHeading = "%nNotes:%n",
         footer = {"- --output and --deployments-url may come before or after the command."})
 public class RequestsCommand implements Runnable {
@@ -130,5 +131,70 @@ public class RequestsCommand implements Runnable {
         if (!deploymentId.isEmpty()) {
             out.println("deployment " + SafeText.line(deploymentId) + ": " + SafeText.line(status.isEmpty() ? "-" : status));
         }
+    }
+
+    // --- decline ---
+
+    @CommandLine.Command(name = "decline", mixinStandardHelpOptions = true,
+            description = {"Decline a deployment request held for a person's decision, so it will not deploy. The "
+                    + "decision is final: nothing un-declines it. The release request this version belongs to ends "
+                    + "WITHDRAWN; to ship the work again, push a branch made from the release's tag and open a new "
+                    + "release request. It prints the request's gate (UNMET once declined, with who declined it, "
+                    + "when, and the note in the detail if one was given).",
+                    "POST /deployments/api/deployment-requests/{id}/decline with an optional JSON body ({note}) "
+                            + "(HTTP 200 {deploymentRequest, deployment: null})."},
+            footerHeading = HelpText.EXAMPLES,
+            footer = {"  qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f "
+                            + "--note \"the change is wrong\"",
+                    "",
+                    "- HTTP 404: no deployment request of that id. HTTP 409: the request is not held, its gate "
+                            + "already settled, or a deployment request of the same release request was already "
+                            + "approved. Each is exit 1, and nothing was declined.",
+                    "- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent."},
+            exitCodeListHeading = HelpText.EXIT_CODES,
+            exitCodeList = {HelpText.DONE, HelpText.REFUSED, HelpText.USAGE})
+    public static class DeclineCommand extends PlatformCommand {
+
+        @CommandLine.ParentCommand
+        RequestsCommand parent;
+
+        @CommandLine.Option(names = "--request", paramLabel = "<id>", required = true,
+                description = "The deployment request's id, as qits-deployments names it.")
+        String request;
+
+        @CommandLine.Option(names = "--note", paramLabel = "<text>",
+                description = "Why it is declined. Appears in the gate detail, after the person's name.")
+        String note;
+
+        @Override
+        protected int execute(CliContext context) throws CliFailure, InterruptedException {
+            boolean json = parent.json();
+            String id = SettingsCommand.required(request, "Name the deployment request: --request <id>.");
+            JsonNode answer = parent.deployments(context).declineDeploymentRequest(id, note);
+            if (json) {
+                ProjectsApi.printJson(context.out(), answer);
+                return 0;
+            }
+            printDeclined(context.out(), answer);
+            return 0;
+        }
+    }
+
+    /** The request as name/value lines, its gate first among them, mirroring {@link #printApproved}. */
+    static void printDeclined(PrintStream out, JsonNode answer) {
+        JsonNode request = answer.path("deploymentRequest");
+        out.println("deployment request " + SafeText.line(text(request, "id")) + ": "
+                + SafeText.line(text(request, "qualityGate")));
+        List<List<String>> rows = new ArrayList<>();
+        rows.add(List.of("application", Table.cell(text(request, "applicationName"), 64)));
+        rows.add(List.of("version", Table.cell(text(request, "version"), 64)));
+        if (!text(request, "releaseRequestQualifiedId").isEmpty()) {
+            rows.add(List.of("release request", Table.cell(text(request, "releaseRequestQualifiedId"), 64)));
+        }
+        rows.add(List.of("gate", Table.cell(text(request, "qualityGate"), 32)));
+        rows.add(List.of("gate detail", Table.cell(text(request, "gateDetail"), 400)));
+        rows.add(List.of("declined by", Table.cell(text(request, "declinedBy"), 64)));
+        rows.add(List.of("declined at", Table.time(text(request, "declinedAt"))));
+        Table.print(out, "  ", null, rows);
     }
 }

@@ -1075,6 +1075,163 @@
         "references": {
           "qits-call": {
             "app": "qits-deployments-service",
+            "operationId": "declineDeploymentRequest"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits deployments requests decline",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits deployments requests decline: declineDeploymentRequest",
+      "key": "2eb2246f",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a deployment request held for decline",
+          "params": {
+            "applicationName": "contract-app-00000001",
+            "environmentId": "00000000-0000-4000-8000-000000000001",
+            "id": "00000000-0000-4000-8000-000000000002"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "note": "the change is wrong"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/deployments/api/deployment-requests/${id}/decline",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/deployments/api/deployment-requests/00000000-0000-4000-8000-000000000002/decline"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "deploymentRequest": {
+              "applicationName": "contract-app-00000001",
+              "declinedAt": "2026-01-01T00:00:00Z",
+              "declinedBy": "an-operator",
+              "gateDetail": "declined by an-operator: the change is wrong",
+              "id": "00000000-0000-4000-8000-000000000002",
+              "qualityGate": "UNMET",
+              "releaseRequestQualifiedId": "contract-app-rr-2",
+              "version": "2026.103.120000"
+            }
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.deploymentRequest.applicationName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.declinedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.deploymentRequest.declinedBy": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.gateDetail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.deploymentRequest.qualityGate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.releaseRequestQualifiedId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.deploymentRequest.version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
             "operationId": "deleteSetting"
           },
           "qits-trigger": {

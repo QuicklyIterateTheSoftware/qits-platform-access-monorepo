@@ -14,8 +14,9 @@ import java.nio.charset.StandardCharsets;
  * The qits-deployments doors the CLI calls, read as JSON trees like every platform answer: the
  * settings ({@code /deployments/api/settings}, epic qits-765), the per-application, per-environment
  * values the deployer hands a service, and the database moves ({@code
- * /deployments/api/database-moves}, qits-2175), and a held deployment request's approval ({@code
- * /deployments/api/deployment-requests/{id}/approve}, qits-2268).
+ * /deployments/api/database-moves}, qits-2175), and a held deployment request's approval or decline
+ * ({@code /deployments/api/deployment-requests/{id}/approve}, qits-2268; {@code .../decline},
+ * qits-2271).
  * <p>
  * A secret's {@code value} is null in every answer: the service never sends one back.
  */
@@ -116,6 +117,20 @@ public final class DeploymentsApi {
      */
     public JsonNode approveDeploymentRequest(String id) throws CliFailure, InterruptedException {
         return client.post(uri("/deployments/api/deployment-requests/" + segment(id) + "/approve"));
+    }
+
+    /**
+     * {@code {deploymentRequest: {id, applicationName, version, qualityGate, gateDetail, declinedBy,
+     * declinedAt, ...}, deployment: null}} (qits-2271): a deployment request held for decline,
+     * declined. 404 when there is no such request; 409 when it is not held, its gate already
+     * settled, or a deployment request of the same release request was already approved. The
+     * decision is final: nothing un-declines it. The body is {@code {"note": <note>}} when one is
+     * given, else {@code {}}.
+     */
+    public JsonNode declineDeploymentRequest(String id, String note) throws CliFailure, InterruptedException {
+        ObjectNode body = JsonNodeFactory.instance.objectNode();
+        putIfGiven(body, "note", note);
+        return client.post(uri("/deployments/api/deployment-requests/" + segment(id) + "/decline"), body);
     }
 
     private static void putIfGiven(ObjectNode body, String name, String value) {

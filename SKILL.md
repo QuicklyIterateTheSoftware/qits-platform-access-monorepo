@@ -3370,7 +3370,7 @@ qits deployments database abort --id 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ## qits deployments requests
 
-Deployment requests at qits-deployments: what a release asks to deploy, and the gate it waits behind. `approve` lets one held for a person's approval deploy.
+Deployment requests at qits-deployments: what a release asks to deploy, and the gate it waits behind. `approve` lets one held for a person's approval deploy; `decline` refuses it for good.
 
 ### Notes
 
@@ -3399,6 +3399,38 @@ qits deployments requests approve --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 ```
 
 - HTTP 404: no deployment request of that id. HTTP 409: the request is not held, its gate already settled, or its version is no longer the application's newest release (approving it would be a rollback). Each is exit 1, and nothing was queued.
+- Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits deployments requests decline
+
+Decline a deployment request held for a person's decision, so it will not deploy. The decision is final: nothing un-declines it. The release request this version belongs to ends WITHDRAWN; to ship the work again, push a branch made from the release's tag and open a new release request. It prints the request's gate (UNMET once declined, with who declined it, when, and the note in the detail if one was given).
+
+POST /deployments/api/deployment-requests/{id}/decline with an optional JSON body ({note}) (HTTP 200 {deploymentRequest, deployment: null}).
+
+```
+qits deployments requests decline --request <id> [--deployments-url <url>] [--note <text>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--request <id>` | Required. The deployment request's id, as qits-deployments names it. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `--note <text>` | Why it is declined. Appears in the gate detail, after the person's name. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f --note "the change is wrong"
+```
+
+- HTTP 404: no deployment request of that id. HTTP 409: the request is not held, its gate already settled, or a deployment request of the same release request was already approved. Each is exit 1, and nothing was declined.
 - Takes qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
 
 ### Exit codes

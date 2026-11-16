@@ -26,13 +26,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** `qits deployments requests approve` against a fake edge and a fake idp (qits-2268). */
+/** `qits deployments requests approve` and `decline` against a fake edge and a fake idp (qits-2268, qits-2271). */
 class RequestsCommandsTest {
 
     private static final Instant T0 = Instant.parse("2026-11-15T10:00:00Z");
     private static final String ID = "6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f";
     private static final String DEPLOYMENT = "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d";
     private static final String APPROVE = "/deployments/api/deployment-requests/" + ID + "/approve";
+    private static final String DECLINE = "/deployments/api/deployment-requests/" + ID + "/decline";
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String APPROVED = """
@@ -43,6 +44,16 @@ class RequestsCommandsTest {
               "approvedBy":"dana.weber","approvedAt":"2026-11-15T10:00:00Z"},
              "deployment":{"id":"%s","applicationName":"qits-ci","version":"2026.1115.90000","status":"QUEUED"}}
             """.formatted(ID, DEPLOYMENT, DEPLOYMENT);
+
+    private static final String DECLINED = """
+            {"deploymentRequest":{"id":"%s","applicationName":"qits-ci","variant":null,"version":"2026.1115.90000",
+              "environmentId":"e","repoId":"qits-ci-service","qualityGate":"UNMET",
+              "gateDetail":"declined by dana.weber: the change is wrong",
+              "deploymentId":null,"createdAt":"2026-11-15T09:00:00Z","gateSettledAt":"2026-11-15T10:00:00Z",
+              "deploymentStatus":null,"deployHold":true,"releaseRequestQualifiedId":"qits-ci-service-rr-12",
+              "approvedBy":null,"approvedAt":null,"declinedBy":"dana.weber","declinedAt":"2026-11-15T10:00:00Z"},
+             "deployment":null}
+            """.formatted(ID);
 
     @TempDir
     Path home;
@@ -65,6 +76,7 @@ class RequestsCommandsTest {
         new SessionFile(home.resolve("qits")).write(new Session(idp.url(), "qits-cli", FakeIdp.SECRET + "access-0",
                 T0.plus(Duration.ofMinutes(10)), idp.issueRefreshToken(), T0.plus(Duration.ofDays(30))));
         platform.answer("POST", APPROVE, APPROVED);
+        platform.answer("POST", DECLINE, DECLINED);
     }
 
     @AfterEach
@@ -132,6 +144,69 @@ class RequestsCommandsTest {
         platform.answer("POST", APPROVE, 404, "{\"message\":\"no deployment request " + ID + "\"}");
 
         Result r = run("deployments", "requests", "approve", "--request", ID);
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("404");
+    }
+
+    @Test
+    void declineWithANotePostsItAndPrintsTheSettledGate() throws Exception {
+        Result r = run("deployments", "requests", "decline", "--request", ID, "--note", "the change is wrong");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(JSON.readTree(platform.requests("POST", DECLINE).getFirst().body()))
+                .isEqualTo(JSON.readTree("{\"note\":\"the change is wrong\"}"));
+        assertThat(r.out()).startsWith("deployment request " + ID + ": UNMET\n")
+                .contains("  application      qits-ci")
+                .contains("  version          2026.1115.90000")
+                .contains("  release request  qits-ci-service-rr-12")
+                .contains("  gate             UNMET")
+                .contains("  gate detail      declined by dana.weber: the change is wrong")
+                .contains("  declined by      dana.weber")
+                .contains("  declined at      ");
+        assertThat(r.out()).doesNotContain("deployment " + DEPLOYMENT);
+    }
+
+    @Test
+    void declineWithoutANoteSendsAnEmptyBody() throws Exception {
+        Result r = run("deployments", "requests", "decline", "--request", ID);
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(JSON.readTree(platform.requests("POST", DECLINE).getFirst().body())).isEqualTo(JSON.readTree("{}"));
+    }
+
+    @Test
+    void declineJsonIsTheServicesAnswer() throws Exception {
+        Result r = run("deployments", "requests", "decline", "--request", ID, "-o", "json");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(JSON.readTree(r.out())).isEqualTo(JSON.readTree(DECLINED));
+    }
+
+    @Test
+    void declineRequiresARequest() {
+        Result r = run("deployments", "requests", "decline");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(platform.requests("POST", DECLINE)).isEmpty();
+    }
+
+    @Test
+    void aRequestNotHeldForDeclineRefusesWithExitOneAndTheServicesWords() {
+        platform.answer("POST", DECLINE, 409, "{\"message\":\"deployment request " + ID + " is not held for decline\"}");
+
+        Result r = run("deployments", "requests", "decline", "--request", ID);
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("409").contains("is not held for decline");
+        assertThat(r.out()).isEmpty();
+    }
+
+    @Test
+    void anUnknownRequestRefusesDeclineWithExitOne() {
+        platform.answer("POST", DECLINE, 404, "{\"message\":\"no deployment request " + ID + "\"}");
+
+        Result r = run("deployments", "requests", "decline", "--request", ID);
 
         assertThat(r.exit()).isEqualTo(1);
         assertThat(r.err()).contains("404");
