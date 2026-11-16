@@ -358,7 +358,10 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                2026.1114.112916, in `a database move that is running`, and answers with the move as it stood
                when the abort was asked (its own running state, not yet ABORTED). qits deployments requests approve
                (RequestsCommand, qits-2268) is approveDeploymentRequest in `a deployment request held for
-               approval`, pending until a pinned qits-deployments-golden-masters records that state
+               approval`, pending until a pinned qits-deployments-golden-masters records that state; decline
+               (qits-2271) is declineDeploymentRequest in `a deployment request held for decline`, pending until
+               the pin reaches 2026.1116.213739 (published). A decline is final: nothing un-declines it, and the
+               request's release request ends WITHDRAWN
     agentmcp/  qits agent-mcp credentials list|set|delete, on qits-projects' agent MCP catalog
                (AgentMcpApi; epic qits-765). Its rows belong to ProjectsContract (AgentMcpContract)
     remembered/ qits remembered-devices list and revoke (qits-1944), on the idp's

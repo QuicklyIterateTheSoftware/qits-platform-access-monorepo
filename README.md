@@ -1190,7 +1190,8 @@ shows the previous run's outcome.
 `hold-deploy [--request <id>] [--off]` (qits-2268) PUTs `{"hold": true}` (`false` with `--off`) to
 `/projects/api/repositories/{repoId}/release-requests/{requestId}/deploy-hold`. A held request is
 tagged and published as ever when it releases, but its deployment request at qits-deployments waits
-until somebody approves it with `qits deployments requests approve`. Without `--request` it takes the
+until somebody approves it with `qits deployments requests approve`, or declines it with `qits
+deployments requests decline`. Without `--request` it takes the
 repository's one open request, as `regenerate` does. The first line says whether the deploy is now
 held, then the request is printed; its `deploy hold` row (`on (by <who> at <when>)`, or `off`) is
 shown wherever the platform sends `deployHold`. A 409 (the request has released or is done for) is
@@ -1479,6 +1480,18 @@ version is no longer the application's newest release. Takes qits:admin, qits:ad
 qits:desk-admin, qits:desk or qits:agent.
 
     qits deployments requests approve --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+
+`qits deployments requests decline --request <id> [--note <text>]` (qits-2271) POSTs
+`/deployments/api/deployment-requests/{id}/decline` with an optional body (`{"note": <text>}`, or no
+note at all): a deployment request held for a person's decision is declined. The decision is final:
+nothing un-declines it, its release request ends WITHDRAWN, and shipping the work again means
+pushing a branch made from the release's tag and opening a new release request. It prints
+`deployment request <id>: <gate>`, the application, version, release request, gate, gate detail,
+who declined it and when. A 404 means no such request; a 409 means it is not held, its gate already
+settled, or a deployment request of the same release request was already approved. Takes
+qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
+
+    qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f --note "the change is wrong"
 
 ### qits agent-mcp credentials
 
