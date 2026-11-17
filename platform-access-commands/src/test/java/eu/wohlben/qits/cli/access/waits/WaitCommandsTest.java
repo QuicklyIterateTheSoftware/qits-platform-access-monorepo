@@ -285,7 +285,7 @@ class WaitCommandsTest {
 
     @Test
     void usageErrorsSendNothing() {
-        assertThat(run("wait").err()).contains("--event");
+        assertThat(run("wait").err()).contains("--event").contains("--after").contains("--until");
         assertThat(run("wait", "--event", "BuildFailed", "--when", "a^=\"\"").err()).contains("empty prefix");
         assertThat(run("wait", "--event", "E".repeat(129)).err()).contains("not an event name");
         String[] nine = new String[] {"wait", "--event", "X", "--when", "a=1", "--when", "a=2", "--when", "a=3",
@@ -304,6 +304,92 @@ class WaitCommandsTest {
                 new String[] {"wait", "list", "--state", "DONE"})) {
             assertThat(run(args).exit()).as(String.join(" ", args)).isEqualTo(2);
         }
+        assertThat(platform.requests).isEmpty();
+    }
+
+    // --- timers (qits-2309) ---
+
+    @Test
+    void afterSendsATimerWithNoSelection() throws Exception {
+        Result result = run("wait", "--after", "2h", "--label", "sweep cancelled runs");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        JsonNode body = sent();
+        assertThat(body).isEqualTo(JSON.readTree("{\"label\":\"sweep cancelled runs\",\"timeout\":\"PT2H\"}"));
+        assertThat(body.has("selection")).isFalse();
+        assertThat(result.out()).contains("Wait " + WAIT + ": OPEN").contains("event    timer").contains("expires")
+                .doesNotContain("  when ").contains("End your turn now: you get a new turn when the time comes.");
+    }
+
+    @Test
+    void afterIsHeldToTheCeilingByThePlatformAsTimeoutIs() throws Exception {
+        assertThat(run("wait", "--after", "25h").exit()).isZero();
+        assertThat(sent()).isEqualTo(JSON.readTree("{\"timeout\":\"PT25H\"}"));
+    }
+
+    @Test
+    void untilSendsTheTimeLeftFromNow() throws Exception {
+        Result result = run("wait", "--until", "2026-10-10T13:05:00Z", "--label", "03:00 GC run");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(sent()).isEqualTo(JSON.readTree("{\"label\":\"03:00 GC run\",\"timeout\":\"PT3H5M\"}"));
+    }
+
+    @Test
+    void untilTakesAnOffsetAndRoundsUpToWholeSeconds() throws Exception {
+        assertThat(WaitCommand.untilTimeout("2026-10-10T14:05:00+01:00", time)).isEqualTo("PT3H5M");
+        assertThat(WaitCommand.untilTimeout("2026-10-10T10:00:00.001Z", time)).isEqualTo("PT1S");
+        assertThat(WaitCommand.untilTimeout("2026-10-10T10:00:01.5Z", time)).isEqualTo("PT2S");
+        assertThat(WaitCommand.untilTimeout(" 2026-10-11T10:00:00Z ", time)).as("exactly 24h").isEqualTo("PT24H");
+    }
+
+    @Test
+    void untilInThePastOrOverADayAwayIsRefused() {
+        Result past = run("wait", "--until", "2026-10-10T09:59:59Z");
+        assertThat(past.exit()).isEqualTo(2);
+        assertThat(past.err()).contains("--until 2026-10-10T09:59:59Z is not in the future");
+        assertThat(run("wait", "--until", "2026-10-10T10:00:00Z").exit()).as("now").isEqualTo(2);
+        Result far = run("wait", "--until", "2026-10-11T10:00:01Z");
+        assertThat(far.exit()).isEqualTo(2);
+        assertThat(far.err()).contains("is more than 24h away");
+        Result local = run("wait", "--until", "2026-10-10T12:00:00");
+        assertThat(local.exit()).isEqualTo(2);
+        assertThat(local.err()).contains("is not an instant").contains("with a zone");
+        assertThat(run("wait", "--until", "tomorrow").exit()).isEqualTo(2);
+        Result unreadable = run("wait", "--after", "soon");
+        assertThat(unreadable.exit()).isEqualTo(2);
+        assertThat(unreadable.err()).contains("--after 'soon' is not a duration");
+        assertThat(platform.requests).isEmpty();
+    }
+
+    @Test
+    void aTimerTakesNoSelectionNoTimeoutAndNotBoth() {
+        Result both = run("wait", "--after", "2h", "--until", "2026-10-10T12:00:00Z");
+        assertThat(both.exit()).isEqualTo(2);
+        assertThat(both.err()).contains("--after and --until are mutually exclusive");
+        Result event = run("wait", "--after", "2h", "--event", "BuildFailed");
+        assertThat(event.exit()).isEqualTo(2);
+        assertThat(event.err()).contains("--after declares a timer, which takes no --event");
+        Result when = run("wait", "--until", "2026-10-10T12:00:00Z", "--when", "a=b");
+        assertThat(when.exit()).isEqualTo(2);
+        assertThat(when.err()).contains("--until declares a timer, which takes no --when");
+        Result timeout = run("wait", "--after", "2h", "--timeout", "3h");
+        assertThat(timeout.exit()).isEqualTo(2);
+        assertThat(timeout.err()).contains("--after declares a timer, which takes no --timeout");
+        for (String[] args : List.of(new String[] {"wait", "--until", "2026-10-10T12:00:00Z", "--event", "X"},
+                new String[] {"wait", "--after", "2h", "--when", "a=b"},
+                new String[] {"wait", "--until", "2026-10-10T12:00:00Z", "--timeout", "1h"})) {
+            assertThat(run(args).exit()).as(String.join(" ", args)).isEqualTo(2);
+        }
+        assertThat(platform.requests).isEmpty();
+    }
+
+    @Test
+    void aTimerBeforeAPresetsNameIsRefusedRatherThanDropped() {
+        Result result = run("wait", "--after", "2h", "ci-run", RUN);
+
+        assertThat(result.exit()).isEqualTo(2);
+        assertThat(result.err()).contains("a preset takes neither");
         assertThat(platform.requests).isEmpty();
     }
 
@@ -430,6 +516,20 @@ class WaitCommandsTest {
         assertThat(platform.requests("GET", WAITS).getFirst().query()).isEqualTo("state=OPEN");
         assertThat(result.out()).contains("ID").contains("STATE").contains(WAIT).contains("ReleaseRequestStateChanged")
                 .contains("release red").doesNotContain(String.valueOf(ESC));
+    }
+
+    @Test
+    void listShowsATimerInTheEventColumn() {
+        platform.answer("GET", WAITS, """
+                [{"id":"%s","agentId":"%s","label":"sweep cancelled runs","state":"OPEN","selection":null,
+                  "subjectKind":"TIMER","createdAt":"2026-10-10T10:00:00Z","expiresAt":"2026-10-10T12:00:00Z"}]
+                """.formatted(WAIT, AGENT));
+
+        Result result = run("wait", "list");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        String row = result.out().lines().filter(line -> line.startsWith(WAIT)).findFirst().orElseThrow();
+        assertThat(row).contains("OPEN").contains("timer").contains("sweep cancelled runs");
     }
 
     @Test

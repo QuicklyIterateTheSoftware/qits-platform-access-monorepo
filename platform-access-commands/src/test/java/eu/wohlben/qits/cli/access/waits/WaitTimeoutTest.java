@@ -31,4 +31,12 @@ class WaitTimeoutTest {
         assertThat(refused.exitCode()).isEqualTo(CliFailure.USAGE);
         assertThat(refused.getMessage()).startsWith("--timeout");
     }
+
+    @Test
+    void aRefusalNamesTheOptionItWasGiven() throws CliFailure {
+        assertThat(WaitTimeout.iso("2h", "--after")).isEqualTo("PT2H");
+        CliFailure refused = assertThrows(CliFailure.class, () -> WaitTimeout.iso("0m", "--after"));
+        assertThat(refused.exitCode()).isEqualTo(CliFailure.USAGE);
+        assertThat(refused.getMessage()).startsWith("--after must be longer than nothing");
+    }
 }

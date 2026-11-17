@@ -22,6 +22,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * makes, so the row proves the command's own body is the recorded one. qits-workspaces records the
  * declaration of {@code qits wait work} only; the release-request and CI-run presets send other
  * selections, so their rows wait for a recording of their own.
+ * <p>
+ * A timer ({@code qits wait --after}, {@code --until}; qits-2309) sends no selection at all, only
+ * the label and the timeout, so its row sends the body {@link WaitCommand#timerBody} builds. It is
+ * pending until a pinned qits-workspaces-golden-masters records {@value #TIMER}.
  */
 public final class WaitsContract {
 
@@ -33,6 +37,8 @@ public final class WaitsContract {
     static final String RELEASE_REQUEST_WAIT = "an agent declaring a wait on a release request";
     /** The CI-run preset's declaration. */
     static final String CI_RUN_WAIT = "an agent declaring a wait on a CI run";
+    /** The bare form's timer, {@code --after} or {@code --until} (qits-2309). */
+    static final String TIMER = "an agent declaring a timer";
 
     private static final CliPact MASTERS = CliPact.of("qits-workspaces-service", "qits-workspaces");
 
@@ -49,6 +55,13 @@ public final class WaitsContract {
      */
     static final List<String> WAIT = List.of("id", "state", "label", "selection.event", "createdAt", "expiresAt",
             "matchedEventId", "closedAt");
+
+    /**
+     * One timer as {@code printWait} prints it. Its {@code selection} is null, and the command reads
+     * only that it is not an object, to show {@code timer}; consuming it would bind it to exactly
+     * null, which is what a timer is, but no row needs that, so the pact leaves it unbound.
+     */
+    static final List<String> TIMER_WAIT = WAIT.stream().filter(path -> !path.startsWith("selection")).toList();
 
     @FunctionalInterface
     interface Call {
@@ -94,6 +107,16 @@ public final class WaitsContract {
                 "CI run " + WaitCommand.shortId(params.get("runId")) + " to end", null)));
     };
 
+    /** {@code qits wait --after 30m --label …}: the recorded timer, the timeout read as --after reads it. */
+    private static final Call DECLARE_TIMER = (api, params, recorded) -> {
+        JsonNode sent = CliRow.exampleBody(recorded);
+        JsonNode timer = api.create(WaitsApi.Holder.agent(params.get("agentId")), WaitCommand.timerBody(
+                sent.path("label").asText(), WaitTimeout.iso(sent.path("timeout").asText(), "--after")));
+        assertThat(timer.path("id").asText()).isNotBlank();
+        assertThat(timer.path("state").asText()).isNotBlank();
+        assertThat(WaitCommand.event(timer)).isEqualTo(WaitCommand.TIMER);
+    };
+
     /** {@code qits wait list --state open}: id, state, event, label, created and expires of each. */
     private static final Call LIST = (api, params, recorded) -> {
         List<JsonNode> waits = WaitCommand.ListCommand.waits(api.list(WaitsApi.Holder.agent(params.get("agentId")),
@@ -115,6 +138,9 @@ public final class WaitsContract {
                 DECLARE_RELEASE_REQUEST).consumes(WAIT).request("POST /workspaces/api/agents/{agentId}/waits"));
         rows.add(row("qits wait ci-run", CI_RUN_WAIT, "createAgentWait", "create", DECLARE_CI_RUN)
                 .consumes(WAIT).request("POST /workspaces/api/agents/{agentId}/waits"));
+        rows.add(row("qits wait", TIMER, "createAgentWait", "create", DECLARE_TIMER)
+                .consumes(MASTERS.held(TIMER, "createAgentWait", TIMER_WAIT))
+                .request("POST /workspaces/api/agents/{agentId}/waits"));
         rows.add(row("qits wait list", OPEN_WAIT, "listAgentWaits", "list", LIST)
                 .consumes("waits[].id", "waits[].state", "waits[].selection.event", "waits[].label",
                         "waits[].createdAt", "waits[].expiresAt"));
