@@ -4039,6 +4039,8 @@ Declare what this holder waits on: a domain event that fits a selection. The pla
 
 Bare, it takes the event's name and its conditions. branch, release-request, work and ci-run are presets for the usual waits; list shows the holder's waits and cancel ends one.
 
+A timer is the bare form with --after <duration> or --until <instant> instead of an event: the holder gets a turn when that time comes, and no event wakes it. To look at something again later, declare a timer, never a selection made so that it cannot match. A timer takes --label, and neither --event, --when nor --timeout.
+
 Prefer `wait branch` for your own work: a request id goes stale when it refolds or is superseded.
 
 Each --when is one group of conditions, separated by spaces, that must all hold. An event that fits any group matches; with no --when, every event of the name does. Conditions: path=value equal, path^=value starts with, path? present, !path absent. A path is the payload's fields joined by dots; [] after a field means some element of that array, and the conditions of one group that go through the same name[] must hold on the same element (entities[].entityId=<id> entities[].status=VERIFIED). Quote a value that holds spaces or is empty: label="two words", note="". At most 8 groups of 8 conditions.
@@ -4048,17 +4050,19 @@ Two --when are OR, not AND: --when 'repoName=a' --when 'status=b' fires on eithe
 The holder is --agent or --desk (give one, not both), else QITS_AGENT_ID, else QITS_DESK_PROJECT: the harness sets QITS_AGENT_ID in an agent's environment and QITS_DESK_PROJECT in a project's kept front-desk session, and the MCP server sets QITS_AGENT_ID from the caller's token's agent claim, or QITS_DESK_PROJECT from its project claim when the token names no agent and is a desk's (the role qits:desk-admin, or a context_kind of desk-session or desk-delivery). An agent may declare and cancel waits for itself only; a project's desk, for its own project's only.
 
 ```
-qits wait [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [--output table|json] [--timeout <duration>] [--when <conditions>...] [--workspaces-url <url>]
+qits wait [--after <duration>] [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [--output table|json] [--timeout <duration>] [--until <instant>] [--when <conditions>...] [--workspaces-url <url>]
 ```
 
 | Name | What it does |
 |---|---|
+| `--after <duration>` | A timer: wake the holder after this long, with no event. 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H), as --timeout; the most is 24h, and the platform refuses a longer one. Not with --event, --when, --timeout or --until. |
 | `--agent <id>` | The agent whose waits these are. Mutually exclusive with --desk. Default: QITS_AGENT_ID (on the MCP server, from the caller's token's agent claim). |
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
-| `--event <Name>` | Required, unless a preset is named. The event's name, as the bus carries it: BuildFailed, EntityTransitioned. |
+| `--event <Name>` | Required, unless a preset is named or the wait is a timer (--after, --until). The event's name, as the bus carries it: BuildFailed, EntityTransitioned. |
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
+| `--until <instant>` | A timer: wake the holder at this time, with no event. ISO-8601 with a zone: 2026-11-18T03:05:00Z or 2026-11-18T04:05:00+01:00. It must be in the future and at most 24h away. Not with --event, --when, --timeout or --after. |
 | `--when <conditions>...` | One group of conditions, for example 'runId=<id> status=SUCCESS'. Give it again for another group, up to 8: that is OR, not AND, so an event fitting either fires the wait. Conditions that must all hold go in the one quoted --when. Without one, every event of the name fits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
@@ -4077,6 +4081,8 @@ qits wait work qits-123 --status VERIFIED --timeout 2h
 qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a
 qits wait --event BuildFailed --when 'repoName=qits-ci-service branch=main' --label 'main to break'
 qits wait --event EntityTransitioned --when 'entities[].status=VERIFIED' --timeout 30m
+qits wait --after 2h --label 'sweep cancelled runs'
+qits wait --until 2026-11-18T03:05:00Z --label '03:00 GC run'
 qits wait list --state OPEN
 qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001
 qits wait release-request qits-ci-service-rr-12 --desk qits-ci
@@ -4086,7 +4092,7 @@ qits wait release-request qits-ci-service-rr-12 --desk qits-ci
 
 - `0` The wait is declared; it is printed.
 - `1` The platform refused (the message names the status), or cannot be reached.
-- `2` Used wrongly (no holder, both --agent and --desk, no --event, a --when or --timeout that cannot be read or is over a limit), not signed in, or the session ended.
+- `2` Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, --timeout, --after or --until that cannot be read or is over a limit, a timer given with a selection or --timeout, an --until in the past), not signed in, or the session ended.
 
 ## qits wait branch
 
@@ -4244,7 +4250,7 @@ qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a
 
 ## qits wait list
 
-The holder's waits: id, state, event, label, when it was declared, when it times out and, for a BROKEN wait, why.
+The holder's waits: id, state, event (timer, for a timer), label, when it was declared, when it times out and, for a BROKEN wait, why.
 
 ```
 qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state <STATE>] [--workspaces-url <url>]

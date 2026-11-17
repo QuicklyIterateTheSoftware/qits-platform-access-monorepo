@@ -26,9 +26,9 @@ Commands:
 - `qits observe` prints what qits-observability takes in (logs, spans, metrics) as it arrives,
   filtered by the service; `qits observe query` asks the same filters of what it still holds.
 - `qits wait` declares what an agent, or a project's desk, waits on (a release request to end, a
-  work item to reach a status, a CI run to end, or any domain event that fits a selection); the
-  platform gives the holder a turn when it happens. `qits wait list|cancel` show and end the
-  holder's waits.
+  work item to reach a status, a CI run to end, any domain event that fits a selection, or only a
+  time: a timer); the platform gives the holder a turn when it happens. `qits wait list|cancel`
+  show and end the holder's waits.
 - `qits workspaces` is every action the landing app's workspace pages offer, one command each, on
   the same qits-workspaces door: the slots and their containers (start, stop, recreate, the start's
   log), the agents (create, discard, prompt, the prompt draft, the chat, the files, the harness,
@@ -700,6 +700,7 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits checkout-daemon [--path <dir>] [--repository <name>] [--once] [--no-submodules]
     qits checkout sync [--path <dir>]
     qits wait --event <Name> [--when <conditions> …] [--timeout <duration>] [--label <text>]
+    qits wait --after <duration> | --until <instant> [--label <text>]
     qits wait branch <branch> --until joined|released|live|failed [--repository <name>] \
         [--project <project>] [--timeout <duration>] [--label <text>]
     qits wait release-request <id> [--timeout <duration>] [--label <text>]
@@ -1884,6 +1885,7 @@ Notes go to stderr, one line each with a time:
 ### qits wait
 
     qits wait --event <Name> [--when <conditions> …] [--timeout <duration>] [--label <text>] [--agent <id>|--desk <project>]
+    qits wait --after <duration> | --until <instant> [--label <text>] [--agent <id>|--desk <project>]
 
 An agent, or a project's desk, declares what it waits on; the platform gives the holder a turn when
 that happens (qits-1153, qits-1618). The command sends the wait to qits-workspaces — `POST
@@ -1927,6 +1929,17 @@ checks it before anything goes out. The wire form has lowercase ops, string valu
 `--timeout` takes `30m`, `2h`, `1h30m`, `1d` or ISO-8601 (`PT2H`); it is sent as ISO-8601. Every wait
 now carries an `expiresAt`, never null: the platform's own ceiling for an unstated timeout is 8h,
 and the most any wait may run is 24h, which it refuses to extend.
+
+A timer (qits-2309) is a wait with a timeout and no selection: `--after <duration>` (the grammar of
+`--timeout`) or `--until <instant>` (ISO-8601 with a zone, `2026-11-18T03:05:00Z` or
+`2026-11-18T04:05:00+01:00`). It sends `{label?, timeout}` and no `selection` member; the service
+answers the wait with `selection: null` and `subjectKind: TIMER`, and the tables show `timer` in
+the event column. `--until` is sent as the time left from now, rounded up to whole seconds; one in
+the past or more than 24h away is refused before anything goes out (exit 2). `--after` is held to
+the 24h ceiling by the platform, as `--timeout` is. A timer takes `--label` but neither `--event`,
+`--when` nor `--timeout`, and `--after` and `--until` exclude each other (exit 2); given before a
+preset's name they are refused too, not dropped. To look at something again later, declare a
+timer, never a selection made so that it cannot match.
 
 The presets fill in the event and the groups:
 

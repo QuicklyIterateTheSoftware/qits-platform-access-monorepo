@@ -17,6 +17,12 @@ import eu.wohlben.qits.cli.access.projects.ReleaseRequestRefs;
 import picocli.CommandLine;
 
 import java.io.PrintStream;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +39,9 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
  * <p>
  * The presets are the generic form with the event and the groups filled in (W8). The wire shape is
  * W8's, and nothing here knows more of an event than the path a preset names.
+ * <p>
+ * A timer ({@code --after}, {@code --until}; qits-2309) is a wait with a timeout and no selection: it
+ * only ever times out. It is what to declare instead of a selection made never to match.
  */
 @CommandLine.Command(name = "wait", mixinStandardHelpOptions = true,
         subcommands = {BranchWait.class, WaitCommand.ReleaseRequestWait.class, WaitCommand.WorkWait.class,
@@ -42,6 +51,10 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "returns at once; it never blocks.",
                 "Bare, it takes the event's name and its conditions. branch, release-request, work and ci-run are "
                         + "presets for the usual waits; list shows the holder's waits and cancel ends one.",
+                "A timer is the bare form with --after <duration> or --until <instant> instead of an event: the "
+                        + "holder gets a turn when that time comes, and no event wakes it. To look at something "
+                        + "again later, declare a timer, never a selection made so that it cannot match. A timer "
+                        + "takes --label, and neither --event, --when nor --timeout.",
                 "Prefer `wait branch` for your own work: a request id goes stale when it refolds or is superseded.",
                 "Each --when is one group of conditions, separated by spaces, that must all hold. An event that fits "
                         + "any group matches; with no --when, every event of the name does. Conditions: path=value "
@@ -78,27 +91,34 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                 "  qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a",
                 "  qits wait --event BuildFailed --when 'repoName=qits-ci-service branch=main' --label 'main to break'",
                 "  qits wait --event EntityTransitioned --when 'entities[].status=VERIFIED' --timeout 30m",
+                "  qits wait --after 2h --label 'sweep cancelled runs'",
+                "  qits wait --until 2026-11-18T03:05:00Z --label '03:00 GC run'",
                 "  qits wait list --state OPEN",
                 "  qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001",
                 "  qits wait release-request qits-ci-service-rr-12 --desk qits-ci"},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:The wait is declared; it is printed.",
                 "1:The platform refused (the message names the status), or cannot be reached.",
-                "2:Used wrongly (no holder, both --agent and --desk, no --event, a --when or --timeout that "
-                        + "cannot be read or is over a limit), not signed in, or the session ended."})
+                "2:Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, "
+                        + "--timeout, --after or --until that cannot be read or is over a limit, a timer given with "
+                        + "a selection or --timeout, an --until in the past), not signed in, or the session ended."})
 public class WaitCommand extends PlatformCommand {
 
     static final String AGENT_VARIABLE = "QITS_AGENT_ID";
     static final String DESK_VARIABLE = "QITS_DESK_PROJECT";
     static final Set<String> STATES = Set.of("OPEN", "MATCHED", "TIMED_OUT", "BROKEN", "CANCELLED");
+    /** The most any wait may run, a timer included; the platform refuses a longer one. */
+    static final Duration MOST = Duration.ofHours(24);
+    /** What the event column shows for a wait with no selection. */
+    static final String TIMER = "timer";
     private static final Pattern EVENT = Pattern.compile("[A-Za-z][A-Za-z0-9_.-]*");
     private static final Pattern WHOLE_ID =
             Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
 
     /** Required for the bare form, but not at picocli's level, which would ask it of every subcommand too. */
     @CommandLine.Option(names = "--event", paramLabel = "<Name>",
-            description = "Required, unless a preset is named. The event's name, as the bus carries it: "
-                    + "BuildFailed, EntityTransitioned.")
+            description = "Required, unless a preset is named or the wait is a timer (--after, --until). The "
+                    + "event's name, as the bus carries it: BuildFailed, EntityTransitioned.")
     String event;
 
     @CommandLine.Option(names = "--when", paramLabel = "<conditions>",
@@ -107,6 +127,18 @@ public class WaitCommand extends PlatformCommand {
                     + "Conditions that must all hold go in the one quoted --when. Without one, every event of the "
                     + "name fits.")
     List<String> when;
+
+    @CommandLine.Option(names = "--after", paramLabel = "<duration>",
+            description = "A timer: wake the holder after this long, with no event. 30m, 2h, 1h30m, 1d or ISO-8601 "
+                    + "(PT2H), as --timeout; the most is 24h, and the platform refuses a longer one. Not with --event, "
+                    + "--when, --timeout or --until.")
+    String after;
+
+    @CommandLine.Option(names = "--until", paramLabel = "<instant>",
+            description = "A timer: wake the holder at this time, with no event. ISO-8601 with a zone: "
+                    + "2026-11-18T03:05:00Z or 2026-11-18T04:05:00+01:00. It must be in the future and at most 24h "
+                    + "away. Not with --event, --when, --timeout or --after.")
+    String until;
 
     @CommandLine.Mixin
     Declaration declaration;
@@ -150,8 +182,12 @@ public class WaitCommand extends PlatformCommand {
     @Override
     protected int execute(CliContext context) throws CliFailure, InterruptedException {
         boolean json = json(output);
+        if (!blank(after) || !blank(until)) {
+            return timer(context, json);
+        }
         if (event == null || event.isBlank()) {
-            throw new CliFailure("Name the event: --event <Name> with --when <conditions>, or a preset: "
+            throw new CliFailure("Name the event: --event <Name> with --when <conditions>; or a timer, --after "
+                    + "<duration> or --until <instant>; or a preset: "
                     + "`qits wait branch <branch> --until released`, `qits wait release-request <id>`, "
                     + "`qits wait work <qits-123> --status <STATUS>`, `qits wait ci-run <id>`.", CliFailure.USAGE);
         }
@@ -170,6 +206,58 @@ public class WaitCommand extends PlatformCommand {
             groups.add(WhenGrammar.parse(group));
         }
         return declare(context, json, name, groups, declaration, null);
+    }
+
+    /**
+     * {@code --after} or {@code --until}: a wait with a timeout and no selection (qits-2309). It takes
+     * nothing that would make it wait on an event, nor a second timeout.
+     */
+    private int timer(CliContext context, boolean json) throws CliFailure, InterruptedException {
+        if (!blank(after) && !blank(until)) {
+            throw new CliFailure("--after and --until are mutually exclusive: a timer ends after a while or at a "
+                    + "time, not both.", CliFailure.USAGE);
+        }
+        String option = blank(after) ? "--until" : "--after";
+        String clash = !blank(event) ? "--event" : when != null && !when.isEmpty() ? "--when"
+                : !blank(declaration.timeout) ? "--timeout" : null;
+        if (clash != null) {
+            throw new CliFailure(option + " declares a timer, which takes no " + clash + ": no event wakes it, and "
+                    + "its time is its timeout. Wait on an event or declare a timer, not both.", CliFailure.USAGE);
+        }
+        String timeout = blank(after) ? untilTimeout(until, context.clock()) : WaitTimeout.iso(after, "--after");
+        WaitsApi.Holder holder = holder(context);
+        JsonNode wait = api(context).create(holder, timerBody(declaration.label, timeout));
+        return print(context, json, wait, "when the time comes");
+    }
+
+    /**
+     * {@code --until} as the timeout from now, ISO-8601, rounded up to whole seconds so the timer
+     * never fires before the instant. One in the past, or more than {@link #MOST} away, is refused
+     * here: the instant is the caller's, and a refusal from the platform would name only a duration.
+     */
+    static String untilTimeout(String given, Clock clock) throws CliFailure {
+        String text = given.strip();
+        Instant at;
+        try {
+            at = OffsetDateTime.parse(text, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant();
+        } catch (DateTimeParseException notOne) {
+            throw new CliFailure("--until '" + SafeText.line(text) + "' is not an instant. Write ISO-8601 with a zone: "
+                    + "2026-11-18T03:05:00Z or 2026-11-18T04:05:00+01:00.", CliFailure.USAGE);
+        }
+        Instant now = clock.instant();
+        Duration left = Duration.between(now, at);
+        if (left.isNegative() || left.isZero()) {
+            throw new CliFailure("--until " + SafeText.line(text) + " is not in the future: it is " + now
+                    + " now.", CliFailure.USAGE);
+        }
+        if (left.getNano() > 0) {
+            left = left.withNanos(0).plusSeconds(1);
+        }
+        if (left.compareTo(MOST) > 0) {
+            throw new CliFailure("--until " + SafeText.line(text) + " is more than 24h away (it is " + now
+                    + " now): the most any wait may run is 24h.", CliFailure.USAGE);
+        }
+        return left.toString();
     }
 
     /**
@@ -234,25 +322,50 @@ public class WaitCommand extends PlatformCommand {
         return body;
     }
 
+    /** {@code {label?, timeout}}: a timer's create, with no {@code selection} member at all (qits-2309). */
+    static ObjectNode timerBody(String label, String timeout) {
+        ObjectNode body = JsonNodeFactory.instance.objectNode();
+        if (label != null && !label.isBlank()) {
+            body.put("label", label.strip());
+        }
+        body.put("timeout", timeout);
+        return body;
+    }
+
     /**
      * Sends the wait and prints it. Everything is checked before anything goes out: the holder, the
      * timeout and the groups. {@code presetLabel} is used when --label was not given.
      */
     int declare(CliContext context, boolean json, String eventName, List<List<WhenGrammar.Condition>> groups,
                 Declaration given, String presetLabel) throws CliFailure, InterruptedException {
+        if (!blank(after) || !blank(until)) {
+            // Given before a preset's name, they would be dropped without a word: the preset runs, not the bare form.
+            throw new CliFailure("--after and --until declare a timer with the bare `qits wait`; a preset takes "
+                    + "neither. Give the preset --timeout, or declare the timer on its own.", CliFailure.USAGE);
+        }
         WaitsApi.Holder holder = holder(context);
         // A preset's own options win; the ones given before the preset's name count too.
         String timeout = WaitTimeout.iso(given.timeout != null ? given.timeout : declaration.timeout);
         String label = !blank(given.label) ? given.label : !blank(declaration.label) ? declaration.label : presetLabel;
         JsonNode wait = api(context).create(holder, body(eventName, groups, label, timeout));
+        return print(context, json, wait, "when it fires or times out");
+    }
+
+    private static int print(CliContext context, boolean json, JsonNode wait, String when) throws CliFailure {
         if (json) {
             printJson(context.out(), wait);
             return 0;
         }
         printWait(context.out(), wait);
         context.out().println();
-        context.out().println("Declared. End your turn now: you get a new turn when it fires or times out. Do not poll.");
+        context.out().println("Declared. End your turn now: you get a new turn " + when + ". Do not poll.");
         return 0;
+    }
+
+    /** The event a wait matches, or {@link #TIMER} for one with no selection: a timer (qits-2309). */
+    static String event(JsonNode wait) {
+        JsonNode selection = wait.path("selection");
+        return selection.isObject() ? text(selection, "event") : TIMER;
     }
 
     /** One condition list per group, each with the same leading condition: what a preset asks. */
@@ -295,10 +408,10 @@ public class WaitCommand extends PlatformCommand {
         out.println("Wait " + SafeText.line(text(wait, "id")) + ": " + SafeText.line(text(wait, "state")));
         List<List<String>> rows = new ArrayList<>();
         rows.add(List.of("label", Table.cell(SafeText.line(text(wait, "label")), 200)));
-        JsonNode selection = wait.path("selection");
-        rows.add(List.of("event", Table.cell(SafeText.line(text(selection, "event")), 200)));
+        rows.add(List.of("event", Table.cell(SafeText.line(event(wait)), 200)));
+        // A timer's selection is null or absent: no groups, so no when rows.
         boolean first = true;
-        for (JsonNode group : selection.path("when")) {
+        for (JsonNode group : wait.path("selection").path("when")) {
             String written = WhenGrammar.written(group);
             rows.add(List.of(first ? "when" : "or", SafeText.line(written == null ? group.toString() : written)));
             first = false;
@@ -484,8 +597,8 @@ public class WaitCommand extends PlatformCommand {
     // --- list and cancel ---
 
     @CommandLine.Command(name = "list", mixinStandardHelpOptions = true,
-            description = {"The holder's waits: id, state, event, label, when it was declared, when it times out "
-                    + "and, for a BROKEN wait, why."},
+            description = {"The holder's waits: id, state, event (timer, for a timer), label, when it was declared, "
+                    + "when it times out and, for a BROKEN wait, why."},
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits wait list", "  qits wait list --state OPEN -o json"},
             exitCodeListHeading = HelpText.EXIT_CODES,
@@ -523,7 +636,7 @@ public class WaitCommand extends PlatformCommand {
             List<List<String>> rows = new ArrayList<>();
             for (JsonNode wait : waits) {
                 rows.add(List.of(SafeText.line(text(wait, "id")), SafeText.line(text(wait, "state")),
-                        Table.cell(SafeText.line(text(wait.path("selection"), "event")), 40),
+                        Table.cell(SafeText.line(event(wait)), 40),
                         Table.cell(SafeText.line(text(wait, "label")), 50),
                         Table.time(text(wait, "createdAt")), Table.time(text(wait, "expiresAt")),
                         Table.cell(SafeText.line(text(wait, "brokenReason")), 50)));
