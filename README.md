@@ -2283,8 +2283,8 @@ exit 0; `list` prints `{}`.
 
 ## The private edge from this workstation
 
-    qits network-access up [--name <label>]
-    qits network-access down [--revoke]
+    qits network-access up [--name <label>] [--dry-run]
+    qits network-access down [--revoke] [--dry-run]
     qits network-access status
 
 Some apps answer only behind the platform's private edge. `qits network-access up` (epic
@@ -2322,6 +2322,12 @@ subprocesses are out of scope: the git host stays public.
   `denied`, `authentication required`, `credentials required`, 401): run `qits registry-login
   --configure` so Docker gets its login from the qits session, then `up` again. A workstation command: inside the platform or with `QITS_TOKEN` it
   refuses (exit 2), because host containers reach the private edge over the overlay.
+- `--dry-run` (qits-2295) runs no docker and changes nothing: `up --dry-run` validates `--name`,
+  reads `GET /companion`, renders every argv exactly as `up` would (so a served companion the
+  driver's belts refuse is still exit 1) and prints them, in run order, after one `dry run:` line;
+  `down --dry-run` prints `docker rm`, and `docker volume rm` with `--revoke`, and calls nothing.
+  Neither needs docker on PATH, and both also run with `QITS_TOKEN`: that is how a workspace
+  live-checks the verb. Inside the platform they still refuse.
 
 ## qits agents
 

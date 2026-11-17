@@ -66,6 +66,14 @@ final class Docker {
         return Optional.empty();
     }
 
+    /**
+     * The binary a dry run renders its argv with: {@code docker} on {@code env}'s PATH, else the bare
+     * word, because a dry run prints the commands and needs no docker to do it.
+     */
+    static String binOrName(Map<String, String> env) {
+        return find(env).map(Path::toString).orElse("docker");
+    }
+
     /** The binary every argv starts with: element 0 of what the driver renders. */
     String bin() {
         return bin;

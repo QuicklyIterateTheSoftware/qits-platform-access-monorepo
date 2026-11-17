@@ -373,6 +373,123 @@ class NetworkAccessCommandsTest {
         assertThat(platform.requests).isEmpty();
     }
 
+    /** The docker commands a dry run prints, as a person would paste them: what `up` runs, in order. */
+    private static final List<String> UP_LINES = List.of(
+            "docker pull " + REF,
+            "docker volume create qits-network-access-companion",
+            "docker run --rm " + String.join(" ", AS_COMPANION) + " keygen",
+            "docker run --rm -i " + String.join(" ", AS_COMPANION) + " configure",
+            "docker rm -f qits-network-access-companion",
+            "docker run -d --name qits-network-access-companion --restart unless-stopped -p 127.0.0.1:47813:47813 "
+                    + String.join(" ", AS_COMPANION) + " run");
+
+    /** The token home a workspace is: QITS_TOKEN, and no session file the command may read. */
+    private void inTheTokenHome() throws Exception {
+        Files.delete(home.resolve(".config/qits/t.json"));
+        env.put("QITS_TOKEN", "a-token");
+        env.put("QITS_DOMAIN", "wohlben.eu");
+    }
+
+    /** qits-2295: how a workspace live-checks `up`. It reads GET /companion and does nothing else. */
+    @Test
+    void upDryRunInTheTokenHomePrintsWhatUpWouldRunAndRunsNothing() throws Exception {
+        inTheTokenHome();
+
+        Result result = run("network-access", "up", "--name", "laptop", "--dry-run");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        List<String> lines = result.out().lines().toList();
+        assertThat(lines.getFirst()).startsWith("dry run: nothing ran;").contains("laptop");
+        assertThat(lines.subList(1, lines.size())).containsExactlyElementsOf(UP_LINES);
+        assertThat(dockerCalls()).isEmpty();
+        assertThat(platform.requests("GET", "/network-access/api/companion")).hasSize(1)
+                .allSatisfy(r -> assertThat(r.authorization()).isEqualTo("Bearer a-token"));
+        assertThat(platform.requests).noneMatch(r -> r.path().contains("/peers"));
+        assertThat(home.resolve(".config/qits/access.json")).doesNotExist();
+    }
+
+    @Test
+    void upDryRunNeedsNoDocker() throws Exception {
+        env.put("PATH", home.resolve("nothing-here").toString());
+
+        Result result = run("network-access", "up", "--name", "laptop", "--dry-run");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(result.out().lines().skip(1).toList()).containsExactlyElementsOf(UP_LINES);
+        assertThat(platform.requests).noneMatch(r -> r.path().contains("/peers"));
+        assertThat(home.resolve(".config/qits/access.json")).doesNotExist();
+    }
+
+    @Test
+    void upDryRunRefusesAServedEntrypointThatIsAFlag() throws Exception {
+        inTheTokenHome();
+        platform.answer("GET", "/network-access/api/companion",
+                COMPANION.replace("/work/companion/qits-access-companion", "--privileged"));
+
+        Result result = run("network-access", "up", "--name", "laptop", "--dry-run");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("Invalid entrypoint").contains("--privileged");
+        assertThat(result.out()).doesNotContain("docker ");
+    }
+
+    @Test
+    void upDryRunStillChecksTheName() throws Exception {
+        inTheTokenHome();
+
+        assertThat(run("network-access", "up", "--name", "Not A Label", "--dry-run").exit()).isEqualTo(2);
+        assertThat(platform.requests).isEmpty();
+    }
+
+    @Test
+    void downDryRunInTheTokenHomePrintsWhatDownWouldRunAndRevokesNothing() throws Exception {
+        inTheTokenHome();
+
+        Result revoke = run("network-access", "down", "--revoke", "--dry-run");
+
+        assertThat(revoke.exit()).as(revoke.err()).isZero();
+        assertThat(revoke.out().lines().toList()).hasSize(3).endsWith(
+                "docker rm -f qits-network-access-companion",
+                "docker volume rm qits-network-access-companion");
+        assertThat(revoke.out()).startsWith("dry run: nothing ran;");
+
+        Result plain = run("network-access", "down", "--dry-run");
+        assertThat(plain.exit()).as(plain.err()).isZero();
+        assertThat(plain.out().lines().toList()).hasSize(2).endsWith("docker rm -f qits-network-access-companion");
+
+        assertThat(dockerCalls()).isEmpty();
+        assertThat(platform.requests).isEmpty();
+        assertThat(home.resolve(".config/qits/access.json")).doesNotExist();
+    }
+
+    /** A workstation's dry run leaves its access.json as it was: down --revoke would delete it. */
+    @Test
+    void downDryRunOnAWorkstationKeepsTheState() throws Exception {
+        assertThat(run("network-access", "up", "--name", "laptop").exit()).isZero();
+        Files.delete(log);
+        String before = Files.readString(home.resolve(".config/qits/access.json"));
+
+        assertThat(run("network-access", "down", "--revoke", "--dry-run").exit()).isZero();
+
+        assertThat(dockerCalls()).isEmpty();
+        assertThat(platform.requests("POST", "/network-access/api/peers/" + PEER_ID + "/revoke")).isEmpty();
+        assertThat(Files.readString(home.resolve(".config/qits/access.json"))).isEqualTo(before);
+    }
+
+    @Test
+    void aDryRunInsideThePlatformStillRefusesWithExit2() throws Exception {
+        env.put("QITS_PLATFORM", "true");
+        env.put("QITS_DOMAIN", "wohlben.eu");
+
+        for (String command : List.of("up", "down")) {
+            Result result = run("network-access", command, "--dry-run");
+            assertThat(result.exit()).as(command).isEqualTo(2);
+            assertThat(result.err()).contains("host containers reach the private edge over the overlay");
+        }
+        assertThat(dockerCalls()).isEmpty();
+        assertThat(platform.requests).isEmpty();
+    }
+
     @Test
     void downStopsTheCompanionAndKeepsThePeerForTheNextUp() throws Exception {
         assertThat(run("network-access", "up", "--name", "laptop").exit()).isZero();

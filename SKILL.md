@@ -5696,7 +5696,7 @@ A browser reaches the same tunnel through the companion's proxy auto-config file
 
 ### Notes
 
-- A workstation command, signed in as a person: with QITS_TOKEN or inside the platform it refuses, because host containers reach the private edge over the overlay.
+- A workstation command, signed in as a person: with QITS_TOKEN or inside the platform it refuses, because host containers reach the private edge over the overlay. The exception is `up --dry-run` and `down --dry-run`, which also run with QITS_TOKEN: they run nothing and only print the docker commands, which is how a workspace live-checks this command.
 - Registering a device takes qits:admin.
 - QITS_NETWORK_ACCESS_PROXY=<url> names the companion's address instead of access.json's, and QITS_NETWORK_ACCESS_PROXY=off sends every call direct.
 - Only https and wss calls to hosts under the platform's domain go through the companion; loopback and every QITS_URL_* address go direct. When the companion does not answer, calls go direct with one warning.
@@ -5710,11 +5710,12 @@ Running it again is how the companion is upgraded to the image the platform name
 qits commands dial the companion's CONNECT proxy directly; a browser instead needs its proxy auto-config URL set to http://127.0.0.1:47813/proxy.pac, which this command prints once the companion is up.
 
 ```
-qits network-access up [--name <label>] [--network-access-url <url>]
+qits network-access up [--dry-run] [--name <label>] [--network-access-url <url>]
 ```
 
 | Name | What it does |
 |---|---|
+| `--dry-run` | Run nothing and register nothing; print the docker commands `up` would run. |
 | `--name <label>` | The device's name, a DNS label. Default: this machine's short host name. |
 | `--network-access-url <url>` | The network-access service's base URL, without /network-access. Default: QITS_NETWORK_ACCESS_URL, else the session's idp address with `idp` swapped for `network-access`. |
 
@@ -5723,8 +5724,10 @@ qits network-access up [--name <label>] [--network-access-url <url>]
 ```
 qits network-access up
 qits network-access up --name laptop
+qits network-access up --dry-run
 ```
 
+- --dry-run runs no docker, registers no device and writes no file: it reads the companion the platform names and prints, in order, the docker commands `up` would run. It needs no Docker, and runs with QITS_TOKEN too.
 - Needs Docker. Docker gets its login for the platform's registry from `qits registry-login --configure`, which points it at `qits docker-credential`.
 - Registering the device takes qits:admin.
 
@@ -5732,7 +5735,7 @@ qits network-access up --name laptop
 
 - `0` The companion is up and healthy.
 - `1` The platform refused, docker failed, or the companion did not become healthy in 20 s.
-- `2` Used wrongly, not signed in, or not on a workstation.
+- `2` Used wrongly, not signed in, or not on a workstation (with --dry-run: inside the platform).
 - `3` Docker is missing or not running, or the registry refused the pull: run `qits registry-login --configure`.
 
 ## qits network-access down
@@ -5742,11 +5745,12 @@ Stop the network-access companion: platform calls go direct again. The device an
 --revoke also revokes the device at the platform and deletes the key's volume and access.json.
 
 ```
-qits network-access down [--network-access-url <url>] [--revoke]
+qits network-access down [--dry-run] [--network-access-url <url>] [--revoke]
 ```
 
 | Name | What it does |
 |---|---|
+| `--dry-run` | Revoke nothing and run nothing; print the docker commands `down` would run. |
 | `--network-access-url <url>` | The network-access service's base URL, without /network-access. Default: QITS_NETWORK_ACCESS_URL, else the session's idp address with `idp` swapped for `network-access`. |
 | `--revoke` | Also revoke the device and delete its key. |
 
@@ -5755,15 +5759,17 @@ qits network-access down [--network-access-url <url>] [--revoke]
 ```
 qits network-access down
 qits network-access down --revoke
+qits network-access down --revoke --dry-run
 ```
 
+- --dry-run revokes nothing, runs no docker and deletes no file: it prints the docker commands `down` would run. It needs no Docker, and runs with QITS_TOKEN too.
 - Revoking takes qits:admin.
 
 ### Exit codes
 
 - `0` Done.
 - `1` The platform refused the revoke, or docker or a file failed.
-- `2` Used wrongly, not signed in, or not on a workstation.
+- `2` Used wrongly, not signed in, or not on a workstation (with --dry-run: inside the platform).
 - `3` Docker is missing or not running.
 
 ## qits network-access status

@@ -52,7 +52,9 @@ import java.util.regex.Pattern;
                         + "proxy auto-config URL to http://127.0.0.1:47813/proxy.pac."},
         footerHeading = "%nNotes:%n",
         footer = {"- A workstation command, signed in as a person: with QITS_TOKEN or inside the platform it "
-                + "refuses, because host containers reach the private edge over the overlay.",
+                + "refuses, because host containers reach the private edge over the overlay. The exception is "
+                + "`up --dry-run` and `down --dry-run`, which also run with QITS_TOKEN: they run nothing and only "
+                + "print the docker commands, which is how a workspace live-checks this command.",
                 "- Registering a device takes qits:admin.",
                 "- QITS_NETWORK_ACCESS_PROXY=<url> names the companion's address instead of access.json's, and "
                         + "QITS_NETWORK_ACCESS_PROXY=off sends every call direct.",
@@ -106,9 +108,25 @@ public class NetworkAccessCommand implements Runnable {
     }
 
     static void workstationOnly(CliContext context) throws CliFailure {
-        if (context.mode() != Mode.WORKSTATION) {
+        workstationOnly(context, false);
+    }
+
+    /**
+     * A dry run also runs with QITS_TOKEN: it runs no docker and changes nothing, it only reads GET
+     * /companion, which an agent's token may, so it is the one way a workspace checks the verb live.
+     * Inside the platform it still refuses: there is no caller's machine to print commands for.
+     */
+    static void workstationOnly(CliContext context, boolean dryRun) throws CliFailure {
+        Mode mode = context.mode();
+        if (mode != Mode.WORKSTATION && !(dryRun && mode == Mode.EDGE_TOKEN)) {
             throw new CliFailure(NOT_HERE, CliFailure.USAGE);
         }
+    }
+
+    /** What a dry run prints: its first line, then every argv as a person would paste it, in run order. */
+    static void printDryRun(CliContext context, String heading, List<List<String>> argvs) {
+        context.out().println(heading);
+        argvs.forEach(argv -> context.out().println(Docker.line(argv)));
     }
 
     NetworkAccessApi api(CliContext context) throws CliFailure, InterruptedException {
@@ -231,14 +249,18 @@ public class NetworkAccessCommand implements Runnable {
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits network-access up",
                     "  qits network-access up --name laptop",
+                    "  qits network-access up --dry-run",
                     "",
+                    "- --dry-run runs no docker, registers no device and writes no file: it reads the companion "
+                            + "the platform names and prints, in order, the docker commands `up` would run. It "
+                            + "needs no Docker, and runs with QITS_TOKEN too.",
                     "- Needs Docker. Docker gets its login for the platform's registry from `qits registry-login --configure`, "
                             + "which points it at `qits docker-credential`.",
                     "- Registering the device takes qits:admin."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {"0:The companion is up and healthy.",
                     "1:The platform refused, docker failed, or the companion did not become healthy in 20 s.",
-                    "2:Used wrongly, not signed in, or not on a workstation.",
+                    "2:Used wrongly, not signed in, or not on a workstation (with --dry-run: inside the platform).",
                     "3:Docker is missing or not running, or the registry refused the pull: run `qits registry-login --configure`."})
     public static class UpCommand extends PlatformCommand {
 
@@ -249,32 +271,49 @@ public class NetworkAccessCommand implements Runnable {
                 description = "The device's name, a DNS label. Default: this machine's short host name.")
         String name;
 
+        @CommandLine.Option(names = "--dry-run",
+                description = "Run nothing and register nothing; print the docker commands `up` would run.")
+        boolean dryRun;
+
         @Override
         protected int execute(CliContext context) throws CliFailure, InterruptedException {
-            workstationOnly(context);
+            workstationOnly(context, dryRun);
             String device = name == null ? defaultName() : name.strip();
             if (!LABEL.matcher(device).matches()) {
                 throw new CliFailure("--name must be a DNS label: lower-case letters, digits and inner dashes, "
                         + "at most 63.", CliFailure.USAGE);
             }
-            Docker docker = Docker.of(context.env());
-            Docker.Result version = docker.run(DockerArgv.version(docker.bin(), null), null, DOCKER_WITHIN);
-            if (!version.ok()) {
-                throw new CliFailure("Docker does not answer (`docker version`: " + version.said()
-                        + "): install or start Docker.", Docker.NOT_READY);
+            Docker docker = null;
+            if (!dryRun) {
+                docker = Docker.of(context.env());
+                Docker.Result version = docker.run(DockerArgv.version(docker.bin(), null), null, DOCKER_WITHIN);
+                if (!version.ok()) {
+                    throw new CliFailure("Docker does not answer (`docker version`: " + version.said()
+                            + "): install or start Docker.", Docker.NOT_READY);
+                }
             }
+            String bin = docker == null ? Docker.binOrName(context.env()) : docker.bin();
 
             NetworkAccessApi api = parent.api(context);
             Companion companion = Companion.of(api.companion());
-            // Rendered before anything runs, so a companion the belts refuse is refused before a pull.
+            // Rendered before anything runs, so a companion the belts refuse is refused before a pull,
+            // and a dry run refuses it exactly as `up` would.
             String ref = companion.reference();
-            List<String> keygen = companionRun(docker.bin(), HostRunSpec.removed(ref), companion, "keygen");
-            List<String> configure = companionRun(docker.bin(), HostRunSpec.removed(ref).interactive(), companion,
+            List<String> keygen = companionRun(bin, HostRunSpec.removed(ref), companion, "keygen");
+            List<String> configure = companionRun(bin, HostRunSpec.removed(ref).interactive(), companion,
                     "configure");
-            List<String> start = companionRun(docker.bin(), HostRunSpec.detached(CONTAINER, ref)
+            List<String> start = companionRun(bin, HostRunSpec.detached(CONTAINER, ref)
                     .restart("unless-stopped").publish(PUBLISH), companion, "run");
+            List<String> pullArgv = DockerArgv.pull(bin, ref);
+            List<String> volumeCreate = DockerArgv.volumeCreate(bin, VOLUME);
+            List<String> rm = DockerArgv.rm(bin, CONTAINER);
+            if (dryRun) {
+                printDryRun(context, "dry run: nothing ran; up would run these docker commands, in order, and "
+                                + "register the device " + device + " between keygen and configure:",
+                        List.of(pullArgv, volumeCreate, keygen, configure, rm, start));
+                return 0;
+            }
 
-            List<String> pullArgv = DockerArgv.pull(docker.bin(), ref);
             Docker.Result pull = docker.run(pullArgv, null, PULL_WITHIN);
             if (!pull.ok()) {
                 if (REGISTRY_REFUSED.matcher(pull.said()).find()) {
@@ -284,7 +323,7 @@ public class NetworkAccessCommand implements Runnable {
                 }
                 throw failed(pullArgv, pull);
             }
-            must(docker, DockerArgv.volumeCreate(docker.bin(), VOLUME));
+            must(docker, volumeCreate);
             Docker.Result key = must(docker, keygen);
             String publicKey = lastLine(key.out());
             if (!PUBLIC_KEY.matcher(publicKey).matches()) {
@@ -325,7 +364,7 @@ public class NetworkAccessCommand implements Runnable {
             }
 
             // Absent is fine: the first `up` has nothing to remove.
-            docker.run(DockerArgv.rm(docker.bin(), CONTAINER), null, DOCKER_WITHIN);
+            docker.run(rm, null, DOCKER_WITHIN);
             must(docker, start);
 
             String address = address(context);
@@ -393,12 +432,15 @@ public class NetworkAccessCommand implements Runnable {
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits network-access down",
                     "  qits network-access down --revoke",
+                    "  qits network-access down --revoke --dry-run",
                     "",
+                    "- --dry-run revokes nothing, runs no docker and deletes no file: it prints the docker commands "
+                            + "`down` would run. It needs no Docker, and runs with QITS_TOKEN too.",
                     "- Revoking takes qits:admin."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE,
                     "1:The platform refused the revoke, or docker or a file failed.",
-                    "2:Used wrongly, not signed in, or not on a workstation.",
+                    "2:Used wrongly, not signed in, or not on a workstation (with --dry-run: inside the platform).",
                     "3:Docker is missing or not running."})
     public static class DownCommand extends PlatformCommand {
 
@@ -408,9 +450,24 @@ public class NetworkAccessCommand implements Runnable {
         @CommandLine.Option(names = "--revoke", description = "Also revoke the device and delete its key.")
         boolean revoke;
 
+        @CommandLine.Option(names = "--dry-run",
+                description = "Revoke nothing and run nothing; print the docker commands `down` would run.")
+        boolean dryRun;
+
         @Override
         protected int execute(CliContext context) throws CliFailure, InterruptedException {
-            workstationOnly(context);
+            workstationOnly(context, dryRun);
+            if (dryRun) {
+                // Never access.json: with QITS_TOKEN there is no session directory to read it from.
+                String bin = Docker.binOrName(context.env());
+                printDryRun(context, revoke
+                                ? "dry run: nothing ran; down --revoke would revoke the device access.json names, "
+                                        + "run these docker commands, in order, and delete access.json:"
+                                : "dry run: nothing ran; down would run this docker command:",
+                        revoke ? List.of(DockerArgv.rm(bin, CONTAINER), DockerArgv.volumeRm(bin, VOLUME))
+                                : List.of(DockerArgv.rm(bin, CONTAINER)));
+                return 0;
+            }
             Optional<AccessState> saved = state(context);
             Docker docker = Docker.of(context.env());
             String peerId = saved.map(AccessState::peerId).orElse(null);
