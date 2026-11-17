@@ -658,12 +658,12 @@
  │   release-request     Wait until a release request ends: FINALIZED, REJECTED, FAILED, WITHDRAWN │
  │   work                Wait until a work item reaches a status.                                  │
  │   ci-run              Wait until a CI run ends: SUCCESS, FAILED, CANCELLED, CONFIG_ERROR or TIM │
- │   list                The holder's waits: id, state, event, label, when it was declared, when i │
+ │   list                The holder's waits: id, state, event (timer, for a timer), label, when it │
  │   cancel              End one of the holder's open waits. An agent holder gets no turn for it.  │
  │   --event             (any)                                                                     │
  │   --when              (any)                                                                     │
- │   --timeout           (any)                                                                     │
- │   --label             (any)                                                                     │
+ │   --after             (any)                                                                     │
+ │   --until             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits wait
@@ -689,12 +689,12 @@
  │   release-request     Wait until a release request ends: FINALIZED, REJECTED, FAILED, WITHDRAWN │
  │   work                Wait until a work item reaches a status.                                  │
  │   ci-run              Wait until a CI run ends: SUCCESS, FAILED, CANCELLED, CONFIG_ERROR or TIM │
- │   list                The holder's waits: id, state, event, label, when it was declared, when i │
+ │   list                The holder's waits: id, state, event (timer, for a timer), label, when it │
  │   cancel              End one of the holder's open waits. An agent holder gets no turn for it.  │
  │   --event             (any)                                                                     │
  │   --when              (any)                                                                     │
- │   --timeout           (any)                                                                     │
- │   --label             (any)                                                                     │
+ │   --after             (any)                                                                     │
+ │   --until             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits wait
@@ -716,7 +716,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ wait ─────────────────────────────────────────────────────────────────────────────────── /list  ┐
- │   list              ▸ The holder's waits: id, state, event, label, when it was declared, when i │
+ │   list              ▸ The holder's waits: id, state, event (timer, for a timer), label, when it │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -747,7 +747,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ wait ─────────────────────────────────────────────────────────────────────────────────── /list  ┐
- │   list              ▸ The holder's waits: id, state, event, label, when it was declared, when i │
+ │   list              ▸ The holder's waits: id, state, event (timer, for a timer), label, when it │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
