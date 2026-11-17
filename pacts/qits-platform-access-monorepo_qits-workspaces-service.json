@@ -3750,6 +3750,136 @@
         "references": {
           "qits-call": {
             "app": "qits-workspaces-service",
+            "operationId": "createAgentWait"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits wait",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits wait: createAgentWait",
+      "key": "ab274363",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an agent declaring a timer",
+          "params": {
+            "agentId": "00000000-0000-4000-8000-0000000000a1"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "label": "look at the deploy again",
+            "timeout": "PT30M"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/workspaces/api/agents/${agentId}/waits",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/workspaces/api/agents/00000000-0000-4000-8000-0000000000a1/waits"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "closedAt": null,
+            "createdAt": "2026-01-01T00:00:00Z",
+            "expiresAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000100",
+            "label": "look at the deploy again",
+            "matchedEventId": null,
+            "state": "OPEN"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.expiresAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.label": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-workspaces-service",
             "operationId": "getWorkspaceActiveProcess"
           },
           "qits-trigger": {
