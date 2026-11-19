@@ -144,7 +144,7 @@ public class NetworkAccessCommand implements Runnable {
         return PlatformUrls.networkAccess(networkAccessUrl, context.env(), context.idpUrl()) + "/";
     }
 
-        static Path directory(CliContext context) {
+    static Path directory(CliContext context) {
         return context.sessionFile().directory();
     }
 
