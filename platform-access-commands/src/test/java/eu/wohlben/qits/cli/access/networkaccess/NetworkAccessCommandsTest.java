@@ -251,6 +251,17 @@ class NetworkAccessCommandsTest {
         assertThat(platform.requests("POST", "/network-access/api/peers")).hasSize(3);
     }
 
+    /** A device already active names the page that revokes it: the service's own host (qits-2361). */
+    @Test
+    void aDeviceAlreadyActivePointsAtTheNetworkAccessPage() throws Exception {
+        platform.answer("POST", "/network-access/api/peers", 409, "{\"message\":\"laptop is already an active device\"}");
+
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).isNotZero();
+        assertThat(result.err()).contains("Revoke that device at " + platform.url() + "/, or pass another --name.");
+    }
+
     /** Every docker call runs under a deadline (qits-2213): one that hangs fails `up` instead of hanging it. */
     @Test
     void aDockerCallThatHangsPastItsDeadlineFailsUp() throws Exception {

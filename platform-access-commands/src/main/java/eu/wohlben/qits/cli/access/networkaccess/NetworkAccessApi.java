@@ -25,6 +25,14 @@ public final class NetworkAccessApi {
         this.base = base;
     }
 
+    /**
+     * The page a person manages their devices on: qits-network-access-service serves
+     * qits-network-access-frontend at {@code /} of its own host (qits-2361).
+     */
+    public String page() {
+        return base + "/";
+    }
+
     /** {@code {image, version, entrypoint, user}}: what the companion runs from, and as whom. */
     public JsonNode companion() throws CliFailure, InterruptedException {
         return client.get(uri("/network-access/api/companion"));

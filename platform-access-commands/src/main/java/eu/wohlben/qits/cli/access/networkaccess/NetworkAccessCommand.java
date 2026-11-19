@@ -341,7 +341,7 @@ public class NetworkAccessCommand implements Runnable {
                     if (refused.status() == 409) {
                         throw new CliFailure(refused.getMessage() + System.lineSeparator()
                                 + "This companion's key, or the name " + device + ", is already an active device. "
-                                + "Revoke that device in the landing app, or pass another --name.",
+                                + "Revoke that device at " + api.page() + ", or pass another --name.",
                                 CliFailure.FAILED);
                     }
                     throw refused;
