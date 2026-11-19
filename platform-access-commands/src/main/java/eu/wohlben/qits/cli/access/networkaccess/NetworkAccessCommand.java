@@ -135,7 +135,16 @@ public class NetworkAccessCommand implements Runnable {
                 PlatformUrls.networkAccess(networkAccessUrl, context.env(), context.idpUrl()));
     }
 
-    static Path directory(CliContext context) {
+    /**
+     * The page a person manages their devices on: qits-network-access-service serves
+     * qits-network-access-frontend at {@code /} of its own host (qits-2361). Not a door of {@link
+     * NetworkAccessApi}, so no contract row has to reach it.
+     */
+    String page(CliContext context) throws CliFailure, InterruptedException {
+        return PlatformUrls.networkAccess(networkAccessUrl, context.env(), context.idpUrl()) + "/";
+    }
+
+        static Path directory(CliContext context) {
         return context.sessionFile().directory();
     }
 
@@ -341,7 +350,7 @@ public class NetworkAccessCommand implements Runnable {
                     if (refused.status() == 409) {
                         throw new CliFailure(refused.getMessage() + System.lineSeparator()
                                 + "This companion's key, or the name " + device + ", is already an active device. "
-                                + "Revoke that device at " + api.page() + ", or pass another --name.",
+                                + "Revoke that device at " + parent.page(context) + ", or pass another --name.",
                                 CliFailure.FAILED);
                     }
                     throw refused;
