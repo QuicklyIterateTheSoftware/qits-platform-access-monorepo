@@ -46,6 +46,7 @@ class NetworkAccessCommandsTest {
     private static final String REF = "registry.qits.wohlben.eu/qits/qits-network-access:2026.1110.191501";
     private static final List<String> AS_COMPANION = List.of("--user", "65532:65532", "--entrypoint",
             "/work/companion/qits-access-companion", "-v", "qits-network-access-companion:/state", REF);
+    private static final List<String> LINK_MTU_ENV = List.of("-e", "QITS_COMPANION_LINK_MTU=1380");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String COMPANION = """
@@ -129,11 +130,15 @@ class NetworkAccessCommandsTest {
         platform.answer("GET", "/network-access/api/peers/" + PEER_ID + "/tunnel", TUNNEL);
         platform.answer("POST", "/network-access/api/peers/" + PEER_ID + "/revoke", PEER.replace("ACTIVE", "REVOKED"));
         platform.answer("GET", "/healthz", "{\"status\":\"ok\",\"peerId\":\"" + PEER_ID + "\"}");
+        // A canned answer, not a real probe: a test must not depend on what network this machine
+        // happens to run on. Tests that care about failure replace this with their own.
+        NetworkAccessCommand.UpCommand.LINK_MTU = (host, port) -> new LinkMtu.Measurement.Measured("eth0", 1380);
     }
 
     @AfterEach
     void stop() {
         NetworkAccessCommand.DOCKER_WITHIN = Duration.ofSeconds(60);
+        NetworkAccessCommand.UpCommand.LINK_MTU = LinkMtu.DEFAULT;
         platform.close();
         idp.close();
     }
@@ -186,7 +191,7 @@ class NetworkAccessCommandsTest {
                 args("run", "--rm", "-i", AS_COMPANION, "configure"),
                 List.of("rm", "-f", "qits-network-access-companion"),
                 args("run", "-d", "--name", "qits-network-access-companion", "--restart", "unless-stopped",
-                        "-p", "127.0.0.1:47813:47813", AS_COMPANION, "run"));
+                        "-p", "127.0.0.1:47813:47813", LINK_MTU_ENV, AS_COMPANION, "run"));
         // The tunnel answer reaches the companion's configure whole.
         assertThat(JSON.readTree(stdin.toFile())).isEqualTo(JSON.readTree(TUNNEL));
         FakePlatform.Request created = platform.requests("POST", "/network-access/api/peers").getFirst();
@@ -200,7 +205,46 @@ class NetworkAccessCommandsTest {
                 .isEqualTo(PosixFilePermissions.fromString("rw-------"));
         assertThat(result.out()).contains("peer " + PEER_ID + " (laptop), tunnel IP 100.96.0.10")
                 .contains("platform calls now go through the companion")
-                .contains("browsers: set the proxy auto-config URL to " + platform.url() + "/proxy.pac");
+                .contains("browsers: set the proxy auto-config URL to " + platform.url() + "/proxy.pac")
+                .contains("companion mtu: host link eth0 1380");
+    }
+
+    /**
+     * qits-2373: the companion computes {@code min(edge MTU, link MTU - 80)} itself; this command
+     * hands it only the raw host link MTU, measured on the host because inside any container every
+     * interface reads the runtime's default regardless of what actually carries its packets.
+     */
+    @Test
+    void upMeasuresTheHostLinkTowardTheEdgeAndPassesItToTheRunContainerOnly() throws Exception {
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        List<List<String>> calls = dockerCalls();
+        assertThat(calls).filteredOn(argv -> "run".equals(argv.getFirst()) && "keygen".equals(argv.getLast()))
+                .allSatisfy(argv -> assertThat(argv).doesNotContain("QITS_COMPANION_LINK_MTU"));
+        assertThat(calls).filteredOn(argv -> "run".equals(argv.getFirst()) && "configure".equals(argv.getLast()))
+                .allSatisfy(argv -> assertThat(argv).doesNotContain("QITS_COMPANION_LINK_MTU"));
+        assertThat(calls.getLast()).isEqualTo(args("run", "-d", "--name", "qits-network-access-companion",
+                "--restart", "unless-stopped", "-p", "127.0.0.1:47813:47813", LINK_MTU_ENV, AS_COMPANION, "run"));
+        assertThat(result.out()).contains("companion mtu: host link eth0 1380");
+    }
+
+    /** Nothing can be measured: `up` warns and still starts the companion, without the variable. */
+    @Test
+    void aLinkMtuMeasurementFailureStartsWithoutTheVariableAndWarns() throws Exception {
+        NetworkAccessCommand.UpCommand.LINK_MTU =
+                (host, port) -> new LinkMtu.Measurement.Unmeasurable("no route to host");
+
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(dockerCalls().getLast()).isEqualTo(args("run", "-d", "--name",
+                "qits-network-access-companion", "--restart", "unless-stopped", "-p", "127.0.0.1:47813:47813",
+                AS_COMPANION, "run"));
+        assertThat(dockerCalls()).noneMatch(argv -> argv.stream().anyMatch(a -> a.contains("QITS_COMPANION_LINK_MTU")));
+        assertThat(result.err()).contains("warning: could not measure the host link toward 46.224.171.33: "
+                + "no route to host; the companion uses the edge's MTU");
+        assertThat(result.out()).doesNotContain("companion mtu:");
     }
 
     /**
@@ -392,7 +436,9 @@ class NetworkAccessCommandsTest {
             "docker run --rm -i " + String.join(" ", AS_COMPANION) + " configure",
             "docker rm -f qits-network-access-companion",
             "docker run -d --name qits-network-access-companion --restart unless-stopped -p 127.0.0.1:47813:47813 "
-                    + String.join(" ", AS_COMPANION) + " run");
+                    + String.join(" ", AS_COMPANION) + " run",
+            "up also passes -e QITS_COMPANION_LINK_MTU=<MTU of the host interface toward the edge> to the "
+                    + "run container");
 
     /** The token home a workspace is: QITS_TOKEN, and no session file the command may read. */
     private void inTheTokenHome() throws Exception {

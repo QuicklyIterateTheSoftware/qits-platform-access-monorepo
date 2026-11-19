@@ -273,6 +273,12 @@ public class NetworkAccessCommand implements Runnable {
                     "3:Docker is missing or not running, or the registry refused the pull: run `qits registry-login --configure`."})
     public static class UpCommand extends PlatformCommand {
 
+        /**
+         * What {@code up} asks for the host link's MTU toward the edge, replaced by a test that
+         * wants a canned {@link LinkMtu.Measurement} instead of a real probe.
+         */
+        static LinkMtu LINK_MTU = LinkMtu.DEFAULT;
+
         @CommandLine.ParentCommand
         NetworkAccessCommand parent;
 
@@ -320,6 +326,8 @@ public class NetworkAccessCommand implements Runnable {
                 printDryRun(context, "dry run: nothing ran; up would run these docker commands, in order, and "
                                 + "register the device " + device + " between keygen and configure:",
                         List.of(pullArgv, volumeCreate, keygen, configure, rm, start));
+                context.out().println("up also passes -e QITS_COMPANION_LINK_MTU=<MTU of the host interface "
+                        + "toward the edge> to the run container");
                 return 0;
             }
 
@@ -361,6 +369,7 @@ public class NetworkAccessCommand implements Runnable {
                 throw new CliFailure("The network-access service answered a peer with no id.", CliFailure.FAILED);
             }
             JsonNode tunnel = api.peerTunnel(peerId);
+            Optional<Integer> linkMtu = linkMtu(context, tunnel);
             String tunnelJson;
             try {
                 tunnelJson = JSON.writeValueAsString(tunnel);
@@ -374,7 +383,13 @@ public class NetworkAccessCommand implements Runnable {
 
             // Absent is fine: the first `up` has nothing to remove.
             docker.run(rm, null, DOCKER_WITHIN);
-            must(docker, start);
+            // Rebuilt rather than reused: the MTU is only known now, after the tunnel answered, and
+            // only the detached run takes it — never keygen or configure.
+            List<String> toStart = linkMtu.isEmpty() ? start
+                    : companionRun(bin, HostRunSpec.detached(CONTAINER, ref).restart("unless-stopped")
+                            .publish(PUBLISH).env("QITS_COMPANION_LINK_MTU", Integer.toString(linkMtu.get())),
+                            companion, "run");
+            must(docker, toStart);
 
             String address = address(context);
             boolean healthy = awaitHealthy(context, address);
@@ -431,6 +446,32 @@ public class NetworkAccessCommand implements Runnable {
         private static String lastLine(String out) {
             String[] lines = out.strip().split("\\R");
             return lines.length == 0 ? "" : lines[lines.length - 1].strip();
+        }
+
+        /**
+         * The host link's MTU toward the tunnel's edge, printed once measured; empty, with a
+         * warning on {@link CliContext#err()}, when nothing could be measured — the companion
+         * still starts, it just applies the rule to its own idea of the edge's MTU instead.
+         */
+        private static Optional<Integer> linkMtu(CliContext context, JsonNode tunnel) {
+            String address = SafeText.line(tunnel.path("edge").path("publicAddress").asText(""));
+            int port = tunnel.path("edge").path("listenPort").asInt(0);
+            if (address.isBlank() || port <= 0) {
+                context.err().println("warning: could not measure the host link toward " + address
+                        + ": the tunnel named no edge address; the companion uses the edge's MTU");
+                return Optional.empty();
+            }
+            LinkMtu.Measurement measured = LINK_MTU.measure(address, port);
+            if (measured instanceof LinkMtu.Measurement.Measured found) {
+                context.out().println("companion mtu: host link " + SafeText.line(found.interfaceName())
+                        + " " + found.mtu());
+                return Optional.of(found.mtu());
+            }
+            String reason = measured instanceof LinkMtu.Measurement.Unmeasurable unmeasurable
+                    ? unmeasurable.reason() : "no measurement";
+            context.err().println("warning: could not measure the host link toward " + address + ": "
+                    + SafeText.line(reason) + "; the companion uses the edge's MTU");
+            return Optional.empty();
         }
     }
 
