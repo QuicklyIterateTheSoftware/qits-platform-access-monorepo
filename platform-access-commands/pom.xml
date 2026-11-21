@@ -51,7 +51,7 @@
              first that reads JDK 25 class files. Not in any BOM, so it is pinned here. -->
         <jacoco.version>0.8.14</jacoco.version>
         <!-- qits-containers-javalib's driver jar, the house's docker layer: a released calver. -->
-        <qits.containers-driver.version>2026.1121.22941</qits.containers-driver.version>
+        <qits.containers-driver.version>2026.1121.232208</qits.containers-driver.version>
 
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
