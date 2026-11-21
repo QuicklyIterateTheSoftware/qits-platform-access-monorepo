@@ -54,9 +54,10 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "superseded (MOVED): the wait does not care which request it is on."},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:The wait is declared and printed, or the branch already reached the target; it says "
-                + "which.",
-                "1:An early step (FAILED, CONFLICTED or WITHDRAWN) already holds, so nothing was declared; or the "
-                        + "platform refused, or cannot be reached.",
+                + "which. A wait that comes back already MATCHED is 0 too, for the same reason.",
+                "1:An early step (FAILED, CONFLICTED or WITHDRAWN) already holds, so nothing was declared; the "
+                        + "platform refused, or cannot be reached; or the wait came back BROKEN already (the "
+                        + "message says why).",
                 "2:Used wrongly (no holder, no branch, an --until that is not joined, released, live or failed, a "
                         + "project qits does not know), not signed in, or the session ended."})
 public class BranchWait extends PlatformCommand {

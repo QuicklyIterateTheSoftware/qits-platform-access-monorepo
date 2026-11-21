@@ -1800,10 +1800,12 @@ class PlatformCommandsTest {
         assertThat(platform.requests("GET", REQUESTS).getFirst().query()).isNull();
         assertThat(platform.requests("POST", runsOf(REJECTED_ID, "entity-diagram")).getFirst().body()).isEmpty();
         assertThat(r.out().lines().toList()).containsExactly(
-                "Asked for entity-diagram on release request " + REJECTED_ID + ": run bump-1",
+                "Asked for entity-diagram on release request " + REJECTED_ID + ": automation job bump-1",
                 "The request folds again when the output is committed to maintenance/automations/entity-diagram/"
                         + REJECTED_ID + "; QA then runs again.",
-                "Follow the run with `qits maintenance bump bump-1`.");
+                "bump-1 is not a CI run id: `qits maintenance bump bump-1` shows the job and, once qits-ci has "
+                        + "accepted it, its CI run (ciRunId) for `qits wait ci-run <ci run id>`.",
+                "`qits wait release-request " + REJECTED_ID + "` waits for the re-fold.");
     }
 
     @Test

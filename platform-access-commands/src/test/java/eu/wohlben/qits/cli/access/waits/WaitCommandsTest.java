@@ -456,6 +456,68 @@ class WaitCommandsTest {
                 """.formatted(RUN)));
     }
 
+    // --- a wait that comes back already decided (qits-2470) ---
+
+    @Test
+    void aBrokenCiRunWaitFailsWithTheReasonAndTheJobHint() throws Exception {
+        platform.route("POST", WAITS, request -> new FakePlatform.Answer(201, """
+                {"id":"%s","state":"BROKEN",
+                 "brokenReason":"run %s does not exist: qits-ci knows no run %s"}
+                """.formatted(WAIT, RUN, RUN), Map.of()));
+
+        Result result = run("wait", "ci-run", RUN);
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("BROKEN").contains("run " + RUN + " does not exist")
+                .contains("qits release-request regenerate").contains("qits maintenance automation run")
+                .contains("qits maintenance bump").contains("ciRunId");
+        assertThat(result.out()).contains("Wait " + WAIT + ": BROKEN").doesNotContain("End your turn now");
+    }
+
+    @Test
+    void aBrokenWaitWithNoHintJustFailsOnTheReason() throws Exception {
+        platform.route("POST", WAITS, request -> new FakePlatform.Answer(201, """
+                {"id":"%s","state":"BROKEN","brokenReason":"the branch was deleted"}
+                """.formatted(WAIT), Map.of()));
+
+        Result result = run("wait", "release-request", REQUEST);
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("BROKEN").contains("the branch was deleted")
+                .doesNotContain("qits maintenance bump");
+        assertThat(result.out()).contains("Wait " + WAIT + ": BROKEN").doesNotContain("End your turn now");
+    }
+
+    @Test
+    void aMatchedWaitCarriesOnWithoutEndingTheTurn() throws Exception {
+        platform.route("POST", WAITS, request -> new FakePlatform.Answer(201, """
+                {"id":"%s","state":"MATCHED","matchedEventId":"ee1e2d3f-0000-4000-8000-000000000099"}
+                """.formatted(WAIT), Map.of()));
+
+        Result result = run("wait", "release-request", REQUEST);
+
+        assertThat(result.exit()).isZero();
+        assertThat(result.out()).contains("Wait " + WAIT + ": MATCHED")
+                .contains("Matched already when declared: carry on, there is nothing to wait for.")
+                .doesNotContain("End your turn now");
+        assertThat(result.err()).isEmpty();
+    }
+
+    @Test
+    void jsonForABrokenWaitIsExitOneWithTheWaitOnStdout() throws Exception {
+        platform.route("POST", WAITS, request -> new FakePlatform.Answer(201, """
+                {"id":"%s","state":"BROKEN",
+                 "brokenReason":"run %s does not exist: qits-ci knows no run %s"}
+                """.formatted(WAIT, RUN, RUN), Map.of()));
+
+        Result result = run("wait", "ci-run", RUN, "-o", "json");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(JSON.readTree(result.out()).path("state").asText()).isEqualTo("BROKEN");
+        assertThat(result.out()).doesNotContain("End your turn now");
+        assertThat(result.err()).contains("BROKEN").contains("does not exist");
+    }
+
     @Test
     void workResolvesTheQualifiedIdAndWaitsForTheStatus() throws Exception {
         Result result = run("wait", "work", "qits-123", "--status", "verified", "--label", "my ticket");

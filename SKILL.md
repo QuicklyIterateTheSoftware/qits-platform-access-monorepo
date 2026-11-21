@@ -2578,7 +2578,7 @@ qits release-request --project qits decline --request qits-ci-service-rr-221 --s
 
 Generate one release output again on an open release request: the entity diagram, the screenshot baselines, a CLI's tapes, the dependency bump, the estate pins, or the golden recordings (maven or npm).
 
-QA checks the entity diagram, the screenshot baselines and a CLI's tapes and fails when they are stale; it does not regenerate them. This command asks for the run. The automation commits the output to maintenance/automations/<kind>/<request id>, the request folds again with it, and QA then runs again. It prints the run's id.
+QA checks the entity diagram, the screenshot baselines and a CLI's tapes and fails when they are stale; it does not regenerate them. This command asks for the run. The automation commits the output to maintenance/automations/<kind>/<request id>, the request folds again with it, and QA then runs again. It prints the automation job's id, which is not a CI run.
 
 ```
 qits release-request regenerate --kind <kind> [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>] [--request <id>]
@@ -2603,7 +2603,7 @@ qits release-request --project qits --repository qits-platform-access-monorepo r
 
 - Without --request it takes the repository's one open request. A REJECTED request is open: a red QA is the usual reason to regenerate.
 - 409 means a run of this kind is already active for the request, the request is not open or has no fold, or bumping is off. 404 means the platform knows no such kind or request. 503 means qits-maintenance cannot be reached; nothing ran. 504 means it was asked and did not answer in time; whether it ran is unknown, so check `qits maintenance automations --request <id>` before pressing again.
-- `qits maintenance automations --request <id>` shows each kind's state, and `qits maintenance bump <run id>` how the run went.
+- `qits maintenance automations --request <id>` shows each kind's state, and `qits maintenance bump <job id>` how the job went.
 
 ### Exit codes
 
@@ -4090,8 +4090,8 @@ qits wait release-request qits-ci-service-rr-12 --desk qits-ci
 
 ### Exit codes
 
-- `0` The wait is declared; it is printed.
-- `1` The platform refused (the message names the status), or cannot be reached.
+- `0` The wait is declared; it is printed. A wait already MATCHED or otherwise closed when declared is 0 too: there is nothing left to wait for.
+- `1` The platform refused (the message names the status), cannot be reached, or the wait came back BROKEN already (the platform decided it can never fire; the message says why).
 - `2` Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, --timeout, --after or --until that cannot be read or is over a limit, a timer given with a selection or --timeout, an --until in the past), not signed in, or the session ended.
 
 ## qits wait branch
@@ -4135,8 +4135,8 @@ qits wait branch ticket/qits-123 --until failed --repository qits-ci-service
 
 ### Exit codes
 
-- `0` The wait is declared and printed, or the branch already reached the target; it says which.
-- `1` An early step (FAILED, CONFLICTED or WITHDRAWN) already holds, so nothing was declared; or the platform refused, or cannot be reached.
+- `0` The wait is declared and printed, or the branch already reached the target; it says which. A wait that comes back already MATCHED is 0 too, for the same reason.
+- `1` An early step (FAILED, CONFLICTED or WITHDRAWN) already holds, so nothing was declared; the platform refused, or cannot be reached; or the wait came back BROKEN already (the message says why).
 - `2` Used wrongly (no holder, no branch, an --until that is not joined, released, live or failed, a project qits does not know), not signed in, or the session ended.
 
 ## qits wait release-request
@@ -4175,8 +4175,8 @@ qits wait release-request 4f2a91c0-1d2e-4c3b-9a8f-0123456789ab
 
 ### Exit codes
 
-- `0` The wait is declared; it is printed.
-- `1` The platform refused (the message names the status), or cannot be reached.
+- `0` The wait is declared; it is printed. A request already in a final state fires it at once (MATCHED), which is 0 too.
+- `1` The platform refused (the message names the status), cannot be reached, or the wait came back BROKEN already (the message says why).
 - `2` Used wrongly (no holder, not a whole id or uuid), not signed in, or the session ended.
 
 ## qits wait work
@@ -4210,8 +4210,8 @@ qits wait work qits-123 --status DONE --timeout 1d --label 'qits-123 to be done'
 
 ### Exit codes
 
-- `0` The wait is declared; it is printed.
-- `1` The platform refused (for example an item it does not know, HTTP 404), or cannot be reached.
+- `0` The wait is declared; it is printed. An item already at that status fires it at once (MATCHED), which is 0 too.
+- `1` The platform refused (for example an item it does not know, HTTP 404), cannot be reached, or the wait came back BROKEN already (the message says why).
 - `2` Used wrongly (no holder, no --status), not signed in, or the session ended.
 
 ## qits wait ci-run
@@ -4244,8 +4244,8 @@ qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a
 
 ### Exit codes
 
-- `0` The wait is declared; it is printed.
-- `1` The platform refused (the message names the status), or cannot be reached.
+- `0` The wait is declared; it is printed. A run already ended fires it at once (MATCHED), which is 0 too.
+- `1` The platform refused (the message names the status), cannot be reached, or the wait came back BROKEN already (the message says why; a run id that does not exist is commonly an automation job id, not a CI run id).
 - `2` Used wrongly (no holder, not a whole id), not signed in, or the session ended.
 
 ## qits wait list

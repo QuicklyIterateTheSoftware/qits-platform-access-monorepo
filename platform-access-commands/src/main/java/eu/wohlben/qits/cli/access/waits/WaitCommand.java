@@ -97,8 +97,10 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                 "  qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001",
                 "  qits wait release-request qits-ci-service-rr-12 --desk qits-ci"},
         exitCodeListHeading = HelpText.EXIT_CODES,
-        exitCodeList = {"0:The wait is declared; it is printed.",
-                "1:The platform refused (the message names the status), or cannot be reached.",
+        exitCodeList = {"0:The wait is declared; it is printed. A wait already MATCHED or otherwise closed when "
+                        + "declared is 0 too: there is nothing left to wait for.",
+                "1:The platform refused (the message names the status), cannot be reached, or the wait came back "
+                        + "BROKEN already (the platform decided it can never fire; the message says why).",
                 "2:Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, "
                         + "--timeout, --after or --until that cannot be read or is over a limit, a timer given with "
                         + "a selection or --timeout, an --until in the past), not signed in, or the session ended."})
@@ -338,6 +340,15 @@ public class WaitCommand extends PlatformCommand {
      */
     int declare(CliContext context, boolean json, String eventName, List<List<WhenGrammar.Condition>> groups,
                 Declaration given, String presetLabel) throws CliFailure, InterruptedException {
+        return declare(context, json, eventName, groups, given, presetLabel, null);
+    }
+
+    /**
+     * {@code declare}, with a hint appended to a BROKEN reason that says the subject does not exist
+     * (qits-2470): only {@code wait ci-run} has one, for a run id that was never a CI run id at all.
+     */
+    int declare(CliContext context, boolean json, String eventName, List<List<WhenGrammar.Condition>> groups,
+                Declaration given, String presetLabel, String brokenHint) throws CliFailure, InterruptedException {
         if (!blank(after) || !blank(until)) {
             // Given before a preset's name, they would be dropped without a word: the preset runs, not the bare form.
             throw new CliFailure("--after and --until declare a timer with the bare `qits wait`; a preset takes "
@@ -348,17 +359,47 @@ public class WaitCommand extends PlatformCommand {
         String timeout = WaitTimeout.iso(given.timeout != null ? given.timeout : declaration.timeout);
         String label = !blank(given.label) ? given.label : !blank(declaration.label) ? declaration.label : presetLabel;
         JsonNode wait = api(context).create(holder, body(eventName, groups, label, timeout));
-        return print(context, json, wait, "when it fires or times out");
+        return print(context, json, wait, "when it fires or times out", brokenHint);
     }
 
     private static int print(CliContext context, boolean json, JsonNode wait, String when) throws CliFailure {
+        return print(context, json, wait, when, null);
+    }
+
+    /**
+     * Prints the wait exactly as declared, then says what its state means. The platform looks the
+     * subject up synchronously, so a wait can come back already decided (qits-2470): OPEN is the
+     * only state that is actually waited on, so only it gets "end your turn now". BROKEN means
+     * nothing will ever fire it, so this fails the command instead of telling the caller to wait on
+     * nothing; {@code brokenHint}, when given, is appended to a reason that says the subject does
+     * not exist. Any other state (MATCHED most often: the selection was already true when declared)
+     * closes at once with no new turn promised for it, because there is nothing left to wait for.
+     */
+    private static int print(CliContext context, boolean json, JsonNode wait, String when, String brokenHint)
+            throws CliFailure {
         if (json) {
             printJson(context.out(), wait);
+        } else {
+            printWait(context.out(), wait);
+        }
+        String state = text(wait, "state");
+        if (state.equals("BROKEN")) {
+            String rawReason = text(wait, "brokenReason");
+            String hint = brokenHint != null && rawReason.contains("does not exist") ? " " + brokenHint : "";
+            throw new CliFailure("The wait was declared but is already BROKEN: " + SafeText.line(rawReason)
+                    + "; nothing will fire it, so do not end the turn waiting for it." + hint, CliFailure.FAILED);
+        }
+        if (json) {
             return 0;
         }
-        printWait(context.out(), wait);
         context.out().println();
-        context.out().println("Declared. End your turn now: you get a new turn " + when + ". Do not poll.");
+        if (state.isEmpty() || state.equals("OPEN")) {
+            context.out().println("Declared. End your turn now: you get a new turn " + when + ". Do not poll.");
+        } else if (state.equals("MATCHED")) {
+            context.out().println("Matched already when declared: carry on, there is nothing to wait for.");
+        } else {
+            context.out().println("Already " + state + ": carry on, there is nothing to wait for.");
+        }
         return 0;
     }
 
@@ -453,7 +494,10 @@ public class WaitCommand extends PlatformCommand {
                             + "matches it exactly, so the start of a uuid is refused, and the id must be in the "
                             + "case the list shows."},
             exitCodeListHeading = HelpText.EXIT_CODES,
-            exitCodeList = {"0:The wait is declared; it is printed.", HelpText.REFUSED,
+            exitCodeList = {"0:The wait is declared; it is printed. A request already in a final state fires it "
+                            + "at once (MATCHED), which is 0 too.",
+                    "1:The platform refused (the message names the status), cannot be reached, or the wait came "
+                            + "back BROKEN already (the message says why).",
                     "2:Used wrongly (no holder, not a whole id or uuid), not signed in, or the session ended."})
     public static class ReleaseRequestWait extends PlatformCommand {
 
@@ -504,8 +548,10 @@ public class WaitCommand extends PlatformCommand {
             footer = {"  qits wait work qits-123 --status VERIFIED",
                     "  qits wait work qits-123 --status DONE --timeout 1d --label 'qits-123 to be done'"},
             exitCodeListHeading = HelpText.EXIT_CODES,
-            exitCodeList = {"0:The wait is declared; it is printed.",
-                    "1:The platform refused (for example an item it does not know, HTTP 404), or cannot be reached.",
+            exitCodeList = {"0:The wait is declared; it is printed. An item already at that status fires it at "
+                            + "once (MATCHED), which is 0 too.",
+                    "1:The platform refused (for example an item it does not know, HTTP 404), cannot be reached, "
+                            + "or the wait came back BROKEN already (the message says why).",
                     "2:Used wrongly (no holder, no --status), not signed in, or the session ended."})
     public static class WorkWait extends PlatformCommand {
 
@@ -568,12 +614,25 @@ public class WaitCommand extends PlatformCommand {
                     "",
                     "- Give the whole id: `qits ci runs ... -o json` shows it."},
             exitCodeListHeading = HelpText.EXIT_CODES,
-            exitCodeList = {"0:The wait is declared; it is printed.", HelpText.REFUSED,
+            exitCodeList = {"0:The wait is declared; it is printed. A run already ended fires it at once "
+                            + "(MATCHED), which is 0 too.",
+                    "1:The platform refused (the message names the status), cannot be reached, or the wait came "
+                            + "back BROKEN already (the message says why; a run id that does not exist is "
+                            + "commonly an automation job id, not a CI run id).",
                     "2:Used wrongly (no holder, not a whole id), not signed in, or the session ended."})
     public static class CiRunWait extends PlatformCommand {
 
         static final String EVENT = "BuildStatusChanged";
         static final List<String> FINAL_STATUSES = List.of("SUCCESS", "FAILED", "CANCELLED", "CONFIG_ERROR", "TIMED_OUT");
+
+        /**
+         * Appended to a BROKEN reason that says the run does not exist: the usual cause is an
+         * automation job id (`qits release-request regenerate`, `qits maintenance automation run`)
+         * mistaken for one, before qits-ci has even accepted the bump's run (qits-2470).
+         */
+        static final String NOT_A_RUN_HINT = "An id printed by `qits release-request regenerate` or `qits "
+                + "maintenance automation run` is an automation job id, not a CI run; `qits maintenance bump "
+                + "<id>` shows its CI run (ciRunId) once qits-ci has accepted it.";
 
         @CommandLine.ParentCommand
         WaitCommand parent;
@@ -590,7 +649,8 @@ public class WaitCommand extends PlatformCommand {
             String runId = wholeId(id, "run", "`qits ci runs --project <p> --repository <r> -o json`");
             List<List<WhenGrammar.Condition>> groups = onePerValue(
                     new WhenGrammar.Condition("runId", WhenGrammar.Op.EXACT, runId), "status", FINAL_STATUSES);
-            return parent.declare(context, json, EVENT, groups, declaration, "CI run " + shortId(runId) + " to end");
+            return parent.declare(context, json, EVENT, groups, declaration, "CI run " + shortId(runId) + " to end",
+                    NOT_A_RUN_HINT);
         }
     }
 

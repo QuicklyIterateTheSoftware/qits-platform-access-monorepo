@@ -1168,7 +1168,9 @@ and the screenshot baselines and fails when they are stale, but does not regener
 how a person or an agent asks for that. Without `--request` it takes the repository's one open
 request (a REJECTED one counts), and refuses when there is none or more than one. The automation
 commits the output to `maintenance/automations/<kind>/<request id>`, the request folds again with
-it, and QA runs again. It prints the run's id; `qits maintenance bump <run id>` shows how it went.
+it, and QA runs again. It prints the automation job's id, not a CI run's; `qits maintenance bump
+<job id>` shows the job and, once qits-ci has accepted it, the job's CI run (`ciRunId`) for `qits
+wait ci-run <ci run id>`. `qits wait release-request <id>` waits for the re-fold.
 
 - HTTP 409 means a run of that kind is already active for the request, the request is not open or
   has no fold, or bumping is off. HTTP 404 means no such kind or request. HTTP 503 means
@@ -1893,6 +1895,15 @@ that happens (qits-1153, qits-1618). The command sends the wait to qits-workspac
 for a desk — prints it and returns at once. It never blocks. Declare the wait, then end the turn:
 the next turn names what fired, the event or the timeout. Never poll for the same thing in a
 background loop.
+
+The platform looks the subject up when it creates the wait, so the answer can already be decided
+(qits-2470): OPEN prints and says to end the turn, as above. BROKEN (the platform decided it can
+never fire, with a `brokenReason`) prints the wait and fails the command instead (exit 1, the
+reason on stderr) rather than telling the caller to end a turn for nothing; `wait ci-run` adds a
+hint when the reason says the run does not exist, because that id is usually an automation job id
+(`qits release-request regenerate`, `qits maintenance automation run`), not a CI run id. Any other
+state — MATCHED most often, the selection already true when declared — prints the wait and exits 0
+with no new turn promised for it: there is nothing left to wait for.
 
 The holder is `--agent` or `--desk` (never both), else `QITS_AGENT_ID`, else `QITS_DESK_PROJECT`.
 The harness sets `QITS_AGENT_ID` in an agent's environment and `QITS_DESK_PROJECT` in a project's

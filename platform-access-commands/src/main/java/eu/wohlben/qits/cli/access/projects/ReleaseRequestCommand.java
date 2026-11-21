@@ -864,7 +864,8 @@ public class ReleaseRequestCommand implements Runnable {
                             + "are stale; it "
                             + "does not regenerate them. This command asks for the run. The automation commits the "
                             + "output to maintenance/automations/<kind>/<request id>, the request folds again with "
-                            + "it, and QA then runs again. It prints the run's id."},
+                            + "it, and QA then runs again. It prints the automation job's id, which is not a CI "
+                            + "run."},
             footerHeading = HelpText.EXAMPLES,
             footer = {
                     "  qits release-request --project qits --repository qits-landing-app regenerate "
@@ -882,7 +883,7 @@ public class ReleaseRequestCommand implements Runnable {
                             + "asked and did not answer in time; whether it ran is unknown, so check `qits "
                             + "maintenance automations --request <id>` before pressing again.",
                     "- `qits maintenance automations --request <id>` shows each kind's state, and "
-                            + "`qits maintenance bump <run id>` how the run went."},
+                            + "`qits maintenance bump <job id>` how the job went."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE, HelpText.REFUSED,
                     "2:Used wrongly (for example no --request when the repository has no open request or more "
@@ -928,11 +929,15 @@ public class ReleaseRequestCommand implements Runnable {
                 SafeJson.print(context.out(), answer);
                 return 0;
             }
-            String runId = text(answer, "id");
-            context.out().println("Asked for " + wantedKind + " on release request " + requestName + ": run " + runId);
+            String jobId = text(answer, "id");
+            context.out().println("Asked for " + wantedKind + " on release request " + requestName
+                    + ": automation job " + jobId);
             context.out().println("The request folds again when the output is committed to maintenance/automations/"
                     + wantedKind + "/" + requestId + "; QA then runs again.");
-            context.out().println("Follow the run with `qits maintenance bump " + runId + "`.");
+            context.out().println(jobId + " is not a CI run id: `qits maintenance bump " + jobId + "` shows the "
+                    + "job and, once qits-ci has accepted it, its CI run (ciRunId) for `qits wait ci-run <ci run "
+                    + "id>`.");
+            context.out().println("`qits wait release-request " + requestName + "` waits for the re-fold.");
             return 0;
         }
 
