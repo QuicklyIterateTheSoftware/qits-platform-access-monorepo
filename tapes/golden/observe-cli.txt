@@ -790,22 +790,22 @@ esourceAttributes":{"service.name":"qits-example","service.version":"2026.1231.1
 nvironment.name":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source":"_service/qits-exa
 mple","record":{"epochNanos":1767225600010000000,"severityNumber":9,"severityText":"INFO","body":"li
 sting invoices","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b01","serviceNam
-e":"qits-example","attributes":{},"resourceAttributes":{"service.name":"qits-example","service.versi
-on":"2026.1231.120000","deployment.environment.name":"dev"}}},{"kind":"span","receivedAtMillis":1767
-225602000,"source":"_service/qits-example","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","s
-panId":"7b2e1d3c4f5a6b02","parentSpanId":"7b2e1d3c4f5a6b01","serviceName":"qits-example","scopeName"
-:"test-instrumentation","name":"SELECT invoices","kind":"CLIENT","startEpochNanos":17672256000500000
-00,"durationMs":600,"status":"UNSET","statusMessage":"","attributes":{},"events":[],"resourceAttribu
-tes":{"service.name":"qits-example","service.version":"2026.1231.120000","deployment.environment.nam
-e":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source":"_service/qits-example","record"
-:{"epochNanos":1767225600700000000,"severityNumber":17,"severityText":"ERROR","body":"invoice store
-unreachable","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b01","serviceName":
-"qits-example","attributes":{"exception.type":"java.lang.IllegalStateException","exception.message":
-"invoice store unreachable"},"resourceAttributes":{"service.name":"qits-example","service.version":"
-2026.1231.120000","deployment.environment.name":"dev"}}},{"kind":"span","receivedAtMillis":176722560
-2000,"source":"_service/qits-example","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a02","spanId
-":"7b2e1d3c4f5a6b03","parentSpanId":"","serviceName":"qits-example","scopeName":"test-instrumentatio
-n","name":"GET /health","kind":"SERVER","startEpochNanos":1767225601000000000,"durationMs":5,"status
+e":"qits-example","source":"_service/qits-example","attributes":{},"resourceAttributes":{"service.na
+me":"qits-example","service.version":"2026.1231.120000","deployment.environment.name":"dev"}}},{"kin
+d":"span","receivedAtMillis":1767225602000,"source":"_service/qits-example","record":{"traceId":"6a1
+f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b02","parentSpanId":"7b2e1d3c4f5a6b01","servic
+eName":"qits-example","scopeName":"test-instrumentation","name":"SELECT invoices","kind":"CLIENT","s
+tartEpochNanos":1767225600050000000,"durationMs":600,"status":"UNSET","statusMessage":"","attributes
+":{},"events":[],"resourceAttributes":{"service.name":"qits-example","service.version":"2026.1231.12
+0000","deployment.environment.name":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source"
+:"_service/qits-example","record":{"epochNanos":1767225600700000000,"severityNumber":17,"severityTex
+t":"ERROR","body":"invoice store unreachable","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":
+"7b2e1d3c4f5a6b01","serviceName":"qits-example","source":"_service/qits-example","attributes":{"exce
+ption.type":"java.lang.IllegalStateException","exception.message":"invoice store unreachable"},"reso
+urceAttributes":{"service.name":"qits-example","service.version":"2026.1231.120000","deployment.envi
+ronment.name":"dev"}}},{"kind":"span","receivedAtMillis":1767225602000,"source":"_service/qits-examp
+le","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a02","spanId":"7b2e1d3c4f5a6b03","parentSpanId
+":"","serviceName":"qits-example","scopeName":"test-instrumentation","name":"GET /health","kind":"SE
 ────────────────────────────────────────────────────────────────────────────────
 $ qits observe query --filter service=qits-example --since 2026-01-01T00:00:00Z --until 2026-01-01T0
 1:00:00Z -o json
@@ -821,22 +821,22 @@ esourceAttributes":{"service.name":"qits-example","service.version":"2026.1231.1
 nvironment.name":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source":"_service/qits-exa
 mple","record":{"epochNanos":1767225600010000000,"severityNumber":9,"severityText":"INFO","body":"li
 sting invoices","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b01","serviceNam
-e":"qits-example","attributes":{},"resourceAttributes":{"service.name":"qits-example","service.versi
-on":"2026.1231.120000","deployment.environment.name":"dev"}}},{"kind":"span","receivedAtMillis":1767
-225602000,"source":"_service/qits-example","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","s
-panId":"7b2e1d3c4f5a6b02","parentSpanId":"7b2e1d3c4f5a6b01","serviceName":"qits-example","scopeName"
-:"test-instrumentation","name":"SELECT invoices","kind":"CLIENT","startEpochNanos":17672256000500000
-00,"durationMs":600,"status":"UNSET","statusMessage":"","attributes":{},"events":[],"resourceAttribu
-tes":{"service.name":"qits-example","service.version":"2026.1231.120000","deployment.environment.nam
-e":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source":"_service/qits-example","record"
-:{"epochNanos":1767225600700000000,"severityNumber":17,"severityText":"ERROR","body":"invoice store
-unreachable","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b01","serviceName":
-"qits-example","attributes":{"exception.type":"java.lang.IllegalStateException","exception.message":
-"invoice store unreachable"},"resourceAttributes":{"service.name":"qits-example","service.version":"
-2026.1231.120000","deployment.environment.name":"dev"}}},{"kind":"span","receivedAtMillis":176722560
-2000,"source":"_service/qits-example","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a02","spanId
-":"7b2e1d3c4f5a6b03","parentSpanId":"","serviceName":"qits-example","scopeName":"test-instrumentatio
-n","name":"GET /health","kind":"SERVER","startEpochNanos":1767225601000000000,"durationMs":5,"status
+e":"qits-example","source":"_service/qits-example","attributes":{},"resourceAttributes":{"service.na
+me":"qits-example","service.version":"2026.1231.120000","deployment.environment.name":"dev"}}},{"kin
+d":"span","receivedAtMillis":1767225602000,"source":"_service/qits-example","record":{"traceId":"6a1
+f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":"7b2e1d3c4f5a6b02","parentSpanId":"7b2e1d3c4f5a6b01","servic
+eName":"qits-example","scopeName":"test-instrumentation","name":"SELECT invoices","kind":"CLIENT","s
+tartEpochNanos":1767225600050000000,"durationMs":600,"status":"UNSET","statusMessage":"","attributes
+":{},"events":[],"resourceAttributes":{"service.name":"qits-example","service.version":"2026.1231.12
+0000","deployment.environment.name":"dev"}}},{"kind":"log","receivedAtMillis":1767225602000,"source"
+:"_service/qits-example","record":{"epochNanos":1767225600700000000,"severityNumber":17,"severityTex
+t":"ERROR","body":"invoice store unreachable","traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a01","spanId":
+"7b2e1d3c4f5a6b01","serviceName":"qits-example","source":"_service/qits-example","attributes":{"exce
+ption.type":"java.lang.IllegalStateException","exception.message":"invoice store unreachable"},"reso
+urceAttributes":{"service.name":"qits-example","service.version":"2026.1231.120000","deployment.envi
+ronment.name":"dev"}}},{"kind":"span","receivedAtMillis":1767225602000,"source":"_service/qits-examp
+le","record":{"traceId":"6a1f0c2b9d8e47f3a5b4c3d2e1f00a02","spanId":"7b2e1d3c4f5a6b03","parentSpanId
+":"","serviceName":"qits-example","scopeName":"test-instrumentation","name":"GET /health","kind":"SE
 ────────────────────────────────────────────────────────────────────────────────
 $ qits observe
 Missing required option: '--filter=<conditions>'
