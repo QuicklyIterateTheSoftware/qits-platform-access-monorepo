@@ -509,6 +509,7 @@
                   "serviceName": "qits-example",
                   "severityNumber": 9,
                   "severityText": "INFO",
+                  "source": "_service/qits-example",
                   "spanId": "7b2e1d3c4f5a6b01",
                   "traceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01"
                 },
@@ -557,6 +558,7 @@
                   "serviceName": "qits-example",
                   "severityNumber": 17,
                   "severityText": "ERROR",
+                  "source": "_service/qits-example",
                   "spanId": "7b2e1d3c4f5a6b01",
                   "traceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01"
                 },
@@ -935,6 +937,14 @@
                 }
               ]
             },
+            "$.records[1].record.source": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.records[1].record.spanId": {
               "combine": "AND",
               "matchers": [
@@ -1184,6 +1194,14 @@
               ]
             },
             "$.records[3].record.severityText": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.records[3].record.source": {
               "combine": "AND",
               "matchers": [
                 {
