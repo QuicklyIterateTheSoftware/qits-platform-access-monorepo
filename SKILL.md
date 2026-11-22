@@ -3751,6 +3751,44 @@ qits remembered-devices revoke --device 6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f
 - `1` The idp refused: no such device of yours (404), the credential is not a person's `qits login` session (403), or it cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
+## qits service-clients
+
+The idp's service clients: one per platform service that declares idp:client. list shows each one's id, when it was created and when its secret was last rotated. Never a secret.
+
+Reading needs qits:admin, qits:agent, qits:system, qits:admin-agent or qits:desk-admin.
+
+### Notes
+
+- --output and --idp-url may come before or after the command.
+
+## qits service-clients list
+
+List the idp's service clients, sorted by id: each one's id, when it was created, and when its secret was last rotated (- for never).
+
+```
+qits service-clients list [--idp-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--idp-url <url>` | The idp's base URL, with /idp. Default: the session's idp; inside the platform https://idp.qits.<QITS_DOMAIN>/idp. |
+| `-o, --output table\|json` | table (the default): for people. json: the answer as JSON, pretty-printed. |
+
+### Examples
+
+```
+qits service-clients list
+qits service-clients list -o json
+```
+
+- -o json prints the idp's answer, in the idp's order.
+
+### Exit codes
+
+- `0` Done.
+- `1` The idp refused (HTTP 403: the caller holds none of the reading roles), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
 ## qits events
 
 Print qits-events domain events as they happen, one JSON object per line on stdout. Use it to watch the platform: builds (BuildStatusChanged), release requests (ReleaseRequestStateChanged). To wait for something, do not keep this running: declare it with `qits wait` and end your turn.

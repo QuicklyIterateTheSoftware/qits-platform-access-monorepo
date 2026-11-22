@@ -297,6 +297,13 @@ class McpToolCatalogTest {
      * the caller's machine: the idp, not the catalog, decides who may reach them, and it refuses an
      * agent's bearer here as it does on the CLI.
      */
+    /** The idp's service clients (qits-2531): a read the idp itself guards by role. */
+    @Test
+    void theServiceClientsListIsServed() {
+        assertThat(catalog.tool("service-clients_list")).isPresent();
+        assertThat(properties(tool("service-clients_list"))).doesNotContainKey("idp-url");
+    }
+
     @Test
     void theRememberedDevicesCommandsAreServed() {
         assertThat(catalog.tool("remembered-devices_list")).isPresent();
@@ -423,7 +430,7 @@ class McpToolCatalogTest {
         });
         assertThat(reads).containsExactlyInAnyOrder(
                 "projects_list", "projects_delivery", "projects_desk_answer", "projects_desk_triggers",
-                "projects_agents_list", "projects_agents_answer", "users_list", "remembered-devices_list", "repositories_list", "repositories_branches", "repositories_commits",
+                "projects_agents_list", "projects_agents_answer", "users_list", "remembered-devices_list", "service-clients_list", "repositories_list", "repositories_branches", "repositories_commits",
                 "repositories_commit-changes", "repositories_commit-diff", "repositories_commit-subjects",
                 "work_list", "work_details", "ideas_list", "ideas_details", "pitches_list", "pitches_show",
                 "ui-builder_routes", "ui-builder_freeze", "ui-builder_golden-masters", "ui-builder_entities", "work_dossier_list", "work_dossier_get",

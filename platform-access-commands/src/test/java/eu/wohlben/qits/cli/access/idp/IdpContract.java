@@ -5,6 +5,7 @@ import eu.wohlben.qits.cli.access.contracts.CliRow;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.wohlben.qits.cli.access.remembered.IdpRememberedDevicesContract;
+import eu.wohlben.qits.cli.access.serviceclients.IdpServiceClientsContract;
 import eu.wohlben.qits.cli.access.users.IdpUsersContract;
 import eu.wohlben.qits.pact.consumer.Trigger;
 
@@ -150,6 +151,7 @@ public final class IdpContract {
             .client(TokenClient.class)
             .client(IdpUsersContract.CLIENT)
             .client(IdpRememberedDevicesContract.CLIENT)
+            .client(IdpServiceClientsContract.CLIENT)
             .excluded("TokenClient#authorizeUrl", "the address the browser is sent to (GET /idp/authorize); the"
                     + " browser makes that request, never the CLI")
             .excluded("TokenClient#redirectUri", "the connect page's address, sent inside the exchange's form")
@@ -173,6 +175,7 @@ public final class IdpContract {
                 .consumes(SESSION_TOKENS));
         rows.addAll(IdpUsersContract.ROWS);
         rows.addAll(IdpRememberedDevicesContract.ROWS);
+        rows.addAll(IdpServiceClientsContract.ROWS);
         // The MCP service's quarkus-oidc tenant (qits-708): the discovery document read from
         // auth-server-url at startup, then the JWKS at the jwks_uri it names.
         rows.add(CliRow.framework(MCP_TENANT, SIGNING_KEY, "getOpenIdConfiguration", DISCOVERY)

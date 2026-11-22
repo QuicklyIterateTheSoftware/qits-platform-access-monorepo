@@ -12,7 +12,8 @@ run's step logs, a retry, a cancel, a run's release reports), `qits database dia
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
 golden master records), `qits users` (the idp's users: invite, register, list,
 delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
-revoke; qits-1944), `qits network-access` (this workstation onto the private edge through a
+revoke; qits-1944), `qits service-clients` (the idp's service clients: list; qits-2531),
+`qits network-access` (this workstation onto the private edge through a
 Docker companion; epic qits-1977), `qits events` (the live event
 stream), `qits wait` (an agent's declared waits in qits-workspaces), `qits workspaces` (every action
 of the landing app's workspace pages, on the same qits-workspaces doors), `qits targets` (execution
@@ -381,6 +382,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                (access.json). The companion is published on 127.0.0.1:47813 only, and
                NetworkAccessCommandsTest holds that exact -p argument. platform/CompanionProxy is
                the ProxySelector every HttpClient here is built with; see the README
+    serviceclients/ qits service-clients list (qits-2531), on the idp's GET /idp/api/service-clients
+               (IdpServiceClientsApi), addressed as users/ addresses the idp. Its row
+               (IdpServiceClientsContract, part of idp/IdpContract) sends `Authorization:
+               {authorization}` in `a database service client, read by an admin signed in to the
+               CLI`, pending until a pinned qits-idp-golden-masters records that state.
     users/     qits users invite, register, list and delete, on the idp's user doors (IdpUsersApi).
                register sends no bearer: the register token is the credential, and the person has
                no session yet. The idp's address is the session's, the public vhost inside

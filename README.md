@@ -21,6 +21,8 @@ Commands:
   mints a register token, the new user spends it and gets a generated password, shown once.
 - `qits remembered-devices list|revoke` shows the browsers the idp remembers for you (the ones
   that sign back in without a password) and forgets one, ending every session it opened.
+- `qits service-clients list` shows the idp's service clients: one per platform service that
+  declares `idp:client`, never a secret.
 - `qits events` prints the platform's domain events as they happen; `qits events query` prints the
   ones that already happened in a window of time.
 - `qits observe` prints what qits-observability takes in (logs, spans, metrics) as it arrives,
@@ -692,6 +694,7 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits users delete <username>
     qits remembered-devices list
     qits remembered-devices revoke --device <id>
+    qits service-clients list
     qits events [--filter=<names>]
     qits events query [--filter=<names>] [--since <time>] [--until <time>] [--limit <n>] [-o json]
     qits observe --filter <conditions> [--filter <conditions> …] [-o json]
@@ -1573,6 +1576,22 @@ idp refuses an agent's bearer there as it does here.
     qits remembered-devices list
     qits remembered-devices list -o json
     qits remembered-devices revoke --device 6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f
+
+### qits service-clients
+
+The idp's service clients (qits-2531): one per platform service that declares `idp:client` in its
+deployment. `list` (`GET /idp/api/service-clients`) prints CLIENT ID, CREATED and SECRET ROTATED
+(`-` for never), sorted by id; `-o json` prints the idp's answer. No secret is ever in it. The
+idp admits `qits:admin`, `qits:agent`, `qits:system`, `qits:admin-agent` and `qits:desk-admin`;
+any other bearer gets 403, printed under `Reading service clients needs …` with the idp's own
+sentence. The idp frontend's Clients page shows the same list. Creating, rotating and deleting a
+service client stay with the platform's services, over their own Basic pair.
+
+The idp's address is found as for `qits users`. The qits MCP server serves it as the read
+`service-clients_list`.
+
+    qits service-clients list
+    qits service-clients list -o json
 
 ### qits events
 

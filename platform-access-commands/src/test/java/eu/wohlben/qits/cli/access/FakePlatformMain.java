@@ -104,6 +104,7 @@ public final class FakePlatformMain {
         maintenance();
         users();
         rememberedDevices();
+        serviceClients();
         workspaces();
         waits();
         events();
@@ -194,6 +195,11 @@ public final class FakePlatformMain {
     private void rememberedDevices() {
         platform.answer("GET", "/idp/api/remembered-devices", fixture("remembered-devices.json"));
         refuse("DELETE", "/idp/api/remembered-devices/00000000-0000-4000-8000-000000000001");
+    }
+
+    private void serviceClients() {
+        platform.answer("GET", "/idp/api/service-clients", golden("qits-idp-service", "qits-idp",
+                "a database service client", "listServiceClients"));
     }
 
     // --- qits-workspaces ----------------------------------------------------------------------------
