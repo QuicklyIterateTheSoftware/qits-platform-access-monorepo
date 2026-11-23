@@ -1097,6 +1097,46 @@ class PlatformCommandsTest {
         assertThat(r.out()).isEmpty();
     }
 
+    /**
+     * An open (PENDING) request's 409 is not a closed state, so the listed state would be a lie:
+     * the server's own sentence (qits-2510) is printed alone, with no canned prefix.
+     */
+    @Test
+    void aBranchAlreadyOnAnotherOpenRequestPrintsTheServersSentenceAlone() {
+        platform.answer("POST", sourcesOf(PENDING_ID), 409,
+                "{\"message\":\"feature/search is already a source of qits-ci-service-rr-14, queued behind "
+                        + "qits-ci-service-rr-13; a branch is a source of one open release request at a time\"}");
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "join",
+                "--request", "1111", "--branch", "feature/search");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("feature/search is already a source of qits-ci-service-rr-14, queued behind "
+                        + "qits-ci-service-rr-13; a branch is a source of one open release request at a time")
+                .doesNotContain("takes no more branches");
+        assertThat(r.out()).isEmpty();
+    }
+
+    /**
+     * Same for an approved (qits-2526), still-open request: the server's sentence alone, no canned
+     * prefix claiming it is closed.
+     */
+    @Test
+    void anApprovedRequestPrintsTheServersSentenceAlone() {
+        platform.answer("POST", sourcesOf(PENDING_ID), 409,
+                "{\"message\":\"Release request " + PENDING_ID + " is approved at a1b2c3d4: a new branch "
+                        + "would refold it and lapse the approval; join qits-ci-service-rr-14, queued behind it\"}");
+
+        Result r = run("release-request", "--project", "qits", "--repository", "qits-ci-service", "join",
+                "--request", "1111", "--branch", "feature/search");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("Release request " + PENDING_ID + " is approved at a1b2c3d4: a new branch "
+                        + "would refold it and lapse the approval; join qits-ci-service-rr-14, queued behind it")
+                .doesNotContain("takes no more branches");
+        assertThat(r.out()).isEmpty();
+    }
+
     @Test
     void a404SaysThereIsNoSuchRequestOrBranch() {
         platform.answer("POST", sourcesOf(PENDING_ID), 404,

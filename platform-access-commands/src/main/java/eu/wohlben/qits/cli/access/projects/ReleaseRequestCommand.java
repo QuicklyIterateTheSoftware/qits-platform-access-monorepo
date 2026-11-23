@@ -394,8 +394,13 @@ public class ReleaseRequestCommand implements Runnable {
                     "- Safe to repeat: a branch already on a request that has not released adds nothing and "
                             + "answers that request. With --priority it states that priority again; without, the "
                             + "branch keeps its priority.",
-                    "- From RELEASED on a request takes no more branches (HTTP 409, and the message names the "
-                            + "next request): join that one, or use `create`."},
+                    "- HTTP 409 refuses a RELEASED, FINALIZED, WITHDRAWN or OBSOLETE request: it takes no more "
+                            + "branches, and the message names the next request. Join that one, or use `create`.",
+                    "- HTTP 409 also refuses an approved request: a new branch would refold it and lapse the "
+                            + "approval. The message names the request queued behind it.",
+                    "- HTTP 409 also refuses a branch that is already a source of another open release request "
+                            + "of the repository: a branch is a source of one open request at a time. The "
+                            + "message names that request."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE, HelpText.REFUSED,
                     "2:Used wrongly (for example a --request that fits no request, or more than one), not signed in, "
@@ -442,12 +447,19 @@ public class ReleaseRequestCommand implements Runnable {
             return 0;
         }
 
-        /** The two refusals a join can expect get a sentence that says what to do next. */
+        /**
+         * A 409 on a closed request gets a sentence that says what to do next; the approved (qits-2526)
+         * and already-a-source (qits-2510) refusals hit open requests, so the server's sentence stands alone.
+         */
         private static CliFailure explain(CliFailure refused, JsonNode found) {
             if (refused.status() == 409) {
-                return new CliFailure("Release request " + ReleaseRequestRefs.name(found) + " is " + settledState(found)
-                        + " and takes no more branches (HTTP 409). Join the next request the platform names, or "
-                        + "use `qits release-request create`. " + refused.getMessage(), CliFailure.FAILED);
+                String listed = text(found, "state").toUpperCase(Locale.ROOT);
+                if (CLOSED.contains(listed)) {
+                    return new CliFailure("Release request " + ReleaseRequestRefs.name(found) + " is " + listed
+                            + " and takes no more branches (HTTP 409). Join the next request the platform names, "
+                            + "or use `qits release-request create`. " + refused.getMessage(), CliFailure.FAILED);
+                }
+                return new CliFailure(refused.getMessage(), CliFailure.FAILED);
             }
             if (refused.status() == 404) {
                 return new CliFailure("No such request or branch. " + refused.getMessage(), CliFailure.FAILED);

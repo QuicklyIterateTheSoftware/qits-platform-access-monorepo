@@ -2416,7 +2416,9 @@ qits release-request --project qits --repository qits-ci-service join --request 
 ```
 
 - Safe to repeat: a branch already on a request that has not released adds nothing and answers that request. With --priority it states that priority again; without, the branch keeps its priority.
-- From RELEASED on a request takes no more branches (HTTP 409, and the message names the next request): join that one, or use `create`.
+- HTTP 409 refuses a RELEASED, FINALIZED, WITHDRAWN or OBSOLETE request: it takes no more branches, and the message names the next request. Join that one, or use `create`.
+- HTTP 409 also refuses an approved request: a new branch would refold it and lapse the approval. The message names the request queued behind it.
+- HTTP 409 also refuses a branch that is already a source of another open release request of the repository: a branch is a source of one open request at a time. The message names that request.
 
 ### Exit codes
 

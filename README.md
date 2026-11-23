@@ -1115,8 +1115,14 @@ command prints the request that came back, with its sources, like `create`.
 
 - A branch already on the request adds nothing. With `--priority` it states that priority again;
   without, the branch keeps the priority it has.
-- A RELEASED, FINALIZED, WITHDRAWN or OBSOLETE request takes no more branches (HTTP 409, exit code
-  1). Open a new one with `create`.
+- HTTP 409 (exit code 1) is one of three refusals, each printed as the server's own sentence. A
+  RELEASED, FINALIZED, WITHDRAWN or OBSOLETE request takes no more branches; the message names the
+  next request. Open that one with `join`, or a new one with `create`.
+- An approved request refuses too (qits-2526): a new branch would refold it and lapse the
+  approval. The message names the request queued behind it.
+- A branch already a source of another open request of the repository is refused as well
+  (qits-2510): a branch is a source of one open release request at a time. The message names that
+  request.
 - HTTP 404 means the platform has no such request (exit code 1). A branch the git host does not
   have is not a 404: the fold fails, and the request's detail says why.
 
