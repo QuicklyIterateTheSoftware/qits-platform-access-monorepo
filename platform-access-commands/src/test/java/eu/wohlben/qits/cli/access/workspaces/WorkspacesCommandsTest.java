@@ -29,9 +29,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * `qits workspaces …` as a person types it, against a fake edge. Which request each command makes is
- * {@link LandingPactTest}'s; this is what the commands print, and what they refuse before anything
- * goes out.
+ * `qits workspaces …` as a person types it, against a fake edge. Which request each command makes
+ * is checked against the landing app's calls by qits-ci's {@code contracts.mirror} (qits-2465),
+ * not here; this is what the commands print, and what they refuse before anything goes out.
  */
 class WorkspacesCommandsTest {
 

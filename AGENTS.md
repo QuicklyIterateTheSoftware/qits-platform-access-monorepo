@@ -273,10 +273,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
     workspaces/ qits workspaces: the landing app's workspace pages, one command per action (qits-1261).
                WorkspacesApi is every door, with the method, path, query and body the page sends;
                the daemon's doors go through the container proxy, /workspaces/container/{slot}/…;
-               Doors is who may call each kind of door, in the help's words. LandingPactTest (test)
-               runs a command for every call in the landing app's pacts (copied under
-               src/test/resources/workspaces/landing-pacts/) and fails on a call no command makes;
-               copy the pacts again when the pages change. Register runner and rotate token are
+               Doors is who may call each kind of door, in the help's words. Pact parity with the
+               landing app (qits-2465) is qits-ci's job, not a local test: `.config/qits/
+               release.yml`'s `contracts.mirror` names qits-landing-app as this repository's
+               mirror counterpart, and a landing call no command makes must be listed in its
+               `excluded`, with a reason. Register runner and rotate token are
                left out: they answer a one-time token. `attach` is the Terminal tab, on terminal/'s
                TerminalAttach; `--attach` on `workspaces agents sign-in open` does the same for the
                sign-in terminal.

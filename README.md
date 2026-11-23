@@ -2047,9 +2047,10 @@ line, both empty otherwise.
 
 Every action the landing app's workspace pages offer is a command here, and each calls the door the
 page calls, with the same method, path, query and body, and the caller's own credential (qits-1261).
-`workspaces/LandingPactTest` holds that against the landing app's own consumer pacts (copies under
-`platform-access-commands/src/test/resources/workspaces/landing-pacts/`): every recorded call is made
-by one command, the same way.
+Pact parity with the landing app is qits-ci's job (qits-2465): `.config/qits/release.yml`'s
+`contracts.mirror` names `qits-landing-app` as this repository's mirror counterpart, checked on
+every release request, and a landing call no command makes must be listed in its `excluded`, with
+a reason.
 
     qits workspaces list --repository <id|name>   GET  /workspaces/api/workspaces?repositoryId=
       [--project <project>]

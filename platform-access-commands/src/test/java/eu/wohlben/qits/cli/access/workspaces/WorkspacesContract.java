@@ -19,8 +19,9 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 /**
  * <b>What {@code qits workspaces} and {@code qits wait} ask qits-workspaces, and why</b> (ticket
  * qits-1149): the JSON API under {@code /workspaces/api}, which the landing app's workspace pages
- * call the same way ({@code LandingPactTest}). The doors a slot's daemon answers through the
- * container proxy are qits-workspace-daemon's, in {@link WorkspaceDaemonContract}.
+ * call the same way (parity checked by qits-ci's {@code contracts.mirror}, qits-2465, not a local
+ * test). The doors a slot's daemon answers through the container proxy are qits-workspace-daemon's,
+ * in {@link WorkspaceDaemonContract}.
  * <p>
  * One row per (command, call), each in a state qits-workspaces records, with the request it
  * recorded: the slot and agent ids are the state's examples, the bodies the recorded ones.

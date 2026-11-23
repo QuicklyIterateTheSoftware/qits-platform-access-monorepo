@@ -54,6 +54,78 @@ contracts:
     qits-deployments-service: { packages: [maven] }
     qits-network-access-service: { packages: [maven] }
 
+  # qits-2465: pact parity with qits-landing-app, checked by qits-ci on every release request. An
+  # operation landing makes that the CLI does not must be listed here with a reason.
+  mirror:
+    repository: qits-landing-app
+    framework: pact-jvm
+    excluded:
+      qits-artifacts-service:
+        listDaemonVersions: "landing show-artifact-daemon (ui); the qits CLI has no command for it yet"
+        listDocsVersionSummaries: "landing show-artifact-docs-site (ui); the qits CLI has no command for it yet"
+        listImageManifestSummaries: "landing show-artifact-image (ui); the qits CLI has no command for it yet"
+        listImageTagSummaries: "landing show-artifact-image (ui); the qits CLI has no command for it yet"
+        listImages: "landing show-artifact-image (ui); the qits CLI has no command for it yet"
+        listMavenVersionSummaries: "landing show-maven-package (ui); the qits CLI has no command for it yet"
+        listNpmVersionSummaries: "landing show-npm-package (ui); the qits CLI has no command for it yet"
+        listSbomVersions: "landing show-maven-package (ui); the qits CLI has no command for it yet"
+      qits-ci-service:
+        listActiveRuns: "landing show-project-ci (ui); the qits CLI has no command for it yet"
+        listRepositorySummaries: "landing show-project-ci (ui); the qits CLI has no command for it yet"
+      qits-deployments-service:
+        getDeploymentRequest: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
+        listDeploymentRequests: "landing show-project-deployment-requests (ui); the qits CLI has no command for it yet"
+        listDeployments: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
+        listEnvironments: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
+      qits-edge-service: "the qits CLI calls no qits-edge-service door; landing pages: open-version-bumps"
+      qits-events-service:
+        getEvent: "landing show-project-event (ui); the qits CLI has no command for it yet"
+        listEventNames: "landing show-event-names (ui); the qits CLI has no command for it yet"
+      qits-githost-service: "the qits CLI calls no qits-githost-service door; landing pages: show-changed-image, show-project-loc"
+      qits-maintenance-service:
+        getAdoptionByRelease: "landing show-adoption (ui); the qits CLI has no command for it yet"
+        getRepository: "landing show-maintenance-repository (ui); the qits CLI has no command for it yet"
+        getRepositoryDownstream: "landing show-maintenance-repository (ui); the qits CLI has no command for it yet"
+        listArtifacts: "landing show-project-artifacts (ui); the qits CLI has no command for it yet"
+        listBumps: "landing show-maintenance-repository (ui); the qits CLI has no command for it yet"
+        listDependencies: "landing search-project-dependencies (ui); the qits CLI has no command for it yet"
+        listDependencyDependents: "landing show-artifact-dependents (ui); the qits CLI has no command for it yet"
+        listPendingBumps: "landing open-version-bumps (ui); the qits CLI has no command for it yet"
+        listRepositories: "landing search-project-dependencies (ui); the qits CLI has no command for it yet"
+        listRepositoryDependents: "landing show-maintenance-repository (ui); the qits CLI has no command for it yet"
+      qits-mirror-service: "the qits CLI calls no qits-mirror-service door; landing pages: show-mirror-repositories, show-mirror-repository, show-mirror-upstreams"
+      qits-observability-service:
+        getTelemetryStore: "landing show-telemetry-trace (ui); the qits CLI has no command for it yet"
+        getTelemetryTrace: "landing show-telemetry-trace (ui); the qits CLI has no command for it yet"
+        listTelemetryTraces: "landing show-telemetry-traces (ui); the qits CLI has no command for it yet"
+        searchTelemetryLogs: "landing show-telemetry-logs (ui); the qits CLI has no command for it yet"
+      qits-orchestrator-service: "the qits CLI calls no qits-orchestrator-service door; landing pages: open-orchestrator-step, show-orchestrator-process, start-orchestrator-dry-run"
+      qits-projects-service:
+        getProject: "landing open-project (ui); the qits CLI has no command for it yet"
+        getReleaseRequest: "landing show-release-request (ui); the qits CLI has no command for it yet"
+        getReleaseRequestApprovalEligibility: "landing show-release-request (ui); the qits CLI has no command for it yet"
+        getReleaseRequestArtifacts: "landing show-release-request (ui); the qits CLI has no command for it yet"
+        getReleaseRequestChangeDiff: "landing show-release-request-changes (ui); the qits CLI has no command for it yet"
+        getReleaseRequestSubmoduleChangeDiff: "landing show-release-request-changes (ui); the qits CLI has no command for it yet"
+        getReleaseRequestSubmoduleChanges: "landing show-release-request-changes (ui); the qits CLI has no command for it yet"
+        listCommitBuilds: "landing show-release-request (ui); the qits CLI has no command for it yet"
+        listProjectWorkBriefs: "landing show-commit-work-briefs (ui); the qits CLI has no command for it yet"
+        listReleaseRequestChanges: "landing show-release-request-changes (ui); the qits CLI has no command for it yet"
+        listWorkDossierAssets: "landing show-work-item (ui); the qits CLI has no command for it yet"
+        listWrapperClosings: "landing show-wrapper-closings (ui); the qits CLI has no command for it yet"
+        reprioritizeWork: "landing reprioritize-work-item (ui); the qits CLI has no command for it yet"
+        setReleaseSourcePriority: "landing set-release-source-priority (ui); the qits CLI has no command for it yet"
+        startAgent: "landing open-desk-agent (ui); the qits CLI has no command for it yet"
+        waiveReleaseRequestAutomations: "landing waive-release-automations (ui); the qits CLI has no command for it yet"
+      qits-system-service: "the qits CLI calls no qits-system-service door; landing pages: cancel-target-sign-in, declare-target, delete-target, edit-target, follow-target-sign-in, greenlight-target, …"
+      qits-workspace-daemon:
+        detect: "recorded at the daemon's slot-addressed shape; `qits agents chat|files` reach them through the agent proxy, which the workspaces contract records no row for"
+        getCommandLog: "recorded at the daemon's slot-addressed shape; `qits agents chat|files` reach them through the agent proxy, which the workspaces contract records no row for"
+        listFiles: "recorded at the daemon's slot-addressed shape; `qits agents chat|files` reach them through the agent proxy, which the workspaces contract records no row for"
+        readFile: "recorded at the daemon's slot-addressed shape; `qits agents chat|files` reach them through the agent proxy, which the workspaces contract records no row for"
+      qits-workspaces-service:
+        getAgentActiveProcess: "the qits CLI has no command for getAgentActiveProcess yet: nothing in epic qits-1667 asked for one"
+
 # THE daemon ARCHETYPE'S OWN HEADER NAMES THIS REPOSITORY AS THE ONE THAT RIDES ITS OWN RECIPES, and
 # the reason is the build: there is no `docker/Dockerfile.musl-builder` here, so the archetype's
 # guarded toolchain half never fires, and `docker/Dockerfile` takes MUSL_URL and ZLIB_URL directly
