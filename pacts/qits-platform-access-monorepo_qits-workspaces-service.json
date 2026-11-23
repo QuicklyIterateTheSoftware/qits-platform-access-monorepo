@@ -492,6 +492,7 @@
                 "entityId": "contract-00000001-9",
                 "entityTitle": "Invoice totals are off by one cent",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": null,
@@ -544,6 +545,14 @@
               ]
             },
             "$.agents[*].harness": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.agents[*].phase": {
               "combine": "AND",
               "matchers": [
                 {
@@ -658,6 +667,7 @@
                 "entityId": "contract-00000001-9",
                 "entityTitle": "Invoice totals are off by one cent",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "release request contract-qits-rr-368 to end",
@@ -680,6 +690,7 @@
                 "entityId": "contract-00000001-1",
                 "entityTitle": "Export invoices for the accountants",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": null,
@@ -694,6 +705,7 @@
                 "entityId": "contract-00000001-5",
                 "entityTitle": "PDF export",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": null,
@@ -708,6 +720,7 @@
                 "entityId": "contract-00000001-4",
                 "entityTitle": "Download button on the invoice list",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "CI run 00000000 to end",
@@ -728,6 +741,7 @@
                 "entityId": "contract-00000001-10",
                 "entityTitle": "Remember the last export format",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "work contract-00000001-4 VERIFIED; a comment on contract-00000001-4",
@@ -795,6 +809,14 @@
               ]
             },
             "$.agents[0].harness": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.agents[0].phase": {
               "combine": "AND",
               "matchers": [
                 {
@@ -926,6 +948,14 @@
                 }
               ]
             },
+            "$.agents[1].phase": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.agents[1].runState": {
               "combine": "AND",
               "matchers": [
@@ -991,6 +1021,14 @@
                 }
               ]
             },
+            "$.agents[2].phase": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
             "$.agents[2].runState": {
               "combine": "AND",
               "matchers": [
@@ -1049,6 +1087,14 @@
               ]
             },
             "$.agents[3].harness": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.agents[3].phase": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1157,6 +1203,14 @@
               ]
             },
             "$.agents[4].harness": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.agents[4].phase": {
               "combine": "AND",
               "matchers": [
                 {
@@ -1318,6 +1372,7 @@
                 "entityId": "contract-00000001-10",
                 "entityTitle": "Remember the last export format",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "QUEUED",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1328,6 +1383,7 @@
                 "entityId": "contract-00000001-10",
                 "entityTitle": "Remember the last export format",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "QUEUED",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1338,6 +1394,7 @@
                 "entityId": "contract-00000001-10",
                 "entityTitle": "Remember the last export format",
                 "harness": "CLAUDE",
+                "phase": "QUEUED",
                 "runState": "QUEUED",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1394,6 +1451,17 @@
               "matchers": [
                 {
                   "match": "type"
+                }
+              ]
+            },
+            "$.agents[*].phase": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
                 }
               ]
             },
@@ -1515,6 +1583,7 @@
                 "entityId": "contract-00000001-9",
                 "entityTitle": "Invoice totals are off by one cent",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1525,6 +1594,7 @@
                 "entityId": "contract-00000001-9",
                 "entityTitle": "Invoice totals are off by one cent",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1582,6 +1652,17 @@
               "matchers": [
                 {
                   "match": "type"
+                }
+              ]
+            },
+            "$.agents[*].phase": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
                 }
               ]
             },
@@ -1694,6 +1775,7 @@
                 "entityId": "contract-00000001-9",
                 "entityTitle": "Invoice totals are off by one cent",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "RUNNING",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -1747,6 +1829,14 @@
               ]
             },
             "$.agents[*].harness": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.agents[*].phase": {
               "combine": "AND",
               "matchers": [
                 {
@@ -2298,6 +2388,8 @@
             "entityTitle": "Invoice totals are off by one cent",
             "harness": "CLAUDE",
             "lastActivityAt": "2026-01-01T00:00:00Z",
+            "phase": "PROVISIONING",
+            "phaseSince": null,
             "runState": "RUNNING",
             "sessionId": null,
             "startRefusal": null,
@@ -2372,6 +2464,14 @@
                 {
                   "match": "regex",
                   "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.phase": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             },
@@ -5003,6 +5103,7 @@
                 "entityId": "contract-00000001-1",
                 "entityTitle": "Export invoices for the accountants",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "YIELDED",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -5022,6 +5123,7 @@
                 "entityId": "contract-00000001-1",
                 "entityTitle": "Export invoices for the accountants",
                 "harness": "CLAUDE",
+                "phase": "PROVISIONING",
                 "runState": "YIELDED",
                 "state": "ACTIVE",
                 "waitingOn": "release-request 00000000-0000-4000-8000-0000000000c1",
@@ -5088,6 +5190,17 @@
               "matchers": [
                 {
                   "match": "type"
+                }
+              ]
+            },
+            "$.agents[*].phase": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
                 }
               ]
             },

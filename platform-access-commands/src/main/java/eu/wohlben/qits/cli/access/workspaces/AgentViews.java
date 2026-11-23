@@ -71,7 +71,7 @@ final class AgentViews {
         List<List<String>> rows = new ArrayList<>();
         for (JsonNode agent : list) {
             rows.add(List.of(cell(agent, "agentId", 40), cell(agent, "workspaceRowId", 8),
-                    cell(agent, "entityId", 30), cell(agent, "state", 10), cell(agent, "runState", 12),
+                    cell(agent, "entityId", 30), cell(agent, "state", 10), Table.cell(run(agent), 12),
                     cell(agent, "harness", 8), Table.cell(waitingOn(agent), 40), cell(agent, "entityTitle", 50),
                     Table.cell(attentionReason(agent), 80)));
         }
@@ -88,7 +88,11 @@ final class AgentViews {
                 + ")")));
         rows.add(List.of("title", cell(agent, "entityTitle", 120)));
         rows.add(List.of("state", cell(agent, "state", 20)));
-        rows.add(List.of("run", cell(agent, "runState", 20)));
+        rows.add(List.of("run", Table.cell(run(agent), 20)));
+        String since = text(agent, "phaseSince");
+        rows.add(List.of("phase", text(agent, "phase").isEmpty() ? "-"
+                : cell(agent, "phase", 20) + (since.isEmpty() ? "" : " since " + Table.time(since))));
+        rows.add(List.of("waiting for", cell(agent, "phaseDetail", 160)));
         rows.add(List.of("harness", cell(agent, "harness", 20)));
         rows.add(List.of("slot", cell(agent, "workspaceRowId", 12)));
         rows.add(List.of("branch", cell(agent, "wrapperBranch", 120)));
@@ -101,6 +105,16 @@ final class AgentViews {
         rows.add(List.of("last activity", Table.time(text(agent, "lastActivityAt"))));
         rows.add(List.of("created", Table.time(text(agent, "createdAt"))));
         Table.print(out, "  ", null, rows);
+    }
+
+    /**
+     * The RUN column (qits-2515): {@code runState} reads RUNNING as soon as the agent holds a slot,
+     * lease, container and session or not, so until its {@code phase} is READY the phase stands in
+     * for it (QUEUED, PROVISIONING, STARTING). No phase at all (an older service): the runState.
+     */
+    static String run(JsonNode agent) {
+        String phase = text(agent, "phase");
+        return phase.isEmpty() || "READY".equals(phase) ? text(agent, "runState") : phase;
     }
 
     /**

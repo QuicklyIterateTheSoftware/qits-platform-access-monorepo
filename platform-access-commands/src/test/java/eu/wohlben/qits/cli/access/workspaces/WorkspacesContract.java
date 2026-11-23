@@ -57,9 +57,13 @@ public final class WorkspacesContract {
     static final List<String> SLOT = List.of("id", "workspaceId", "runtimeStatus", "runtimeError", "placement",
             "admin", "queuedAt", "daemonConnectedAt", "daemonVersion", "daemonOutdated");
 
-    /** An agent as {@code agents list} prints it. */
-    static final List<String> AGENT = List.of("agentId", "workspaceRowId", "entityId", "state", "runState", "harness",
-            "waitingOn", "entityTitle");
+    /**
+     * An agent as {@code agents list} prints it: {@code phase} stands in for {@code runState} until
+     * READY (qits-2515). Not {@code phaseDetail}, which {@code show} reads when present: no pinned
+     * recording carries it yet.
+     */
+    static final List<String> AGENT = List.of("agentId", "workspaceRowId", "entityId", "state", "runState", "phase",
+            "harness", "waitingOn", "entityTitle");
 
     /** What `agents list --project` reads besides {@link #AGENT}: each wait's subject, and the attention reason. */
     static final List<String> AGENT_STATUS = java.util.stream.Stream.concat(AGENT.stream(), java.util.stream.Stream.of(
@@ -68,7 +72,8 @@ public final class WorkspacesContract {
 
     /** An agent as {@code qits agents show} prints it, besides {@link #AGENT_STATUS}. */
     static final List<String> AGENT_SHOWN = java.util.stream.Stream.concat(AGENT_STATUS.stream(), java.util.stream.Stream
-            .of("entityStatus", "wrapperBranch", "sessionId", "startRefusal", "lastActivityAt", "createdAt")).toList();
+            .of("entityStatus", "phaseSince", "wrapperBranch", "sessionId", "startRefusal", "lastActivityAt", "createdAt"))
+            .toList();
 
     /** An archived harness session as {@code qits agents sessions} prints it. */
     static final List<String> SESSION = List.of("sessionId", "startedAt", "endedAt", "messageCount", "subagents");

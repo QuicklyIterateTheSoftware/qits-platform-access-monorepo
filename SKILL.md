@@ -6358,7 +6358,7 @@ An agent is named by its id (`qits agents list` shows it), or by --work <qits-12
 
 ## qits agents list
 
-Agents, newest first: what each works on, its slot, how it runs (RUNNING, YIELDED, STOPPED, ...), what it waits on and what it needs a person for. Bare, every agent; --work, one item's; --workspace, one slot's; --state ACTIVE, the live ones; --project, one project's.
+Agents, newest first: what each works on, its slot, how it runs (RUNNING, YIELDED, STOPPED, ...; QUEUED, PROVISIONING or STARTING until its slot is READY), what it waits on and what it needs a person for. Bare, every agent; --work, one item's; --workspace, one slot's; --state ACTIVE, the live ones; --project, one project's.
 
 WAITING ON is built from each open wait's subject: a release request or work item shows its qualified id and state, a CI run the first 8 characters of its id and state, a comments wait "comments on <item>", anything else its label; several are joined with "; ". With no waits array (an older service), it falls back to waitingOn. ATTENTION is attention.reason, a dash when there is none.
 
@@ -6395,7 +6395,7 @@ qits agents list --workspace 1 -o json
 
 ## qits agents show
 
-One agent, in any state: what it works on, how it runs, its slot, branch and session, what it waits on and what it needs a person for.
+One agent, in any state: what it works on, how it runs and what it waits for to start, its slot, branch and session, what it waits on and what it needs a person for.
 
 GET /workspaces/api/agents/{id}. Any credential may read it, qits:agent included.
 

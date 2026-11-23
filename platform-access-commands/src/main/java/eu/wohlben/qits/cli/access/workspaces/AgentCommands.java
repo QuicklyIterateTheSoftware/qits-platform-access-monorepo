@@ -63,7 +63,7 @@ public final class AgentCommands {
 
     @CommandLine.Command(name = "list", mixinStandardHelpOptions = true,
             description = {"Agents, newest first: what each works on, its slot, how it runs (RUNNING, YIELDED, "
-                    + "STOPPED, ...), what it waits on and what it needs a person for. Bare, every agent; --work, "
+                    + "STOPPED, ...; QUEUED, PROVISIONING or STARTING until its slot is READY), what it waits on and what it needs a person for. Bare, every agent; --work, "
                     + "one item's; --workspace, one slot's; --state ACTIVE, the live ones; --project, one project's.",
                     "WAITING ON is built from each open wait's subject: a release request or work item shows its "
                             + "qualified id and state, a CI run the first 8 characters of its id and state, a "
@@ -106,7 +106,7 @@ public final class AgentCommands {
     }
 
     @CommandLine.Command(name = "show", mixinStandardHelpOptions = true,
-            description = {"One agent, in any state: what it works on, how it runs, its slot, branch and session, "
+            description = {"One agent, in any state: what it works on, how it runs and what it waits for to start, its slot, branch and session, "
                     + "what it waits on and what it needs a person for.",
                     "GET /workspaces/api/agents/{id}. " + Doors.READ},
             footerHeading = HelpText.EXAMPLES,

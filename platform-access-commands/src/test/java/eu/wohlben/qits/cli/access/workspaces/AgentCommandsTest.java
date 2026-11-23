@@ -93,6 +93,11 @@ class AgentCommandsTest {
                  "lastActivityAt":"2026-10-29T09:00:00Z","createdAt":"2026-10-28T09:00:00Z"}""".formatted(id, runState);
     }
 
+    /** {@link #agent} with its start-up phase fields (qits-2515), {@code fields} as JSON members. */
+    private static String phased(String id, String runState, String fields) {
+        return "{" + fields + "," + agent(id, runState).substring(1);
+    }
+
     /** qits-123 in the projects service, and the ACTIVE agents qits-workspaces answers for it. */
     private void onTheTicket(String... agents) {
         platform.answer("GET", "/projects/api/work/qits-123",
@@ -320,6 +325,54 @@ class AgentCommandsTest {
         assertThat(shown.out()).contains("Agent " + AGENT).contains("qits-123 (IMPLEMENTING)")
                 .contains("ticket/qits-123").containsPattern("run\\s+RUNNING");
         assertThat(JSON.readTree(json.out()).path("runState").asText()).isEqualTo("RUNNING");
+    }
+
+    @Test
+    void anAgentNotReadyYetShowsItsPhaseNotRunning() {
+        String queued = phased(AGENT, "RUNNING", """
+                "phase":"QUEUED","phaseSince":"2026-10-29T09:30:00Z",
+                "phaseDetail":"no target has memory for a 6g WORKSPACE lease\"""");
+        platform.answer("GET", "/workspaces/api/agents", "{\"agents\":[" + queued + "]}");
+        platform.answer("GET", API, queued);
+
+        Result table = run("agents", "list");
+        Result shown = run("agents", "show", AGENT);
+
+        assertThat(table.exit()).as(table.err()).isZero();
+        assertThat(table.out()).containsPattern("ACTIVE\\s+QUEUED\\s+CLAUDE").doesNotContain("RUNNING");
+        assertThat(shown.exit()).as(shown.err()).isZero();
+        assertThat(shown.out()).containsPattern("run\\s+QUEUED").doesNotContain("RUNNING")
+                .containsPattern("phase\\s+QUEUED since \\S+")
+                .containsPattern("waiting for\\s+no target has memory for a 6g WORKSPACE lease");
+        assertThat(shown.out().indexOf("phase")).isBetween(shown.out().indexOf("run "),
+                shown.out().indexOf("harness"));
+    }
+
+    @Test
+    void aReadyAgentOrAnOlderServicesAnswerShowsTheRunState() {
+        platform.answer("GET", "/workspaces/api/agents", "{\"agents\":["
+                + phased(AGENT, "RUNNING", "\"phase\":\"READY\",\"phaseSince\":null,\"phaseDetail\":null") + ","
+                + agent(OTHER, "YIELDED") + "]}");
+        platform.answer("GET", API, agent(AGENT, "STOPPED"));
+
+        Result table = run("agents", "list");
+        Result shown = run("agents", "show", AGENT);
+
+        assertThat(table.exit()).as(table.err()).isZero();
+        assertThat(table.out()).containsPattern("ACTIVE\\s+RUNNING\\s+CLAUDE")
+                .containsPattern("ACTIVE\\s+YIELDED\\s+CLAUDE");
+        assertThat(shown.out()).containsPattern("run\\s+STOPPED").containsPattern("phase\\s+-")
+                .containsPattern("waiting for\\s+-");
+    }
+
+    @Test
+    void aProvisioningAgentFitsTheRunColumn() {
+        platform.answer("GET", "/workspaces/api/agents", "{\"agents\":["
+                + phased(AGENT, "RUNNING", "\"phase\":\"PROVISIONING\"") + "]}");
+
+        Result table = run("agents", "list");
+
+        assertThat(table.out()).containsPattern("ACTIVE\\s+PROVISIONING\\s+CLAUDE");
     }
 
     @Test
