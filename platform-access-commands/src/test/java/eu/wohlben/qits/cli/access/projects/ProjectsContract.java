@@ -562,8 +562,8 @@ public final class ProjectsContract {
         return (api, params, recorded) -> {
             List<JsonNode> listed = WorkEntities.list(api.projectWork(params.get("projectId"), null, null, null, null,
                     null, null, query));
-            assertThat(listed).hasSize(recorded(recorded, "entities"));
-            assertThat(listed).allSatisfy(e -> {
+            // Open-ended (anyLength): the pact holds one example row, not the recording's count.
+            assertThat(listed).isNotEmpty().allSatisfy(e -> {
                 assertThat(ProjectsApi.text(e, "qualifiedId")).isNotBlank();
                 assertThat(ProjectsApi.text(e, "status")).isNotBlank();
             });
