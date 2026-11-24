@@ -93,11 +93,11 @@
              qits-maintenance like the one above. -->
         <qits.workspaces-golden-masters.version>2026.1123.125658</qits.workspaces-golden-masters.version>
         <qits.workspace-daemon-golden-masters.version>2026.1111.190934</qits.workspace-daemon-golden-masters.version>
-        <qits.artifacts-golden-masters.version>2026.1120.165405</qits.artifacts-golden-masters.version>
+        <qits.artifacts-golden-masters.version>2026.1124.154841</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1119.60052</qits.ci-golden-masters.version>
         <qits.idp-golden-masters.version>2026.1123.194348</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1120.65904</qits.events-golden-masters.version>
-        <qits.maintenance-golden-masters.version>2026.1121.195220</qits.maintenance-golden-masters.version>
+        <qits.maintenance-golden-masters.version>2026.1124.131229</qits.maintenance-golden-masters.version>
         <!-- qits-orchestrator's recordings, for `qits orchestrator` (qits-2490). Bumped by qits-maintenance
              like the others. -->
         <qits.orchestrator-golden-masters.version>2026.1124.125326</qits.orchestrator-golden-masters.version>
