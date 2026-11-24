@@ -2734,6 +2734,7 @@
         "body": {
           "content": {
             "archetype": "TICKET",
+            "assignee": null,
             "blocked": false,
             "id": "00000000-0000-4000-8000-000000000002",
             "outcome": null,
@@ -22129,6 +22130,7 @@
         "body": {
           "content": {
             "archetype": "TICKET",
+            "assignee": null,
             "blocked": false,
             "id": "00000000-0000-4000-8000-000000000002",
             "outcome": null,
@@ -24101,6 +24103,7 @@
             "entities": [
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000002",
                 "outcome": "SUPERSEDED",
@@ -24283,6 +24286,7 @@
             "children": [
               {
                 "archetype": "FEATURE",
+                "assignee": null,
                 "id": "00000000-0000-4000-8000-000000000003",
                 "outcome": null,
                 "qualifiedId": "contract-00000001-2",
@@ -25554,6 +25558,7 @@
             "entities": [
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000002",
                 "outcome": null,
@@ -25565,6 +25570,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000003",
                 "outcome": null,
@@ -25576,6 +25582,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000004",
                 "outcome": null,
@@ -25587,6 +25594,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000005",
                 "outcome": null,
@@ -25598,6 +25606,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000006",
                 "outcome": null,
@@ -25609,6 +25618,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000007",
                 "outcome": null,
@@ -25620,6 +25630,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000008",
                 "outcome": null,
@@ -25631,6 +25642,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000009",
                 "outcome": null,
@@ -25642,6 +25654,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000a",
                 "outcome": null,
@@ -25653,6 +25666,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000b",
                 "outcome": null,
@@ -25664,6 +25678,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000c",
                 "outcome": null,
@@ -25675,6 +25690,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000d",
                 "outcome": null,
@@ -25686,6 +25702,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000e",
                 "outcome": null,
@@ -25697,6 +25714,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-00000000000f",
                 "outcome": null,
@@ -25708,6 +25726,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000010",
                 "outcome": null,
@@ -25719,6 +25738,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000011",
                 "outcome": null,
@@ -25730,6 +25750,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000012",
                 "outcome": "OBSOLETE",
@@ -25741,6 +25762,7 @@
               },
               {
                 "archetype": "TICKET",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000013",
                 "outcome": "OBSOLETE",
@@ -25752,6 +25774,7 @@
               },
               {
                 "archetype": "EPIC",
+                "assignee": null,
                 "blocked": false,
                 "id": "00000000-0000-4000-8000-000000000014",
                 "outcome": null,
@@ -25763,6 +25786,7 @@
               },
               {
                 "archetype": "FEATURE",
+                "assignee": null,
                 "id": "00000000-0000-4000-8000-000000000015",
                 "outcome": null,
                 "qualifiedId": "contract-00000001-20",
@@ -25773,6 +25797,7 @@
               },
               {
                 "archetype": "TASK",
+                "assignee": null,
                 "id": "00000000-0000-4000-8000-000000000016",
                 "outcome": null,
                 "qualifiedId": "contract-00000001-21",
@@ -28017,6 +28042,7 @@
         "body": {
           "content": {
             "archetype": "TICKET",
+            "assignee": null,
             "blocked": false,
             "id": "00000000-0000-4000-8000-000000000002",
             "outcome": null,
@@ -28773,6 +28799,7 @@
           "content": {
             "contract-00000001-1": {
               "archetype": "TICKET",
+              "assignee": null,
               "blocked": false,
               "id": "00000000-0000-4000-8000-000000000002",
               "outcome": null,
@@ -29731,6 +29758,7 @@
         "body": {
           "content": {
             "archetype": "TICKET",
+            "assignee": null,
             "blocked": false,
             "id": "00000000-0000-4000-8000-000000000002",
             "outcome": null,

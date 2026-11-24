@@ -51,7 +51,9 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                 "- Give the branch's whole name, as you pushed it: the wait matches it exactly.",
                 "- --repository takes the repository's name, as the event carries it.",
                 "- A branch can carry on into a new request when its request releases without it or is "
-                        + "superseded (MOVED): the wait does not care which request it is on."},
+                        + "superseded (MOVED): the wait does not care which request it is on.",
+                "- For a project's long-running agent the wait is held for the item ticket/<id> or epic/<id> "
+                        + "names, unless --work names another."},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:The wait is declared and printed, or the branch already reached the target; it says "
                 + "which. A wait that comes back already MATCHED is 0 too, for the same reason.",
@@ -163,7 +165,8 @@ public class BranchWait extends PlatformCommand {
         }
         String repo = repository == null || repository.isBlank() ? null : repository.strip();
         // Refuses without a holder, or with a timeout it cannot read, before anything goes out.
-        parent.holder(context);
+        String item = workOf(name);
+        parent.holder(context, item);
         WaitTimeout.iso(declaration.timeout != null ? declaration.timeout : parent.declaration.timeout);
         ProjectsApi projects = ProjectsApi.connect(context, projectsUrl);
         String projectId = project == null || project.isBlank() ? null : text(projects.project(project.strip()), "id");
@@ -191,7 +194,22 @@ public class BranchWait extends PlatformCommand {
             }
         }
         return parent.declare(context, json, EVENT, groups(name, repo, projectId, target), declaration,
-                label(name, wanted, repo));
+                label(name, wanted, repo), null, item);
+    }
+
+    /**
+     * The work item a branch is for, by the platform's naming: {@code ticket/<id>} or {@code
+     * epic/<id>} is {@code <id>}; null for any other branch. A project agent's wait is held for it
+     * when --work is not given (epic qits-2520).
+     */
+    static String workOf(String branch) {
+        for (String prefix : List.of("ticket/", "epic/")) {
+            if (branch.startsWith(prefix)) {
+                String id = branch.substring(prefix.length());
+                return id.isEmpty() || id.contains("/") ? null : id;
+            }
+        }
+        return null;
     }
 
     /** The deliveries as they stand, or null when they cannot be read: the wait is declared all the same. */

@@ -859,25 +859,33 @@ Every archetype has a lifecycle: REPORTED, REFINED, READY_FOR_DEV, IMPLEMENTING,
 
 ## qits work list
 
-A project's work items, every archetype, in the service's order: id (qualified), archetype, status, title and when it last changed. BLOCKED appears when a ticket is: yes for an explicit block, waiting when the only reason is an agent session sitting idle, and - when it is not blocked. NEEDS appears when some item needs another item that is not at its status yet, naming each as <id>@<status> (qits-1897@VERIFIED), and - for an item whose needs are all met. TAGS appears when some item carries one, as its display text (RESERVED_FOR_HUMAN shows as reserved for human), and - for an item with none. A DROPPED item shows its outcome beside the status: DROPPED (DUPLICATE).
+A project's work items, every archetype, in the service's order: id (qualified), archetype, status, title and when it last changed. BLOCKED appears when a ticket is: yes for an explicit block, waiting when the only reason is an agent session sitting idle, and - when it is not blocked. NEEDS appears when some item needs another item that is not at its status yet, naming each as <id>@<status> (qits-1897@VERIFIED), and - for an item whose needs are all met. TAGS appears when some item carries one, as its display text (RESERVED_FOR_HUMAN shows as reserved for human), and - for an item with none. ASSIGNEE appears when some item has one, and - for an item with none. A DROPPED item shows its outcome beside the status: DROPPED (DUPLICATE).
 
 Each filter narrows the list; without one it shows everything.
 
+A project's long-running agent finds its work with --unassigned --by-priority (what it could take next, in the backlog order) and --assigned-to-me (what it holds). Both may leave out --project: --assigned-to-me always, --unassigned when GET /agents/api/me knows the caller; the project is then the agent's own.
+
 ```
-qits work list [--archetype <archetype>] [--entity <entity>] [--outcome <outcome>] [--output table|json] [--parent <entity>] [--project <project>] [--projects-url <url>] [--status <status>] [--tag <tag>]
+qits work list [--agents-url <url>] [--archetype <archetype>] [--assigned-to-me] [--assignee <text>] [--by-priority] [--entity <entity>] [--limit <n>] [--outcome <outcome>] [--output table|json] [--parent <entity>] [--project <project>] [--projects-url <url>] [--status <status>] [--tag <tag>] [--unassigned]
 ```
 
 | Name | What it does |
 |---|---|
+| `--agents-url <url>` | The agents service's base URL, without /agents, which --assigned-to-me and --unassigned ask who the caller is. Default: QITS_AGENTS_URL, else the session's idp address with `idp` swapped for `agents`. |
 | `--archetype <archetype>` | Only items of this archetype: EPIC, TICKET, FEATURE, TASK or ISSUE. |
+| `--assigned-to-me` | Only the items you hold: assigned to your name and not yet at an end. For a project's long-running agent: the name and the default project come from GET /agents/api/me. Not with --assignee or --unassigned. |
+| `--assignee <text>` | Only items assigned to this name, such as a project's long-running agent's (developer). Not with --unassigned or --assigned-to-me. |
+| `--by-priority` | The backlog order: bugs first, then priority (highest first), then oldest. |
 | `--entity <entity>` | The work entity: its id or its qualified id (qits-100), passed to the service as it is. |
+| `--limit <n>` | At most this many items, 1 to 200. |
 | `--outcome <outcome>` | Only DROPPED items dropped with this outcome: DUPLICATE, RESOLVED_ELSEWHERE, SUPERSEDED, OBSOLETE, INVALID or WONT_DO. |
 | `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
 | `--parent <entity>` | Only the children of this item: its id or its qualified id. |
-| `--project <project>` | The project (required): its id or its slug. |
+| `--project <project>` | The project: its id or its slug. Required, except with --assigned-to-me, and with --unassigned for a project's long-running agent: then the agent's own project. |
 | `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects` (https://idp.qits.<QITS_DOMAIN>/idp gives https://projects.qits.<QITS_DOMAIN>). |
 | `--status <status>` | Only items in this status, such as REFINED or OPEN. |
 | `--tag <tag>` | Only items carrying this tag: reserved-for-human (RESERVED_FOR_HUMAN). |
+| `--unassigned` | Only work you could take: an unassigned epic or ticket in a status an agent can move, not blocked, not reserved for a human, every need met. |
 
 ### Examples
 
@@ -887,15 +895,20 @@ qits work list --project qits --archetype epic --status REFINED
 qits work list --project qits --parent qits-120 -o json
 qits work list --project qits --status DROPPED --outcome duplicate
 qits work list --project qits --tag reserved-for-human
+qits work list --project qits --assignee developer
+qits work list --unassigned --by-priority --limit 10
+qits work list --assigned-to-me
 ```
 
 - --archetype, --status and --outcome are case-insensitive. --parent lists the children of one item. --tag takes the tag's display form (reserved-for-human) or its enum name (RESERVED_FOR_HUMAN), either case.
+- --assigned-to-me asks GET /agents/api/me for the agent's name and project, then lists the items assigned to that name that are not at an end. It is for a project's long-running agent; any other caller gets exit 2.
+- --assigned-to-me, --assignee and --unassigned exclude each other.
 
 ### Exit codes
 
 - `0` Done.
 - `1` The platform refused (for example an unknown archetype or status, HTTP 400, or a project it does not know, HTTP 404), or cannot be reached.
-- `2` Used wrongly (for example no --project), not signed in, or the session ended.
+- `2` Used wrongly (for example no --project, two filters that exclude each other, a --limit outside 1..200, or --assigned-to-me for a caller that is no project's long-running agent), not signed in, or the session ended.
 
 ## qits work details
 
@@ -4287,8 +4300,10 @@ Two --when are OR, not AND: --when 'repoName=a' --when 'status=b' fires on eithe
 
 The holder is --agent or --desk (give one, not both), else QITS_AGENT_ID, else QITS_DESK_PROJECT: the harness sets QITS_AGENT_ID in an agent's environment and QITS_DESK_PROJECT in a project's kept front-desk session, and the MCP server sets QITS_AGENT_ID from the caller's token's agent claim, or QITS_DESK_PROJECT from its project claim when the token names no agent and is a desk's (the role qits:desk-admin, or a context_kind of desk-session or desk-delivery). An agent may declare and cancel waits for itself only; a project's desk, for its own project's only.
 
+With none of those, the holder is the project's long-running agent the caller's token belongs to (epic qits-2520), and every wait it declares is held for one work item: --work <item>, else the item `wait work` names, else the <id> of a `wait branch` on ticket/<id> or epic/<id>. Its list and cancel go to its own door, list narrowed to --work when given.
+
 ```
-qits wait [--after <duration>] [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [--output table|json] [--timeout <duration>] [--until <instant>] [--when <conditions>...] [--workspaces-url <url>]
+qits wait [--after <duration>] [--agent <id>] [--desk <project>] [--event <Name>] [--label <text>] [--output table|json] [--timeout <duration>] [--until <instant>] [--when <conditions>...] [--work <item>] [--workspaces-url <url>]
 ```
 
 | Name | What it does |
@@ -4302,6 +4317,7 @@ qits wait [--after <duration>] [--agent <id>] [--desk <project>] [--event <Name>
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
 | `--until <instant>` | A timer: wake the holder at this time, with no event. ISO-8601 with a zone: 2026-11-18T03:05:00Z or 2026-11-18T04:05:00+01:00. It must be in the future and at most 24h away. Not with --event, --when, --timeout or --after. |
 | `--when <conditions>...` | One group of conditions, for example 'runId=<id> status=SUCCESS'. Give it again for another group, up to 8: that is OR, not AND, so an event fitting either fires the wait. Conditions that must all hold go in the one quoted --when. Without one, every event of the name fits. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Waiting on the platform
@@ -4324,13 +4340,15 @@ qits wait --until 2026-11-18T03:05:00Z --label '03:00 GC run'
 qits wait list --state OPEN
 qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001
 qits wait release-request qits-ci-service-rr-12 --desk qits-ci
+qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a --work qits-123
+qits wait list --work qits-123
 ```
 
 ### Exit codes
 
 - `0` The wait is declared; it is printed. A wait already MATCHED or otherwise closed when declared is 0 too: there is nothing left to wait for.
 - `1` The platform refused (the message names the status), cannot be reached, or the wait came back BROKEN already (the platform decided it can never fire; the message says why).
-- `2` Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, --timeout, --after or --until that cannot be read or is over a limit, a timer given with a selection or --timeout, an --until in the past), not signed in, or the session ended.
+- `2` Used wrongly (no holder and no --work, both --agent and --desk, no --event and no timer, a --when, --timeout, --after or --until that cannot be read or is over a limit, a timer given with a selection or --timeout, an --until in the past), not signed in, or the session ended.
 
 ## qits wait branch
 
@@ -4341,7 +4359,7 @@ The same as --event BranchDeliveryChanged with branch=<branch> in every group, r
 It reads the branch's deliveries first. When the target already holds it says so, declares nothing and exits 0; when only an early step (FAILED, CONFLICTED or WITHDRAWN) holds it says so, declares nothing and exits 1. With -o json either way it prints what it read, with declared added as false. When no repository knows the branch yet it warns and declares anyway, and so it does when the read fails.
 
 ```
-qits wait branch --until joined|released|live|failed [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <name>] [--timeout <duration>] [--workspaces-url <url>] <branch>
+qits wait branch --until joined|released|live|failed [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <name>] [--timeout <duration>] [--work <item>] [--workspaces-url <url>] <branch>
 ```
 
 | Name | What it does |
@@ -4356,6 +4374,7 @@ qits wait branch --until joined|released|live|failed [--agent <id>] [--desk <pro
 | `--projects-url <url>` | The projects service's base URL, without /projects, where the deliveries and the project are read. Default: QITS_PROJECTS_URL, else derived from the idp address. |
 | `--repository <name>` | Only this repository's delivery, by name. Default: every repository that knows the branch, by their least advanced step. |
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4370,6 +4389,7 @@ qits wait branch ticket/qits-123 --until failed --repository qits-ci-service
 - Give the branch's whole name, as you pushed it: the wait matches it exactly.
 - --repository takes the repository's name, as the event carries it.
 - A branch can carry on into a new request when its request releases without it or is superseded (MOVED): the wait does not care which request it is on.
+- For a project's long-running agent the wait is held for the item ticket/<id> or epic/<id> names, unless --work names another.
 
 ### Exit codes
 
@@ -4388,7 +4408,7 @@ The same as --event ReleaseRequestStateChanged with one group per final state: r
 Prefer `wait branch` for your own work: a request id goes stale when it refolds or is superseded.
 
 ```
-qits wait release-request [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--timeout <duration>] [--workspaces-url <url>] <id>
+qits wait release-request [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--timeout <duration>] [--work <item>] [--workspaces-url <url>] <id>
 ```
 
 | Name | What it does |
@@ -4399,6 +4419,7 @@ qits wait release-request [--agent <id>] [--desk <project>] [--label <text>] [--
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4424,7 +4445,7 @@ Wait until a work item reaches a status.
 The item is looked up in the projects service first, so its qualified id (qits-123) works. The same as --event EntityTransitioned --when 'entities[].entityId=<its id> entities[].status=<STATUS>'.
 
 ```
-qits wait work --status <STATUS> [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--projects-url <url>] [--timeout <duration>] [--workspaces-url <url>] <entity>
+qits wait work --status <STATUS> [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--projects-url <url>] [--timeout <duration>] [--work <item>] [--workspaces-url <url>] <entity>
 ```
 
 | Name | What it does |
@@ -4437,6 +4458,7 @@ qits wait work --status <STATUS> [--agent <id>] [--desk <project>] [--label <tex
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--projects-url <url>` | The projects service's base URL, without /projects, where the item is looked up. Default: QITS_PROJECTS_URL, else derived from the idp address. |
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4459,7 +4481,7 @@ Wait until a CI run ends: SUCCESS, FAILED, CANCELLED, CONFIG_ERROR or TIMED_OUT.
 The same as --event BuildStatusChanged with one group per final status: runId=<id> status=<STATUS>.
 
 ```
-qits wait ci-run [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--timeout <duration>] [--workspaces-url <url>] <run id>
+qits wait ci-run [--agent <id>] [--desk <project>] [--label <text>] [--output table|json] [--timeout <duration>] [--work <item>] [--workspaces-url <url>] <run id>
 ```
 
 | Name | What it does |
@@ -4470,6 +4492,7 @@ qits wait ci-run [--agent <id>] [--desk <project>] [--label <text>] [--output ta
 | `--label <text>` | What the agent waits on, in a few words. The platform shows the agent as `waiting on <label>`. A preset gives one of its own. |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--timeout <duration>` | Close the wait and wake the agent after this long, if nothing fitted: 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H). Default: 8h, the platform's ceiling for an unstated timeout; the most any wait may run is 24h, and the platform refuses a longer one. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4488,10 +4511,12 @@ qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a
 
 ## qits wait list
 
-The holder's waits: id, state, event (timer, for a timer), label, when it was declared, when it times out and, for a BROKEN wait, why.
+The holder's waits: id, state, event (timer, for a timer), label, when it was declared, when it times out and, for a BROKEN wait, why. WORK appears when some wait is held for a work item: a project's long-running agent's.
+
+With no --agent, --desk, QITS_AGENT_ID or QITS_DESK_PROJECT it lists the project's long-running agent's waits, on every item or only --work's.
 
 ```
-qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state <STATE>] [--workspaces-url <url>]
+qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state <STATE>] [--work <item>] [--workspaces-url <url>]
 ```
 
 | Name | What it does |
@@ -4500,6 +4525,7 @@ qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state 
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
 | `--state <STATE>` | Only the waits in this state: OPEN, MATCHED, TIMED_OUT, BROKEN or CANCELLED. Default: all. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4507,20 +4533,21 @@ qits wait list [--agent <id>] [--desk <project>] [--output table|json] [--state 
 ```
 qits wait list
 qits wait list --state OPEN -o json
+qits wait list --work qits-123
 ```
 
 ### Exit codes
 
 - `0` Done.
 - `1` The platform refused (the message names the status), or cannot be reached.
-- `2` Used wrongly (no holder, a state qits does not know), not signed in, or the session ended.
+- `2` Used wrongly (a state qits does not know), not signed in, or the session ended.
 
 ## qits wait cancel
 
-End one of the holder's open waits. An agent holder gets no turn for it.
+End one of the holder's open waits. An agent holder gets no turn for it. With no --agent, --desk, QITS_AGENT_ID or QITS_DESK_PROJECT it ends one of the project's long-running agent's waits.
 
 ```
-qits wait cancel [--agent <id>] [--desk <project>] [--output table|json] [--workspaces-url <url>] <wait id>
+qits wait cancel [--agent <id>] [--desk <project>] [--output table|json] [--work <item>] [--workspaces-url <url>] <wait id>
 ```
 
 | Name | What it does |
@@ -4529,6 +4556,7 @@ qits wait cancel [--agent <id>] [--desk <project>] [--output table|json] [--work
 | `--agent <id>` | The agent whose waits these are. Mutually exclusive with --desk. Default: QITS_AGENT_ID (on the MCP server, from the caller's token's agent claim). |
 | `--desk <project>` | The project whose desk's waits these are: its id, slug or name. Mutually exclusive with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's project claim, when the token names no agent and is a desk's). |
 | `-o, --output table\|json` | table (the default): the wait for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
+| `--work <item>` | The work item this wait is for: a project's long-running agent names one on every wait (qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the <id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits. |
 | `--workspaces-url <url>` | The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, else derived from the idp address, like the other services. |
 
 ### Examples
@@ -4541,7 +4569,7 @@ qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001
 
 - `0` Done.
 - `1` The platform refused (for example a wait it does not know, HTTP 404), or cannot be reached.
-- `2` Used wrongly (no holder), not signed in, or the session ended.
+- `2` Used wrongly (no wait id), not signed in, or the session ended.
 
 ## qits workspaces
 
@@ -5056,7 +5084,7 @@ A target is named by its name or its id (`qits targets list` shows both).
 
 ## qits targets list
 
-Every target, by name: connected or not, version, slots, login and quarantine. Slots show ci, workspace and desk as used over reserved (with a maximum where set), then all used over the target's slot total. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is a limit: a type never runs more leases than its maximum.
+Every target, by name: connected or not, version, slots, login and quarantine. Slots show ci, workspace, desk and agent as used over reserved (with a maximum where set), then all used over the target's slot total. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is a limit: a type never runs more leases than its maximum.
 
 GET /system/api/targets. Any credential may call it, qits:agent included.
 
@@ -5117,12 +5145,12 @@ qits targets show --target localhost -o json
 
 Declare a target and print the line that installs its runner, with a one-time registration token in it.
 
-POST /system/api/targets with {name, description?, reservations?: {ci, workspace, desk}, slots?} (HTTP 201 {target, registrationToken, installLine}). It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
+POST /system/api/targets with {name, description?, reservations?: {ci, workspace, desk, agent}, slots?} (HTTP 201 {target, registrationToken, installLine}). It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
 
 THE INSTALL LINE IS SHOWN ONLY THIS ONCE: it is printed alone on stdout and nowhere else. Run it on the target's own machine. Lost, `qits targets rotate-token` makes a new one.
 
 ```
-qits targets create --name <name> [--description <text>] [--output table|json] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--slots <n>] [--system-url <url>]
+qits targets create --name <name> [--description <text>] [--output table|json] [--reserved-agent <n>] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--slots <n>] [--system-url <url>]
 ```
 
 | Name | What it does |
@@ -5130,6 +5158,7 @@ qits targets create --name <name> [--description <text>] [--output table|json] [
 | `--name <name>` | Required. The new target's name. |
 | `--description <text>` | Free text. |
 | `-o, --output table\|json` | table (the default): for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
+| `--reserved-agent <n>` | Slots reserved for long-running agents. |
 | `--reserved-ci <n>` | Slots reserved for CI. |
 | `--reserved-desk <n>` | Slots reserved for the desk. |
 | `--reserved-workspace <n>` | Slots reserved for workspaces. |
@@ -5194,20 +5223,22 @@ qits targets rotate-token --target buildbox --slots 8
 
 Change a target's description, slot reservations or slot maximums. Only what is given is sent; a reservation or maximum left out keeps its value. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is the limit: a type never runs more leases than its maximum on that target. `none` clears a maximum.
 
-PATCH /system/api/targets/{id} with {description?, reservations?: {ci?, workspace?, desk?}, maximums?: {ci?, workspace?, desk?}}. It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
+PATCH /system/api/targets/{id} with {description?, reservations?: {ci?, workspace?, desk?, agent?}, maximums?: {ci?, workspace?, desk?, agent?}}. It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
 
 ```
-qits targets update --target <name|id> [--description <text>] [--max-ci <n>|none] [--max-desk <n>|none] [--max-workspace <n>|none] [--output table|json] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--system-url <url>]
+qits targets update --target <name|id> [--description <text>] [--max-agent <n>|none] [--max-ci <n>|none] [--max-desk <n>|none] [--max-workspace <n>|none] [--output table|json] [--reserved-agent <n>] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--system-url <url>]
 ```
 
 | Name | What it does |
 |---|---|
 | `--target <name\|id>` | Required. The target's name or id. |
 | `--description <text>` | Free text. |
+| `--max-agent <n>\|none` | Maximum slots this target ever runs for agent leases; `none` clears it, leaving no ceiling. |
 | `--max-ci <n>\|none` | Maximum slots this target ever runs for CI leases; `none` clears it, leaving no ceiling. |
 | `--max-desk <n>\|none` | Maximum slots this target ever runs for desk leases; `none` clears it, leaving no ceiling. |
 | `--max-workspace <n>\|none` | Maximum slots this target ever runs for workspace leases; `none` clears it, leaving no ceiling. |
 | `-o, --output table\|json` | table (the default): for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
+| `--reserved-agent <n>` | Slots reserved for long-running agents. |
 | `--reserved-ci <n>` | Slots reserved for CI. |
 | `--reserved-desk <n>` | Slots reserved for the desk. |
 | `--reserved-workspace <n>` | Slots reserved for workspaces. |
@@ -5349,12 +5380,12 @@ qits targets delete --target localhost
 
 ## qits targets leases
 
-Leases, oldest first: filter by target, slot type (ci, workspace or desk) or state. show reads one lease; end ends one.
+Leases, oldest first: filter by target, slot type (ci, workspace, desk or agent) or state. show reads one lease; end ends one.
 
 GET /system/api/leases?targetId=&slotType=&state=. qits:admin, qits:admin-agent, qits:desk-admin and qits:agent read every lease; qits:system reads only its own.
 
 ```
-qits targets leases [--output table|json] [--state <state>] [--system-url <url>] [--target <name|id>] [--type ci|workspace|desk]
+qits targets leases [--output table|json] [--state <state>] [--system-url <url>] [--target <name|id>] [--type ci|workspace|desk|agent]
 ```
 
 | Name | What it does |
@@ -5363,7 +5394,7 @@ qits targets leases [--output table|json] [--state <state>] [--system-url <url>]
 | `--state <state>` | Only this state: QUEUED, GRANTED, RUNNING, EXITED, FAILED, ENDING or ENDED. |
 | `--system-url <url>` | qits-system-service's base URL, without /system. Default: QITS_SYSTEM_URL, else derived from the idp address, like the other services. |
 | `--target <name\|id>` | Only this target's leases. |
-| `--type ci\|workspace\|desk` | Only this slot type. |
+| `--type ci\|workspace\|desk\|agent` | Only this slot type. |
 
 ### Examples
 

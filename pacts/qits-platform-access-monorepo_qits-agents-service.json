@@ -1,0 +1,121 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-agents-service",
+            "operationId": "getMe"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits work list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits work list: getMe",
+      "key": "8b449a78",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a running agent calling as itself",
+          "params": {
+            "authorization": "Bearer qits_tok_contract-developer",
+            "name": "developer",
+            "project": "qits",
+            "turnId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer qits_tok_contract-developer"
+          ]
+        },
+        "method": "GET",
+        "path": "/agents/api/me"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "name": "developer",
+            "project": "qits",
+            "projectId": "00000000-0000-4000-8000-000000000002"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.project": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.projectId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-agents-service"
+  }
+}

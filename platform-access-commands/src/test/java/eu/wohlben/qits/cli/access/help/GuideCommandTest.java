@@ -137,6 +137,16 @@ class GuideCommandTest {
     }
 
     @Test
+    void forAsksForTheProjectAgentsVariant() {
+        env.put("QITS_TOKEN", "SECRET-agent-token");
+
+        Result r = run("help", "guide", "--for", "project-agent");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", GUIDE).getFirst().query()).isEqualTo("for=project-agent");
+    }
+
+    @Test
     void forAlsoOverridesATokenHome() {
         env.put("QITS_TOKEN", "SECRET-agent-token");
 
@@ -153,7 +163,7 @@ class GuideCommandTest {
         Result r = run("help", "guide", "--for", "kiosk");
 
         assertThat(r.exit()).isEqualTo(2);
-        assertThat(r.err()).contains("--for must be one of workstation, agent, desk, refinement");
+        assertThat(r.err()).contains("--for must be one of workstation, agent, project-agent, desk, refinement");
         assertThat(platform.requests("GET", GUIDE)).isEmpty();
     }
 

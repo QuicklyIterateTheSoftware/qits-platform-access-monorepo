@@ -548,12 +548,147 @@ class WaitCommandsTest {
         assertThat(platform.requests("POST", WAITS)).isEmpty();
     }
 
+    // --- a project's long-running agent (epic qits-2520) ---
+
+    private static final String PROJECT_AGENT_WAITS = "/workspaces/api/project-agent/waits";
+
+    /** The project agent's door answers the wait it stored, with the item it is held for. */
+    private void projectAgentDoor() {
+        platform.route("POST", PROJECT_AGENT_WAITS, request -> {
+            try {
+                JsonNode sent = JSON.readTree(request.body());
+                var wait = JSON.createObjectNode();
+                wait.put("id", WAIT);
+                wait.set("label", sent.get("label"));
+                wait.set("selection", sent.get("selection"));
+                wait.put("state", "OPEN");
+                wait.put("createdAt", "2026-10-10T10:00:00Z");
+                wait.set("work", sent.get("work"));
+                wait.put("workId", ENTITY);
+                return new FakePlatform.Answer(201, wait.toString(), Map.of());
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    private JsonNode sentToTheProjectAgentDoor() throws Exception {
+        List<FakePlatform.Request> posts = platform.requests("POST", PROJECT_AGENT_WAITS);
+        assertThat(posts).hasSize(1);
+        return JSON.readTree(posts.getFirst().body());
+    }
+
     @Test
-    void workWithoutAnAgentAsksTheProjectsServiceNothing() {
+    void workGoesToTheProjectAgentsDoorWithTheItem() throws Exception {
+        env.remove("QITS_AGENT_ID");
+        projectAgentDoor();
+
+        Result result = run("wait", "--work", "qits-123", "ci-run", RUN);
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        JsonNode sent = sentToTheProjectAgentDoor();
+        assertThat(sent.path("work").asText()).isEqualTo("qits-123");
+        assertThat(sent.path("selection").path("event").asText()).isEqualTo("BuildStatusChanged");
+        assertThat(result.out()).contains("work").contains("qits-123").contains("End your turn");
+        assertThat(platform.requests("POST", WAITS)).isEmpty();
+    }
+
+    @Test
+    void workMayComeAfterThePresetsNameAndATimerTakesItToo() throws Exception {
+        env.remove("QITS_AGENT_ID");
+        projectAgentDoor();
+
+        assertThat(run("wait", "--after", "2h", "--label", "look again", "--work", "qits-7").exit()).isZero();
+
+        JsonNode sent = sentToTheProjectAgentDoor();
+        assertThat(sent.path("work").asText()).isEqualTo("qits-7");
+        assertThat(sent.path("timeout").asText()).isEqualTo("PT2H");
+        assertThat(sent.has("selection")).isFalse();
+    }
+
+    @Test
+    void theWorkPresetHoldsTheWaitForItsOwnItem() throws Exception {
+        env.remove("QITS_AGENT_ID");
+        projectAgentDoor();
+
+        Result result = run("wait", "work", "qits-123", "--status", "VERIFIED");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(sentToTheProjectAgentDoor().path("work").asText()).isEqualTo("qits-123");
+    }
+
+    @Test
+    void aNamedHolderStillWinsOverWork() throws Exception {
+        assertThat(run("wait", "--work", "qits-123", "ci-run", RUN).exit()).isZero();
+
+        assertThat(sent().has("work")).isFalse();
+        assertThat(platform.requests("POST", PROJECT_AGENT_WAITS)).isEmpty();
+    }
+
+    @Test
+    void noHolderAndNoWorkSaysHowToNameOne() {
         env.remove("QITS_AGENT_ID");
 
-        assertThat(run("wait", "work", "qits-123", "--status", "DONE").exit()).isEqualTo(2);
+        Result result = run("wait", "ci-run", RUN);
+
+        assertThat(result.exit()).isEqualTo(2);
+        assertThat(result.err()).contains("No holder: give --agent <id> or --desk <project>, or --work <item> as a "
+                + "project's long-running agent.");
         assertThat(platform.requests).isEmpty();
+    }
+
+    @Test
+    void aNinthWaitOnOneItemIsTheDoorsRefusal() {
+        env.remove("QITS_AGENT_ID");
+        platform.answer("POST", PROJECT_AGENT_WAITS, 409,
+                "{\"error\":\"TOO_MANY_WAITS\",\"message\":\"8 waits are OPEN on qits-123\"}");
+
+        Result result = run("wait", "--work", "qits-123", "ci-run", RUN);
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("409");
+    }
+
+    @Test
+    void listAndCancelWithNoNamedHolderUseTheProjectAgentsDoor() {
+        env.remove("QITS_AGENT_ID");
+        platform.answer("GET", PROJECT_AGENT_WAITS, """
+                {"waits":[{"id":"%s","state":"OPEN","label":"release","work":"qits-123","workId":"%s",
+                  "selection":{"event":"ReleaseRequestStateChanged","when":[]},
+                  "createdAt":"2026-10-10T10:00:00Z","expiresAt":null},
+                  {"id":"x","state":"MATCHED","label":"done","work":"qits-123",
+                  "selection":{"event":"BuildStatusChanged","when":[]},"createdAt":"2026-10-10T10:00:00Z"}]}
+                """.formatted(WAIT, ENTITY));
+
+        Result open = run("wait", "list", "--work", "qits-123", "--state", "OPEN");
+        Result all = run("wait", "list");
+        Result matched = run("wait", "list", "--state", "matched");
+
+        assertThat(open.exit()).as(open.err()).isZero();
+        List<FakePlatform.Request> gets = platform.requests("GET", PROJECT_AGENT_WAITS);
+        assertThat(gets.get(0).query()).isEqualTo("work=qits-123");
+        assertThat(gets.get(1).query()).isEqualTo("state=all");
+        assertThat(gets.get(2).query()).isEqualTo("state=all");
+        assertThat(open.out()).contains("WORK").contains("qits-123").contains(WAIT);
+        assertThat(matched.out()).contains("done").doesNotContain(WAIT);
+
+        platform.answer("DELETE", PROJECT_AGENT_WAITS + "/" + WAIT, 204, "");
+        Result cancel = run("wait", "cancel", WAIT);
+        assertThat(cancel.exit()).as(cancel.err()).isZero();
+        assertThat(platform.requests("DELETE", PROJECT_AGENT_WAITS + "/" + WAIT)).hasSize(1);
+        assertThat(cancel.out()).contains("Cancelled wait " + WAIT + ".");
+    }
+
+    @Test
+    void theProjectAgentsDoorRefusingAnyoneElseIsPrintedAsItComes() {
+        env.remove("QITS_AGENT_ID");
+        platform.answer("GET", PROJECT_AGENT_WAITS, 403, "{\"message\":\"Not a project agent: `qits:agent` "
+                + "with `context_kind` project-agent and a `project` claim.\"}");
+
+        Result result = run("wait", "list");
+
+        assertThat(result.exit()).isEqualTo(1);
+        assertThat(result.err()).contains("Not a project agent");
     }
 
     @Test

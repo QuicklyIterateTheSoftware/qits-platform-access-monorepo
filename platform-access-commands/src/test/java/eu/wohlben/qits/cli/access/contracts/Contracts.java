@@ -1,5 +1,6 @@
 package eu.wohlben.qits.cli.access.contracts;
 
+import eu.wohlben.qits.cli.access.agents.AgentsContract;
 import eu.wohlben.qits.cli.access.ci.CiContract;
 import eu.wohlben.qits.cli.access.deployments.DeploymentsContract;
 import eu.wohlben.qits.cli.access.events.EventsContract;
@@ -34,7 +35,8 @@ public final class Contracts {
             ObservabilityContract.CONTRACT,
             EventsContract.CONTRACT,
             IdpContract.CONTRACT,
-            NetworkAccessContract.CONTRACT);
+            NetworkAccessContract.CONTRACT,
+            AgentsContract.CONTRACT);
 
     private Contracts() {
     }

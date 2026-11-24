@@ -342,6 +342,25 @@ public final class ProjectsApi {
      */
     public JsonNode projectWork(String project, String archetype, String status, String parent, String outcome,
             String supersededBy, String tag) throws CliFailure, InterruptedException {
+        return projectWork(project, archetype, status, parent, outcome, supersededBy, tag, WorkQuery.NONE);
+    }
+
+    /**
+     * What a project's long-running agent asks of the list (epic qits-2520): {@code assignee} (only
+     * items assigned to that name), {@code unassigned} (only work it could take: an unassigned epic or
+     * ticket an agent can move, not blocked, not reserved for a human, every need met), {@code active}
+     * (only items not yet at an end), {@code order=priority} (the backlog order) and {@code limit}.
+     * Null or false leaves a parameter out. The service answers HTTP 400 for {@code assignee} with
+     * {@code unassigned}, a blank assignee, or a limit outside 1..200.
+     */
+    public record WorkQuery(String assignee, boolean unassigned, boolean active, boolean byPriority, Integer limit) {
+
+        public static final WorkQuery NONE = new WorkQuery(null, false, false, false, null);
+    }
+
+    /** The list with every filter, {@code more} the long-running agent's (epic qits-2520). */
+    public JsonNode projectWork(String project, String archetype, String status, String parent, String outcome,
+            String supersededBy, String tag, WorkQuery more) throws CliFailure, InterruptedException {
         List<String> query = new ArrayList<>();
         addQuery(query, "archetype", archetype);
         addQuery(query, "status", status);
@@ -349,6 +368,11 @@ public final class ProjectsApi {
         addQuery(query, "outcome", outcome);
         addQuery(query, "supersededBy", supersededBy);
         addQuery(query, "tag", tag);
+        addQuery(query, "assignee", more.assignee());
+        addQuery(query, "unassigned", more.unassigned() ? "true" : null);
+        addQuery(query, "active", more.active() ? "true" : null);
+        addQuery(query, "order", more.byPriority() ? "priority" : null);
+        addQuery(query, "limit", more.limit() == null ? null : String.valueOf(more.limit()));
         return client.get(uri("/projects/api/projects/" + segment(project) + "/work"
                 + (query.isEmpty() ? "" : "?" + String.join("&", query))));
     }

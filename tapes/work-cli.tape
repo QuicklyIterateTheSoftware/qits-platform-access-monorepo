@@ -2,6 +2,7 @@
 # and as JSON, and a write the platform refuses - blocking an item, which a qits:agent token may
 # not do (403, exit 1). The answers are qits-projects' golden masters; --project is the slug, as
 # the screen's dropdown fills it in.
+# Last, what a project's long-running agent could take next, in the backlog order (epic qits-2520).
 #
 # Against the fake platform tapes/prepare.sh starts (FakePlatformMain). Each command is typed while
 # hidden and shown once its prompt is back, so every frame of the text golden is a finished screen
@@ -51,6 +52,16 @@ Type "qits work --entity contract-00000001-1 block --reason 'Waiting on the DB t
 Enter
 Wait /^\$$/
 Type "echo $?"
+Enter
+Wait /^\$$/
+Show
+Sleep 2s
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits work list --project contract-00000001 --unassigned --by-priority --limit 3"
 Enter
 Wait /^\$$/
 Show

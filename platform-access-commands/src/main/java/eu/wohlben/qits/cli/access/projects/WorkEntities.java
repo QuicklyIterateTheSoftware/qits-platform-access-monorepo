@@ -250,12 +250,14 @@ final class WorkEntities {
 
     /**
      * ID (qualified), ARCHETYPE, STATUS, BLOCKED when one is, NEEDS when one needs another item that
-     * is not at its status yet (epic qits-1899), TAGS when one carries any, TITLE, UPDATED.
+     * is not at its status yet (epic qits-1899), TAGS when one carries any, ASSIGNEE when one has one
+     * (epic qits-2520), TITLE, UPDATED.
      */
     static void printRows(PrintStream out, String indent, List<JsonNode> entities) {
         boolean anyBlocked = entities.stream().anyMatch(WorkEntities::blocked);
         boolean anyNeeds = entities.stream().anyMatch(WorkEntities::needsSomething);
         boolean anyTagged = entities.stream().anyMatch(e -> !tags(e).isEmpty());
+        boolean anyAssigned = entities.stream().anyMatch(e -> !text(e, "assignee").isBlank());
         List<String> headers = new ArrayList<>(List.of("ID", "ARCHETYPE", "STATUS"));
         if (anyBlocked) {
             headers.add("BLOCKED");
@@ -265,6 +267,9 @@ final class WorkEntities {
         }
         if (anyTagged) {
             headers.add("TAGS");
+        }
+        if (anyAssigned) {
+            headers.add("ASSIGNEE");
         }
         headers.add("TITLE");
         headers.add("UPDATED");
@@ -281,6 +286,10 @@ final class WorkEntities {
             if (anyTagged) {
                 String joined = tagsText(e);
                 row.add(cell(joined.isEmpty() ? "-" : joined, 40));
+            }
+            if (anyAssigned) {
+                String held = text(e, "assignee");
+                row.add(cell(held.isBlank() ? "-" : held, 40));
             }
             row.add(cell(text(e, "title"), 70));
             row.add(Table.time(text(e, "updatedAt")));

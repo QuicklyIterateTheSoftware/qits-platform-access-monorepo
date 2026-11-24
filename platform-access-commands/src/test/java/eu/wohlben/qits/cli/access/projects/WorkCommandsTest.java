@@ -258,6 +258,7 @@ class WorkCommandsTest {
         SessionFile store = new SessionFile(home.resolve("qits"));
         env.put("XDG_CONFIG_HOME", home.toString());
         env.put("QITS_PROJECTS_URL", platform.url());
+        env.put("QITS_AGENTS_URL", platform.url());
         store.write(new Session(idp.url(), "qits-cli", FakeIdp.SECRET + "access-0", T0.plus(Duration.ofMinutes(10)),
                 idp.issueRefreshToken(), T0.plus(Duration.ofDays(30))));
 
@@ -881,6 +882,119 @@ class WorkCommandsTest {
         assertThat(r.err()).contains("--outcome is one of DUPLICATE, RESOLVED_ELSEWHERE, SUPERSEDED, OBSOLETE, "
                 + "INVALID, WONT_DO, not boring.");
         assertThat(platform.requests).isEmpty();
+    }
+
+    // --- a project's long-running agent (epic qits-2520) ---
+
+    private static final String ME = "/agents/api/me";
+    private static final String OWN_PROJECT = "00000000-0000-4000-8000-000000000002";
+    private static final String OWN_LIST = "/projects/api/projects/" + OWN_PROJECT + "/work";
+
+    private void anAgentCallsAsItself() {
+        platform.answer("GET", ME, """
+                {"project":"qits","projectId":"%s","name":"developer","generation":2}
+                """.formatted(OWN_PROJECT));
+    }
+
+    @Test
+    void eachNewOptionSendsItsParameterInTheServicesOrder() {
+        Result assignee = run("work", "list", "--project", "qits", "--assignee", "developer", "--archetype", "ticket");
+        Result take = run("work", "list", "--project", "qits", "--unassigned", "--by-priority", "--limit", "10");
+
+        assertThat(assignee.exit()).as(assignee.err()).isZero();
+        assertThat(take.exit()).as(take.err()).isZero();
+        List<FakePlatform.Request> gets = platform.requests("GET", LIST);
+        assertThat(gets.get(0).query()).isEqualTo("archetype=TICKET&assignee=developer");
+        assertThat(gets.get(1).query()).isEqualTo("unassigned=true&order=priority&limit=10");
+        assertThat(platform.requests("GET", ME)).as("--project given: no need to ask who").isEmpty();
+    }
+
+    @Test
+    void assignedToMeAsksWhoTheAgentIsAndListsWhatItHoldsInItsOwnProject() {
+        anAgentCallsAsItself();
+        platform.answer("GET", OWN_LIST, "{\"entities\":[" + TICKET_ROW + "]}");
+
+        Result r = run("work", "list", "--assigned-to-me");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", ME)).hasSize(1);
+        assertThat(platform.requests("GET", OWN_LIST).getFirst().query()).isEqualTo("assignee=developer&active=true");
+        assertThat(r.out()).contains("qits-548");
+    }
+
+    @Test
+    void assignedToMeKeepsAGivenProject() {
+        anAgentCallsAsItself();
+
+        Result r = run("work", "list", "--assigned-to-me", "--project", "qits");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", LIST).getFirst().query()).isEqualTo("assignee=developer&active=true");
+    }
+
+    @Test
+    void assignedToMeForABearerMeDoesNotKnowIsAUsageError() {
+        platform.answer("GET", ME, 404, "{\"message\":\"not an agent\"}");
+
+        Result r = run("work", "list", "--assigned-to-me");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(r.err()).contains("--assigned-to-me is for a project's long-running agent; GET /agents/api/me does "
+                + "not know this bearer");
+        assertThat(platform.requests("GET", LIST)).isEmpty();
+    }
+
+    @Test
+    void unassignedWithoutAProjectIsTheAgentsOwnWhenMeAnswers() {
+        anAgentCallsAsItself();
+        platform.answer("GET", OWN_LIST, "{\"entities\":[]}");
+
+        Result r = run("work", "list", "--unassigned", "--by-priority", "--limit", "10");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(platform.requests("GET", OWN_LIST).getFirst().query())
+                .isEqualTo("unassigned=true&order=priority&limit=10");
+        assertThat(r.out()).contains("No work items match.");
+    }
+
+    @Test
+    void unassignedWithoutAProjectStillNeedsOneWhenMeDoesNotAnswer() {
+        platform.answer("GET", ME, 404, "{\"message\":\"not an agent\"}");
+
+        Result r = run("work", "list", "--unassigned");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(r.err()).contains("--project");
+        assertThat(platform.requests("GET", LIST)).isEmpty();
+    }
+
+    @Test
+    void theExclusionsAndALimitOutOfRangeAreUsageErrorsThatSendNothing() {
+        for (String[] args : List.of(
+                new String[] {"work", "list", "--assigned-to-me", "--assignee", "developer"},
+                new String[] {"work", "list", "--assigned-to-me", "--unassigned"},
+                new String[] {"work", "list", "--project", "qits", "--assignee", "developer", "--unassigned"},
+                new String[] {"work", "list", "--project", "qits", "--limit", "0"},
+                new String[] {"work", "list", "--project", "qits", "--limit", "201"})) {
+            Result r = run(args);
+            assertThat(r.exit()).as(String.join(" ", args)).isEqualTo(2);
+        }
+        assertThat(run("work", "list", "--assigned-to-me", "--assignee", "x").err()).contains("exclude each other");
+        assertThat(run("work", "list", "--project", "qits", "--limit", "201").err()).contains("1 to 200");
+        assertThat(platform.requests).isEmpty();
+    }
+
+    @Test
+    void anAssigneeColumnAppearsOnlyWhenSomeItemHasOne() {
+        Result with = run("work", "list", "--project", "qits");
+        assertThat(with.exit()).as(with.err()).isZero();
+        List<String> lines = with.out().lines().toList();
+        assertThat(lines.getFirst()).contains("ASSIGNEE");
+        assertThat(lines.get(1)).startsWith("qits-548").contains("alice");
+        assertThat(lines.get(2)).startsWith("qits-120").containsPattern("\\s-\\s");
+
+        platform.answer("GET", LIST, "{\"entities\":[" + EPIC_ROW + "]}");
+        assertThat(run("work", "list", "--project", "qits").out()).doesNotContain("ASSIGNEE");
     }
 
     @Test

@@ -7,7 +7,7 @@
     <parent>
         <groupId>eu.wohlben</groupId>
         <artifactId>qits</artifactId>
-        <version>2026.1124.191722</version>
+        <version>2026.1124.233720</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -213,6 +213,11 @@
         <dependency>
             <groupId>eu.wohlben.qits</groupId>
             <artifactId>qits-network-access-golden-masters</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>eu.wohlben.qits</groupId>
+            <artifactId>qits-agents-golden-masters</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

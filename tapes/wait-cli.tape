@@ -1,6 +1,7 @@
 # qits wait, on the command line: the waits the calling agent declared (QITS_AGENT_ID, which
 # tapes/prepare.sh sets), as a table and as JSON, and a declaration the platform refuses - a wait on
 # a CI run (403, exit 1). The answers are qits-workspaces' golden masters.
+# Last, the --work option a project's long-running agent names its work item with (epic qits-2520).
 #
 # Against the fake platform tapes/prepare.sh starts (FakePlatformMain). Each command is typed while
 # hidden and shown once its prompt is back, so every frame of the text golden is a finished screen
@@ -50,6 +51,16 @@ Type "qits wait ci-run 00000000-0000-4000-8000-000000000004"
 Enter
 Wait /^\$$/
 Type "echo $?"
+Enter
+Wait /^\$$/
+Show
+Sleep 2s
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits wait --help | grep -A 3 -- '--work'"
 Enter
 Wait /^\$$/
 Show
