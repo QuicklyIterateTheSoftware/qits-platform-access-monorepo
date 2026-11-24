@@ -39,6 +39,9 @@ class MaintenanceCommandsTest {
     private static final String RUN_2 = "22222222-3333-4444-5555-666666666666";
     private static final String AUTOMATIONS_DOOR = "/maintenance/api/release-requests/" + REQUEST + "/automations";
     private static final String RUN_DOOR = AUTOMATIONS_DOOR + "/screenshot-baselines/runs";
+    private static final String VERSIONS_DOOR = "/maintenance/api/artifacts/versions";
+    private static final String INGEST_DOOR = "/maintenance/api/artifacts/ingest";
+    private static final String SBOM_JOB = "7f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e60";
 
     @TempDir
     Path home;
@@ -85,6 +88,13 @@ class MaintenanceCommandsTest {
                  "message":"new baselines on maintenance/automations/screenshot-baselines/%s at abc, joined to release request %s",
                  "resultSha":"abc","releaseRequestId":"%s"}
                 """.formatted(JOB, REQUEST, REQUEST, REQUEST, REQUEST));
+        platform.answer("GET", VERSIONS_DOOR, """
+                [{"version":"2026.1104.1","repository":"qits-eventstream-javalib","occurredAt":"2026-10-01T10:00:00Z",
+                  "sbomStatus":"PENDING","sbomError":null,"ingestedAt":null},
+                 {"version":"2026.1020.1","repository":"qits-eventstream-javalib","occurredAt":"2026-09-20T10:00:00Z",
+                  "sbomStatus":"FAILED","sbomError":"the sbom answer is not a CycloneDX document","ingestedAt":null}]
+                """);
+        platform.answer("POST", INGEST_DOOR, 202, "{\"id\":\"" + SBOM_JOB + "\"}");
     }
 
     @AfterEach
@@ -225,6 +235,84 @@ class MaintenanceCommandsTest {
         Result r = run("maintenance", "--help");
 
         assertThat(r.exit()).isZero();
-        assertThat(r.out()).contains("automations").contains("automation").doesNotContain("screenshot-baselines");
+        assertThat(r.out()).contains("automations").contains("automation").contains("sbom")
+                .doesNotContain("screenshot-baselines");
+    }
+
+    @Test
+    void sbomVersionsListsEachVersionWithItsStatus() {
+        Result r = run("maintenance", "sbom", "versions", "--ecosystem", "maven", "--name",
+                "eu.wohlben.qits:qits-eventstream-javalib");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("VERSION").contains("STATUS").contains("REPOSITORY").contains("RELEASED")
+                .contains("ERROR").contains("2026.1104.1").contains("PENDING").contains("2026.1020.1")
+                .contains("FAILED").contains("the sbom answer is not a CycloneDX document")
+                .contains("qits-eventstream-javalib");
+        FakePlatform.Request sent = platform.requests("GET", VERSIONS_DOOR).getFirst();
+        assertThat(sent.query()).isEqualTo("ecosystem=maven&name=eu.wohlben.qits%3Aqits-eventstream-javalib");
+    }
+
+    @Test
+    void sbomVersionsJsonPrintsTheAnswerAsIs() {
+        Result r = run("maintenance", "sbom", "versions", "--ecosystem", "maven", "--name", "x", "-o", "json");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("\"version\"").contains("\"sbomStatus\"");
+    }
+
+    @Test
+    void anEmptyVersionsListSaysNoReleaseIsKnown() {
+        platform.answer("GET", VERSIONS_DOOR, "[]");
+        Result r = run("maintenance", "sbom", "versions", "--ecosystem", "maven", "--name", "eu.wohlben.qits:none");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("No released version of eu.wohlben.qits:none (maven) is known.");
+    }
+
+    @Test
+    void sbomVersionsOfABadEcosystemIsRefused() {
+        platform.answer("GET", VERSIONS_DOOR, 400, "{\"message\":\"ecosystem is maven, npm, docker or daemon\"}");
+        Result r = run("maintenance", "sbom", "versions", "--ecosystem", "bogus", "--name", "x");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("ecosystem is maven, npm, docker or daemon");
+    }
+
+    @Test
+    void sbomRereadQueuesAJobAndPrintsItsId() {
+        Result r = run("maintenance", "sbom", "reread", "--ecosystem", "maven", "--name",
+                "eu.wohlben.qits:qits-eventstream-javalib", "--version", "2026.1020.1");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("Queued an SBOM read of eu.wohlben.qits:qits-eventstream-javalib 2026.1020.1 "
+                + "(maven): job " + SBOM_JOB).contains("read asynchronously");
+        assertThat(platform.requests("POST", INGEST_DOOR)).hasSize(1);
+        FakePlatform.Request sent = platform.requests("POST", INGEST_DOOR).getFirst();
+        assertThat(sent.body()).contains("\"ecosystem\":\"maven\"")
+                .contains("\"name\":\"eu.wohlben.qits:qits-eventstream-javalib\"")
+                .contains("\"version\":\"2026.1020.1\"");
+    }
+
+    @Test
+    void sbomRereadRefusalIsPassedOn() {
+        platform.answer("POST", INGEST_DOOR, 403, "{\"message\":\"this credential is qits:agent, which reads but "
+                + "does not write\"}");
+        Result r = run("maintenance", "sbom", "reread", "--ecosystem", "maven", "--name",
+                "eu.wohlben.qits:qits-eventstream-javalib", "--version", "2026.1020.1");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("this credential is qits:agent, which reads but does not write");
+    }
+
+    @Test
+    void sbomRereadHelpWorksDespiteItsOwnVersionFlag() {
+        // Regression: --version collides with the mixin's -V/--version, so this command cannot use
+        // mixinStandardHelpOptions. See AGENTS.md.
+        Result r = run("maintenance", "sbom", "reread", "--help");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("Usage:");
+        assertThat(r.err()).isEmpty();
     }
 }
