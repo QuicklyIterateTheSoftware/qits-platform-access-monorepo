@@ -304,6 +304,18 @@ class McpToolCatalogTest {
         assertThat(properties(tool("service-clients_list"))).doesNotContainKey("idp-url");
     }
 
+    /** qits-orchestrator's processes and runs (qits-2490): the service decides who may start which kind. */
+    @Test
+    void theOrchestratorCommandsAreServed() {
+        assertThat(catalog.tool("orchestrator_processes")).isPresent();
+        assertThat(properties(tool("orchestrator_start"))).containsKeys("kind", "dry-run")
+                .doesNotContainKey("orchestrator-url");
+        assertThat(required(tool("orchestrator_start"))).containsExactly("kind");
+        assertThat(properties(tool("orchestrator_runs"))).containsKeys("kind", "limit");
+        assertThat(properties(tool("orchestrator_run"))).containsKeys("id", "step", "bodies");
+        assertThat(required(tool("orchestrator_run"))).containsExactly("id");
+    }
+
     @Test
     void theRememberedDevicesCommandsAreServed() {
         assertThat(catalog.tool("remembered-devices_list")).isPresent();
@@ -436,7 +448,8 @@ class McpToolCatalogTest {
                 "ui-builder_routes", "ui-builder_freeze", "ui-builder_golden-masters", "ui-builder_entities", "work_dossier_list", "work_dossier_get",
                 "work_refinement_show", "work_design_list", "work_design_get",
                 "release-request_list", "ci_runs", "ci_run", "ci_report_show", "maintenance_automations",
-                "maintenance_bump", "deployments_settings_list", "deployments_settings_preview",
+                "maintenance_bump", "orchestrator_processes", "orchestrator_runs", "orchestrator_run",
+                "deployments_settings_list", "deployments_settings_preview",
                 "deployments_database_moves", "deployments_database_move-status",
                 "agent-mcp_credentials_list",
                 "events", "events_query", "observe", "observe_query", "observe_sources", "observe_errors",

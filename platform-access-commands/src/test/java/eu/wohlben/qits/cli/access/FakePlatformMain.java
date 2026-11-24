@@ -55,6 +55,8 @@ public final class FakePlatformMain {
     /** {@code Faster builds}, the first idea of {@code a project with ideas}. */
     static final String IDEA = "00000000-0000-4000-8000-000000000003";
     static final String RUN = "00000000-0000-4000-8000-000000000004";
+    /** The finished scan run of qits-orchestrator's golden masters. */
+    static final String ORCHESTRATOR_RUN = "00000000-0000-4000-8000-000000000001";
     /** The agent {@code qits wait} acts for: {@code QITS_AGENT_ID} in {@code tapes/prepare.sh}. */
     static final String AGENT = "00000000-0000-4000-8000-0000000000a1";
     /** The version the artifacts store's golden master names as the newest {@code qits}. */
@@ -102,6 +104,7 @@ public final class FakePlatformMain {
         ci();
         deployments();
         maintenance();
+        orchestrator();
         users();
         rememberedDevices();
         serviceClients();
@@ -179,6 +182,20 @@ public final class FakePlatformMain {
         platform.answer("GET", automations, golden("qits-maintenance-service", "qits-maintenance",
                 "a release request with automations", "listReleaseRequestAutomations"));
         refuse("POST", automations + "/cli-tapes/runs");
+    }
+
+    /** qits-orchestrator (qits-2490): its processes, a finished scan run, and a start it refuses. */
+    private void orchestrator() {
+        platform.answer("GET", "/orchestrator/api/processes", orchestrator("the scan process", "listProcesses"));
+        platform.answer("GET", "/orchestrator/api/processes/scan/runs",
+                orchestrator("a finished scan run", "listProcessRuns"));
+        platform.answer("GET", "/orchestrator/api/runs/" + ORCHESTRATOR_RUN,
+                orchestrator("a finished scan run", "getProcessRun"));
+        refuse("POST", "/orchestrator/api/processes/scan/runs");
+    }
+
+    private static String orchestrator(String state, String operation) {
+        return golden("qits-orchestrator-service", "qits-orchestrator", state, operation);
     }
 
     private void users() {
