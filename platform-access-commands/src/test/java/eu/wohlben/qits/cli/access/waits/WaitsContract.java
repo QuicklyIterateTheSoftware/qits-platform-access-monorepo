@@ -5,6 +5,7 @@ import eu.wohlben.qits.cli.access.contracts.CliPact;
 import eu.wohlben.qits.cli.access.contracts.CliRow;
 import eu.wohlben.qits.cli.access.contracts.Reached;
 import eu.wohlben.qits.cli.access.platform.PlatformClient;
+import eu.wohlben.qits.cli.session.Credential;
 import eu.wohlben.qits.pact.consumer.GoldenMasters.Operation;
 
 import java.util.ArrayList;
@@ -39,6 +40,10 @@ public final class WaitsContract {
     static final String CI_RUN_WAIT = "an agent declaring a wait on a CI run";
     /** The bare form's timer, {@code --after} or {@code --until} (qits-2309). */
     static final String TIMER = "an agent declaring a timer";
+    /** A project's long-running agent's declaration, {@code --work} (epic qits-2520). */
+    static final String PROJECT_AGENT_DECLARING = "a project agent declaring a wait for a work item";
+    /** A project's long-running agent's list and cancel (epic qits-2520). */
+    static final String PROJECT_AGENT_OPEN_WAIT = "a project agent with an open wait";
 
     private static final CliPact MASTERS = CliPact.of("qits-workspaces-service", "qits-workspaces");
 
@@ -71,6 +76,21 @@ public final class WaitsContract {
     private static CliRow.Call api(Call call) {
         return (url, recorded) -> call.run(new WaitsApi(new PlatformClient(Reached.CREDENTIAL), url),
                 recorded.params(), recorded);
+    }
+
+    /**
+     * The same call with the bearer the state names ({@code authorization}): the project agent's door
+     * knows its holder only by the bearer, and the provider records its calls with that one.
+     */
+    private static CliRow.Call asTheBearer(Call call) {
+        return (url, recorded) -> {
+            String bearer = recorded.params().get("authorization").substring("Bearer ".length());
+            Credential credential = () -> {
+                Reached.CREDENTIAL.bearer();
+                return bearer;
+            };
+            call.run(new WaitsApi(new PlatformClient(credential), url), recorded.params(), recorded);
+        };
     }
 
     private static void wait(JsonNode wait) {
@@ -117,6 +137,36 @@ public final class WaitsContract {
         assertThat(WaitCommand.event(timer)).isEqualTo(WaitCommand.TIMER);
     };
 
+    /**
+     * {@code qits wait --event ReleaseRequestStateChanged --when 'releaseRequestId=<id> state=FINALIZED'
+     * --label … --timeout 2h --work qits-123}, as a project's long-running agent: the bare form's body,
+     * with the item the wait is held for added by the client (epic qits-2520).
+     */
+    private static final Call DECLARE_FOR_WORK = (api, params, recorded) -> {
+        JsonNode sent = CliRow.exampleBody(recorded);
+        List<List<WhenGrammar.Condition>> groups = new ArrayList<>();
+        for (JsonNode group : sent.path("selection").path("when")) {
+            groups.add(WhenGrammar.parse(WhenGrammar.written(group)));
+        }
+        JsonNode wait = api.create(WaitsApi.Holder.projectAgent(sent.path("work").asText()), WaitCommand.body(
+                sent.path("selection").path("event").asText(), groups, sent.path("label").asText(),
+                WaitTimeout.iso(sent.path("timeout").asText())));
+        wait(wait);
+        assertThat(wait.path("work").asText()).isEqualTo(params.get("work"));
+    };
+
+    /** {@code qits wait list --work qits-123 --state OPEN}: the door's default, so no state is sent. */
+    private static final Call LIST_FOR_WORK = (api, params, recorded) -> {
+        List<JsonNode> waits = WaitCommand.ListCommand.waits(api.list(WaitsApi.Holder.projectAgent(params.get("work")),
+                WaitCommand.ListCommand.projectAgentState("OPEN")));
+        assertThat(waits).isNotEmpty().allSatisfy(WaitsContract::wait);
+        assertThat(waits).allSatisfy(w -> assertThat(w.path("work").asText()).isEqualTo(params.get("work")));
+    };
+
+    /** {@code qits wait cancel <id>} as a project's long-running agent: 204, nothing to read. */
+    private static final Call CANCEL_FOR_WORK = (api, params, recorded) ->
+            api.cancel(WaitsApi.Holder.projectAgent(null), params.get("waitId"));
+
     /** {@code qits wait list --state open}: id, state, event, label, created and expires of each. */
     private static final Call LIST = (api, params, recorded) -> {
         List<JsonNode> waits = WaitCommand.ListCommand.waits(api.list(WaitsApi.Holder.agent(params.get("agentId")),
@@ -146,11 +196,29 @@ public final class WaitsContract {
                         "waits[].createdAt", "waits[].expiresAt"));
         rows.add(row("qits wait cancel", OPEN_WAIT, "cancelAgentWait", "cancel", CANCEL)
                 .consumes(MASTERS.held(OPEN_WAIT, "cancelAgentWait", WAIT)));
+        // epic qits-2520: a project's long-running agent, the bearer itself, on its own door.
+        rows.add(rowAsTheBearer("qits wait", PROJECT_AGENT_DECLARING, "createProjectAgentWait", "create", DECLARE_FOR_WORK)
+                .consumes(MASTERS.held(PROJECT_AGENT_DECLARING, "createProjectAgentWait",
+                        java.util.stream.Stream.concat(WAIT.stream(), java.util.stream.Stream.of("work")).toList()))
+                .header("Authorization", "{authorization}")
+                .request("POST /workspaces/api/project-agent/waits"));
+        rows.add(rowAsTheBearer("qits wait list", PROJECT_AGENT_OPEN_WAIT, "listProjectAgentWaits", "list", LIST_FOR_WORK)
+                .consumes("waits[].id", "waits[].state", "waits[].selection.event", "waits[].label",
+                        "waits[].createdAt", "waits[].expiresAt", "waits[].work")
+                .header("Authorization", "{authorization}")
+                .request("GET /workspaces/api/project-agent/waits?work={work}"));
+        rows.add(rowAsTheBearer("qits wait cancel", PROJECT_AGENT_OPEN_WAIT, "cancelProjectAgentWait", "cancel", CANCEL_FOR_WORK)
+                .header("Authorization", "{authorization}")
+                .request("DELETE /workspaces/api/project-agent/waits/{waitId}"));
         return List.copyOf(rows);
     }
 
     private static CliRow row(String command, String state, String operationId, String method, Call call) {
         return CliRow.of(command, state, operationId, "WaitsApi#" + method, api(call));
+    }
+
+    private static CliRow rowAsTheBearer(String command, String state, String operationId, String method, Call call) {
+        return CliRow.of(command, state, operationId, "WaitsApi#" + method, asTheBearer(call));
     }
 
     private WaitsContract() {

@@ -71,7 +71,11 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                         + "caller's token's agent claim, or QITS_DESK_PROJECT from its project claim when the "
                         + "token names no agent and is a desk's (the role qits:desk-admin, or a context_kind of "
                         + "desk-session or desk-delivery). An agent may declare and cancel waits for itself only; "
-                        + "a project's desk, for its own project's only."},
+                        + "a project's desk, for its own project's only.",
+                "With none of those, the holder is the project's long-running agent the caller's token belongs "
+                        + "to (epic qits-2520), and every wait it declares is held for one work item: --work <item>, "
+                        + "else the item `wait work` names, else the <id> of a `wait branch` on ticket/<id> or "
+                        + "epic/<id>. Its list and cancel go to its own door, list narrowed to --work when given."},
         footerHeading = "%nWaiting on the platform:%n",
         footer = {
                 "- Declare the wait, then end your turn. You get a new turn that names what fired: the event, or "
@@ -95,13 +99,15 @@ import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
                 "  qits wait --until 2026-11-18T03:05:00Z --label '03:00 GC run'",
                 "  qits wait list --state OPEN",
                 "  qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001",
-                "  qits wait release-request qits-ci-service-rr-12 --desk qits-ci"},
+                "  qits wait release-request qits-ci-service-rr-12 --desk qits-ci",
+                "  qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a --work qits-123",
+                "  qits wait list --work qits-123"},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:The wait is declared; it is printed. A wait already MATCHED or otherwise closed when "
                         + "declared is 0 too: there is nothing left to wait for.",
                 "1:The platform refused (the message names the status), cannot be reached, or the wait came back "
                         + "BROKEN already (the platform decided it can never fire; the message says why).",
-                "2:Used wrongly (no holder, both --agent and --desk, no --event and no timer, a --when, "
+                "2:Used wrongly (no holder and no --work, both --agent and --desk, no --event and no timer, a --when, "
                         + "--timeout, --after or --until that cannot be read or is over a limit, a timer given with "
                         + "a selection or --timeout, an --until in the past), not signed in, or the session ended."})
 public class WaitCommand extends PlatformCommand {
@@ -155,6 +161,12 @@ public class WaitCommand extends PlatformCommand {
                     + "with --agent. Default: QITS_DESK_PROJECT (on the MCP server, from the caller's token's "
                     + "project claim, when the token names no agent and is a desk's).")
     String desk;
+
+    @CommandLine.Option(names = "--work", paramLabel = "<item>", scope = CommandLine.ScopeType.INHERIT,
+            description = "The work item this wait is for: a project's long-running agent names one on every wait "
+                    + "(qits-2520). Its qualified id (qits-123) or its id. Default: the item of `wait work`, or the "
+                    + "<id> of `wait branch ticket/<id>` or `epic/<id>`. With list, only that item's waits.")
+    String work;
 
     @CommandLine.Option(names = "--workspaces-url", paramLabel = "<url>", scope = CommandLine.ScopeType.INHERIT,
             description = "The workspaces service's base URL, without /workspaces. Default: QITS_WORKSPACES_URL, "
@@ -227,7 +239,7 @@ public class WaitCommand extends PlatformCommand {
                     + "its time is its timeout. Wait on an event or declare a timer, not both.", CliFailure.USAGE);
         }
         String timeout = blank(after) ? untilTimeout(until, context.clock()) : WaitTimeout.iso(after, "--after");
-        WaitsApi.Holder holder = holder(context);
+        WaitsApi.Holder holder = holder(context, null);
         JsonNode wait = api(context).create(holder, timerBody(declaration.label, timeout));
         return print(context, json, wait, "when the time comes");
     }
@@ -262,16 +274,49 @@ public class WaitCommand extends PlatformCommand {
         return left.toString();
     }
 
+    /** The message for a declaration with no holder at all. */
+    static final String NO_HOLDER = "No holder: give --agent <id> or --desk <project>, or --work <item> as a "
+            + "project's long-running agent. The harness sets " + AGENT_VARIABLE + " in an agent's environment and "
+            + DESK_VARIABLE + " in a project's kept front-desk session, and the MCP server sets either from the "
+            + "caller's token.";
+
     /**
-     * Who the waits belong to: --agent or --desk, else QITS_AGENT_ID, else QITS_DESK_PROJECT; a usage
-     * failure with both --agent and --desk, or with none of the four. On the MCP server the variable
+     * Who a declaration belongs to: the named holder ({@link #namedHolder}), else the project's
+     * long-running agent with the item the wait is held for: --work, else {@code presetWork} (the
+     * item a preset names). A usage failure with neither (epic qits-2520).
+     */
+    WaitsApi.Holder holder(CliContext context, String presetWork) throws CliFailure, InterruptedException {
+        WaitsApi.Holder named = namedHolder(context);
+        if (named != null) {
+            return named;
+        }
+        String item = !blank(work) ? work.strip() : !blank(presetWork) ? presetWork.strip() : null;
+        if (item == null) {
+            throw new CliFailure(NO_HOLDER, CliFailure.USAGE);
+        }
+        return WaitsApi.Holder.projectAgent(item);
+    }
+
+    /**
+     * Whose waits list and cancel act on: the named holder, else the project's long-running agent's
+     * own door, narrowed to --work when it is given. That door answers 403 to anyone else, and the
+     * 403 is printed as it comes.
+     */
+    WaitsApi.Holder listHolder(CliContext context) throws CliFailure, InterruptedException {
+        WaitsApi.Holder named = namedHolder(context);
+        return named != null ? named : WaitsApi.Holder.projectAgent(blank(work) ? null : work.strip());
+    }
+
+    /**
+     * The named holder: --agent or --desk, else QITS_AGENT_ID, else QITS_DESK_PROJECT; null with none
+     * of the four, and a usage failure with both --agent and --desk. On the MCP server the variable
      * comes from the caller's token, not the container's environment (qits-1213, qits-1618).
      * <p>
      * {@code --desk} may name a project by id, slug or name, resolved against the projects service
      * like the other commands that take a {@code --project} (ProjectsCommand); the environment
      * variable is always a project uuid already, so it is used as given, with no lookup.
      */
-    WaitsApi.Holder holder(CliContext context) throws CliFailure, InterruptedException {
+    WaitsApi.Holder namedHolder(CliContext context) throws CliFailure, InterruptedException {
         boolean hasAgent = agent != null && !agent.isBlank();
         boolean hasDesk = desk != null && !desk.isBlank();
         if (hasAgent && hasDesk) {
@@ -292,11 +337,7 @@ public class WaitCommand extends PlatformCommand {
         if (envDesk != null && !envDesk.isBlank()) {
             return WaitsApi.Holder.desk(envDesk.strip());
         }
-        throw new CliFailure("No holder: give --agent <id> or --desk <project>, or set " + AGENT_VARIABLE + " or "
-                + DESK_VARIABLE + ". A wait belongs to one agent or one project's desk; the harness sets "
-                + AGENT_VARIABLE + " in an agent's environment and " + DESK_VARIABLE + " in a project's kept "
-                + "front-desk session, and the MCP server sets either from the caller's token.",
-                CliFailure.USAGE);
+        return null;
     }
 
     /** {@code --desk}'s value resolved to the project's id, the way {@code qits projects} commands do. */
@@ -349,12 +390,22 @@ public class WaitCommand extends PlatformCommand {
      */
     int declare(CliContext context, boolean json, String eventName, List<List<WhenGrammar.Condition>> groups,
                 Declaration given, String presetLabel, String brokenHint) throws CliFailure, InterruptedException {
+        return declare(context, json, eventName, groups, given, presetLabel, brokenHint, null);
+    }
+
+    /**
+     * {@code declare}, with the work item a preset names ({@code wait work}'s item, {@code wait
+     * branch}'s ticket or epic): the one a project agent's wait is held for when --work is not given.
+     */
+    int declare(CliContext context, boolean json, String eventName, List<List<WhenGrammar.Condition>> groups,
+                Declaration given, String presetLabel, String brokenHint, String presetWork)
+            throws CliFailure, InterruptedException {
         if (!blank(after) || !blank(until)) {
             // Given before a preset's name, they would be dropped without a word: the preset runs, not the bare form.
             throw new CliFailure("--after and --until declare a timer with the bare `qits wait`; a preset takes "
                     + "neither. Give the preset --timeout, or declare the timer on its own.", CliFailure.USAGE);
         }
-        WaitsApi.Holder holder = holder(context);
+        WaitsApi.Holder holder = holder(context, presetWork);
         // A preset's own options win; the ones given before the preset's name count too.
         String timeout = WaitTimeout.iso(given.timeout != null ? given.timeout : declaration.timeout);
         String label = !blank(given.label) ? given.label : !blank(declaration.label) ? declaration.label : presetLabel;
@@ -449,6 +500,9 @@ public class WaitCommand extends PlatformCommand {
         out.println("Wait " + SafeText.line(text(wait, "id")) + ": " + SafeText.line(text(wait, "state")));
         List<List<String>> rows = new ArrayList<>();
         rows.add(List.of("label", Table.cell(SafeText.line(text(wait, "label")), 200)));
+        if (!text(wait, "work").isEmpty()) {
+            rows.add(List.of("work", Table.cell(SafeText.line(text(wait, "work")), 200)));
+        }
         rows.add(List.of("event", Table.cell(SafeText.line(event(wait)), 200)));
         // A timer's selection is null or absent: no groups, so no when rows.
         boolean first = true;
@@ -588,7 +642,7 @@ public class WaitCommand extends PlatformCommand {
                 throw new CliFailure("--status is empty. Name a status, like VERIFIED.", CliFailure.USAGE);
             }
             // Refuses without a holder before the item lookup goes out.
-            parent.holder(context);
+            parent.holder(context, wanted);
             WaitTimeout.iso(declaration.timeout != null ? declaration.timeout : parent.declaration.timeout);
             JsonNode item = ProjectsApi.connect(context, projectsUrl).work(wanted);
             String entityId = text(item, "id");
@@ -601,7 +655,7 @@ public class WaitCommand extends PlatformCommand {
                     new WhenGrammar.Condition("entities[].entityId", WhenGrammar.Op.EXACT, entityId),
                     new WhenGrammar.Condition("entities[].status", WhenGrammar.Op.EXACT, target)));
             return parent.declare(context, json, EVENT, groups, declaration,
-                    SafeText.line(qualified) + " to reach " + target);
+                    SafeText.line(qualified) + " to reach " + target, null, qualified);
         }
     }
 
@@ -658,12 +712,15 @@ public class WaitCommand extends PlatformCommand {
 
     @CommandLine.Command(name = "list", mixinStandardHelpOptions = true,
             description = {"The holder's waits: id, state, event (timer, for a timer), label, when it was declared, "
-                    + "when it times out and, for a BROKEN wait, why."},
+                    + "when it times out and, for a BROKEN wait, why. WORK appears when some wait is held for a work "
+                    + "item: a project's long-running agent's.",
+                    "With no --agent, --desk, QITS_AGENT_ID or QITS_DESK_PROJECT it lists the project's "
+                            + "long-running agent's waits, on every item or only --work's."},
             footerHeading = HelpText.EXAMPLES,
-            footer = {"  qits wait list", "  qits wait list --state OPEN -o json"},
+            footer = {"  qits wait list", "  qits wait list --state OPEN -o json", "  qits wait list --work qits-123"},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE, HelpText.REFUSED,
-                    "2:Used wrongly (no holder, a state qits does not know), not signed in, or the session ended."})
+                    "2:Used wrongly (a state qits does not know), not signed in, or the session ended."})
     public static class ListCommand extends PlatformCommand {
 
         @CommandLine.ParentCommand
@@ -674,6 +731,23 @@ public class WaitCommand extends PlatformCommand {
                         + "Default: all.")
         String state;
 
+        /**
+         * What a project agent's door is asked for {@code wanted}: it knows only {@code open}, its
+         * default, and {@code all}. OPEN sends nothing; any other state asks for all and is picked
+         * out here ({@link #only}).
+         */
+        static String projectAgentState(String wanted) {
+            return "OPEN".equals(wanted) ? null : "all";
+        }
+
+        /** The answer with only the waits in {@code wanted}, in the envelope the project agent's door uses. */
+        static JsonNode only(JsonNode answer, String wanted) {
+            ObjectNode narrowed = JsonNodeFactory.instance.objectNode();
+            var kept = narrowed.putArray("waits");
+            waits(answer).stream().filter(w -> wanted.equals(text(w, "state"))).forEach(kept::add);
+            return narrowed;
+        }
+
         @Override
         protected int execute(CliContext context) throws CliFailure, InterruptedException {
             boolean json = json(parent.output);
@@ -682,8 +756,16 @@ public class WaitCommand extends PlatformCommand {
                 throw new CliFailure("--state must be OPEN, MATCHED, TIMED_OUT, BROKEN or CANCELLED, not '"
                         + state.strip() + "'.", CliFailure.USAGE);
             }
-            WaitsApi.Holder holder = parent.holder(context);
-            JsonNode answer = parent.api(context).list(holder, wanted);
+            WaitsApi.Holder holder = parent.listHolder(context);
+            JsonNode answer;
+            if (holder instanceof WaitsApi.Holder.ProjectAgent) {
+                answer = parent.api(context).list(holder, projectAgentState(wanted));
+                if (wanted != null && !wanted.equals("OPEN")) {
+                    answer = only(answer, wanted);
+                }
+            } else {
+                answer = parent.api(context).list(holder, wanted);
+            }
             if (json) {
                 printJson(context.out(), answer);
                 return 0;
@@ -693,16 +775,27 @@ public class WaitCommand extends PlatformCommand {
                 context.out().println(wanted == null ? "No waits." : "No " + wanted + " waits.");
                 return 0;
             }
+            // WORK only where some wait is held for an item: a project agent's (epic qits-2520).
+            boolean anyWork = waits.stream().anyMatch(w -> !text(w, "work").isEmpty());
             List<List<String>> rows = new ArrayList<>();
             for (JsonNode wait : waits) {
-                rows.add(List.of(SafeText.line(text(wait, "id")), SafeText.line(text(wait, "state")),
-                        Table.cell(SafeText.line(event(wait)), 40),
+                List<String> row = new ArrayList<>(List.of(SafeText.line(text(wait, "id")),
+                        SafeText.line(text(wait, "state"))));
+                if (anyWork) {
+                    row.add(Table.cell(SafeText.line(text(wait, "work")), 40));
+                }
+                row.addAll(List.of(Table.cell(SafeText.line(event(wait)), 40),
                         Table.cell(SafeText.line(text(wait, "label")), 50),
                         Table.time(text(wait, "createdAt")), Table.time(text(wait, "expiresAt")),
                         Table.cell(SafeText.line(text(wait, "brokenReason")), 50)));
+                rows.add(row);
             }
-            Table.print(context.out(), "", List.of("ID", "STATE", "EVENT", "LABEL", "CREATED", "EXPIRES", "REASON"),
-                    rows);
+            List<String> headers = new ArrayList<>(List.of("ID", "STATE"));
+            if (anyWork) {
+                headers.add("WORK");
+            }
+            headers.addAll(List.of("EVENT", "LABEL", "CREATED", "EXPIRES", "REASON"));
+            Table.print(context.out(), "", headers, rows);
             return 0;
         }
 
@@ -719,13 +812,15 @@ public class WaitCommand extends PlatformCommand {
     }
 
     @CommandLine.Command(name = "cancel", mixinStandardHelpOptions = true,
-            description = {"End one of the holder's open waits. An agent holder gets no turn for it."},
+            description = {"End one of the holder's open waits. An agent holder gets no turn for it. With no "
+                    + "--agent, --desk, QITS_AGENT_ID or QITS_DESK_PROJECT it ends one of the project's long-running "
+                    + "agent's waits."},
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits wait cancel 7c1e2d3f-0000-4000-8000-000000000001"},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE,
                     "1:The platform refused (for example a wait it does not know, HTTP 404), or cannot be reached.",
-                    "2:Used wrongly (no holder), not signed in, or the session ended."})
+                    "2:Used wrongly (no wait id), not signed in, or the session ended."})
     public static class CancelCommand extends PlatformCommand {
 
         @CommandLine.ParentCommand
@@ -741,7 +836,7 @@ public class WaitCommand extends PlatformCommand {
             if (id.isEmpty()) {
                 throw new CliFailure("Name the wait: its id, as `qits wait list` shows it.", CliFailure.USAGE);
             }
-            WaitsApi.Holder holder = parent.holder(context);
+            WaitsApi.Holder holder = parent.listHolder(context);
             JsonNode answer = parent.api(context).cancel(holder, id);
             boolean isWait = answer != null && answer.isObject();
             if (json) {

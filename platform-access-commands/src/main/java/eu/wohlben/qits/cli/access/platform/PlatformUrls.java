@@ -23,6 +23,11 @@ public final class PlatformUrls {
         return resolve("projects", "--projects-url", "QITS_PROJECTS_URL", flag, env, idpUrl);
     }
 
+    /** qits-agents-service: a project's long-running agents under {@code /agents/api} (epic qits-2520). */
+    public static String agents(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
+        return resolve("agents", "--agents-url", "QITS_AGENTS_URL", flag, env, idpUrl);
+    }
+
     public static String events(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
         return resolve("events", "--events-url", "QITS_EVENTS_URL", flag, env, idpUrl);
     }

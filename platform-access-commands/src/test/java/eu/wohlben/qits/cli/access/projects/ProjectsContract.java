@@ -50,6 +50,10 @@ public final class ProjectsContract {
     // --- the states -----------------------------------------------------------------------------
 
     static final String WORK_IN_EVERY_STATUS = "a project with work in every status";
+    /** {@code qits work list --unassigned --by-priority --limit 10} (epic qits-2520). */
+    static final String WORK_TO_TAKE = "work for a long-running agent to take and hold";
+    /** {@code qits work list --assigned-to-me}: {@code assignee=<name>&active=true} (epic qits-2520). */
+    static final String WORK_HELD = "work a long-running agent holds";
     static final String EPIC_IN_DETAIL = "an epic in detail";
     static final String NO_WORK = "a project with no work";
     static final String REGISTRY = "the archetype registry";
@@ -301,11 +305,11 @@ public final class ProjectsContract {
      * provider's release reaches the pin as well as after.
      */
     static final List<String> ROW = List.of("qualifiedId", "id", "archetype", "status", "outcome", "blocked",
-            "blockSource", "tags", "title", "updatedAt");
+            "blockSource", "tags", "assignee", "title", "updatedAt");
 
     /** One work item in full ({@code WorkEntities.printDetails}), and the project its closes are read in. */
     static final List<String> DETAILS = Stream.concat(ROW.stream(), Stream.of("blockReason", "blockedBy",
-            "ticketType", "impetus", "assignee", "parent", "position", "repositoryId", "supersededBy",
+            "ticketType", "impetus", "parent", "position", "repositoryId", "supersededBy",
             "implementedAt", "createdBy", "createdAt", "description", "acceptanceCriteria", "projectId", "inspiredBy"))
             .toList();
 
@@ -548,6 +552,23 @@ public final class ProjectsContract {
         request(moved.path("to"));
         assertThat(moved.path("to").path("sourceMoves")).isNotEmpty();
     };
+
+    /**
+     * {@code qits work list --unassigned --by-priority --limit 10}, and {@code --assigned-to-me} (its
+     * {@code assignee=<name>&active=true}, the name {@code /agents/api/me} answered): the recorded
+     * query, the same table.
+     */
+    private static Call longRunning(ProjectsApi.WorkQuery query) {
+        return (api, params, recorded) -> {
+            List<JsonNode> listed = WorkEntities.list(api.projectWork(params.get("projectId"), null, null, null, null,
+                    null, null, query));
+            assertThat(listed).hasSize(recorded(recorded, "entities"));
+            assertThat(listed).allSatisfy(e -> {
+                assertThat(ProjectsApi.text(e, "qualifiedId")).isNotBlank();
+                assertThat(ProjectsApi.text(e, "status")).isNotBlank();
+            });
+        };
+    }
 
     /** {@code qits work list}: the table reads every entity's qualified id, archetype and status. */
     private static final Call LIST = (api, params, recorded) -> {
@@ -1628,6 +1649,18 @@ public final class ProjectsContract {
         // qits work
         rows.add(row("qits work list", WORK_IN_EVERY_STATUS, "listProjectWork", "projectWork", LIST)
                 .consumes(held(WORK_IN_EVERY_STATUS, "listProjectWork", prefixed("entities[].", ROW))));
+        // epic qits-2520: what a project's long-running agent could take, and what it holds. The
+        // lists grow and shrink with the seed, so their length is left open.
+        rows.add(row("qits work list", WORK_TO_TAKE, "listProjectWork", "projectWork",
+                longRunning(new ProjectsApi.WorkQuery(null, true, false, true, 10)))
+                .consumes(held(WORK_TO_TAKE, "listProjectWork", prefixed("entities[].", ROW)))
+                .anyLength("entities")
+                .request("GET /projects/api/projects/{projectId}/work?unassigned=true&order=priority&limit=10"));
+        rows.add(row("qits work list", WORK_HELD, "listProjectWork", "projectWork",
+                longRunning(new ProjectsApi.WorkQuery("developer", false, true, false, null)))
+                .consumes(held(WORK_HELD, "listProjectWork", prefixed("entities[].", ROW)))
+                .anyLength("entities")
+                .request("GET /projects/api/projects/{projectId}/work?assignee=developer&active=true"));
         rows.add(row("qits work details", EPIC_IN_DETAIL, "getWork", "work", GET)
                 .consumes(held(EPIC_IN_DETAIL, "getWork", DETAILS)));
         rows.add(row("qits work details", EPIC_IN_DETAIL, "listWorkComments", "workComments", COMMENTS)

@@ -397,7 +397,55 @@ class BranchWaitTest {
         assertThat(run("wait", "branch", BRANCH, "--until", "live", "--timeout", "soon").exit()).isEqualTo(2);
         assertThat(run("wait", "branch", BRANCH, "--until", "live", "--project", "nope").exit()).isEqualTo(2);
         env.remove("QITS_AGENT_ID");
-        assertThat(run("wait", "branch", BRANCH, "--until", "live").exit()).as("no holder").isEqualTo(2);
+        Result noHolder = run("wait", "branch", "feature/x", "--until", "live");
+        assertThat(noHolder.exit()).as("no holder").isEqualTo(2);
+        assertThat(noHolder.err()).contains("No holder: give --agent <id> or --desk <project>, or --work <item> as a "
+                + "project's long-running agent.");
         assertThat(platform.requests("POST", WAITS)).isEmpty();
+    }
+
+    // --- a project's long-running agent (epic qits-2520) ---
+
+    private static final String PROJECT_AGENT_WAITS = "/workspaces/api/project-agent/waits";
+
+    @Test
+    void aTicketBranchHoldsAProjectAgentsWaitForItsItem() throws Exception {
+        env.remove("QITS_AGENT_ID");
+        platform.answer("POST", PROJECT_AGENT_WAITS, 201, """
+                {"id":"%s","state":"OPEN","label":"l","work":"qits-123","selection":{"event":"BranchDeliveryChanged"}}
+                """.formatted(WAIT));
+
+        Result result = run("wait", "branch", BRANCH, "--until", "released");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        List<FakePlatform.Request> posts = platform.requests("POST", PROJECT_AGENT_WAITS);
+        assertThat(posts).hasSize(1);
+        JsonNode sent = JSON.readTree(posts.getFirst().body());
+        assertThat(sent.path("work").asText()).isEqualTo("qits-123");
+        assertThat(sent.path("selection").path("event").asText()).isEqualTo("BranchDeliveryChanged");
+        assertThat(result.out()).contains("work").contains("qits-123");
+    }
+
+    @Test
+    void anEpicBranchNamesTheEpicAndWorkOverridesEither() throws Exception {
+        env.remove("QITS_AGENT_ID");
+        platform.answer("POST", PROJECT_AGENT_WAITS, 201, "{\"id\":\"" + WAIT + "\",\"state\":\"OPEN\"}");
+
+        assertThat(run("wait", "branch", "epic/qits-2520", "--until", "live").exit()).isZero();
+        assertThat(run("wait", "--work", "qits-9", "branch", BRANCH, "--until", "live").exit()).isZero();
+
+        List<FakePlatform.Request> posts = platform.requests("POST", PROJECT_AGENT_WAITS);
+        assertThat(JSON.readTree(posts.get(0).body()).path("work").asText()).isEqualTo("qits-2520");
+        assertThat(JSON.readTree(posts.get(1).body()).path("work").asText()).isEqualTo("qits-9");
+    }
+
+    @Test
+    void workOfReadsTicketAndEpicBranchesOnly() {
+        assertThat(BranchWait.workOf("ticket/qits-123")).isEqualTo("qits-123");
+        assertThat(BranchWait.workOf("epic/qits-2520")).isEqualTo("qits-2520");
+        assertThat(BranchWait.workOf("ticket/")).isNull();
+        assertThat(BranchWait.workOf("ticket/qits-1/more")).isNull();
+        assertThat(BranchWait.workOf("main")).isNull();
+        assertThat(BranchWait.workOf("maintenance/automations/x")).isNull();
     }
 }

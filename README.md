@@ -643,6 +643,8 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits repositories --project <project> remote-login [--repository <repository>]
     qits repositories --project <project> backup reset --repository <repository> --reason <text>
     qits work list --project <project> [--archetype <A>] [--status <STATUS>] [--parent <entity>]
+    qits work list [--project <project>] --unassigned [--by-priority] [--limit <n>]
+    qits work list [--project <project>] --assigned-to-me
     qits work --entity <id or qualified id> details
     <payload> | qits work create --archetype <A>
     <merge patch> | qits work --entity <id or qualified id> update
@@ -1961,8 +1963,21 @@ kept front-desk session; the MCP server runs the command without that environmen
 `project` claim when the token names no agent and is a desk's (the role `qits:desk-admin`, or a
 `context_kind` of `desk-session` or `desk-delivery`). `--desk` takes the project's id, slug or name,
 looked up in the projects service the way the other commands with a `--project` do; the environment
-variable is always a project uuid already. Without any of the four the command exits with 2. An
-agent may declare and cancel waits for itself only; a project's desk, for its own project's only.
+variable is always a project uuid already. An agent may declare and cancel waits for itself only; a
+project's desk, for its own project's only.
+
+Without any of the four, the holder is a project's long-running agent, the caller's bearer itself
+(epic qits-2520), on qits-workspaces' `/workspaces/api/project-agent/waits`. Every wait it declares
+is held for one work item, which reads `waiting on <label>` meanwhile: `--work <item>`, else the item
+`qits wait work` names, else the `<id>` of a `qits wait branch` on `ticket/<id>` or `epic/<id>`. With
+none of those either the command exits with 2. `list` and `cancel` with no named holder go to that
+door too, `list` narrowed to `--work` when it is given; the door answers 403 to any other caller,
+and a ninth OPEN wait on one item 409.
+
+`qits work list --assigned-to-me` and `--unassigned` are that agent's view of the backlog: what it
+holds, and what it could take next (`--by-priority`, `--limit`). Both ask qits-agents-service's `GET
+/agents/api/me` who the caller is (`--agents-url`, else `QITS_AGENTS_URL`, else the idp's sibling
+`agents`) when no `--project` is given, and `--assigned-to-me` always, for the name it lists by.
 
 `--agent` takes the agent's id as `qits agents list` shows it; `qits agents show --work qits-123` names
 the one active agent on an item. A wait that fires for a STOPPED agent (`qits agents stop`) does not

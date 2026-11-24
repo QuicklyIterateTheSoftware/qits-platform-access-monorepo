@@ -2989,6 +2989,64 @@
         "references": {
           "qits-call": {
             "app": "qits-workspaces-service",
+            "operationId": "cancelProjectAgentWait"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits wait cancel",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits wait cancel: cancelProjectAgentWait",
+      "key": "26b88077",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project agent with an open wait",
+          "params": {
+            "authorization": "Bearer contract-project-agent-token",
+            "projectId": "00000000-0000-4000-8000-000000000001",
+            "releaseRequestId": "00000000-0000-4000-8000-0000000000c1",
+            "waitId": "00000000-0000-4000-8000-0000000000bb",
+            "work": "qits-123",
+            "workId": "00000000-0000-4000-8000-0000000000d2"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/workspaces/api/project-agent/waits/${waitId}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-project-agent-token"
+          ]
+        },
+        "method": "DELETE",
+        "path": "/workspaces/api/project-agent/waits/00000000-0000-4000-8000-0000000000bb"
+      },
+      "response": {
+        "status": 204
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-workspaces-service",
             "operationId": "createAgentWait"
           },
           "qits-trigger": {
@@ -3384,6 +3442,179 @@
               ]
             },
             "$.waits[*].state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-workspaces-service",
+            "operationId": "listProjectAgentWaits"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits wait list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits wait list: listProjectAgentWaits",
+      "key": "40fa78f2",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project agent with an open wait",
+          "params": {
+            "authorization": "Bearer contract-project-agent-token",
+            "projectId": "00000000-0000-4000-8000-000000000001",
+            "releaseRequestId": "00000000-0000-4000-8000-0000000000c1",
+            "waitId": "00000000-0000-4000-8000-0000000000bb",
+            "work": "qits-123",
+            "workId": "00000000-0000-4000-8000-0000000000d2"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "query": {
+            "work": {
+              "dataType": "RAW",
+              "expression": "${work}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-project-agent-token"
+          ]
+        },
+        "method": "GET",
+        "path": "/workspaces/api/project-agent/waits",
+        "query": {
+          "work": [
+            "qits-123"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "waits": [
+              {
+                "createdAt": "2026-01-01T00:00:00Z",
+                "expiresAt": "2026-01-01T00:00:00Z",
+                "id": "00000000-0000-4000-8000-0000000000bb",
+                "label": "release-request 00000000-0000-4000-8000-0000000000c1",
+                "selection": {
+                  "event": "ReleaseRequestStateChanged"
+                },
+                "state": "OPEN",
+                "work": "qits-123"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.waits": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.waits[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.waits[*].expiresAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.waits[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.waits[*].label": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.waits[*].selection.event": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.waits[*].state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.waits[*].work": {
               "combine": "AND",
               "matchers": [
                 {
@@ -3951,6 +4182,202 @@
               ]
             },
             "$.state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-workspaces-service",
+            "operationId": "createProjectAgentWait"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits wait",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits wait: createProjectAgentWait",
+      "key": "f45c4046",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a project agent declaring a wait for a work item",
+          "params": {
+            "authorization": "Bearer contract-project-agent-token",
+            "projectId": "00000000-0000-4000-8000-000000000001",
+            "releaseRequestId": "00000000-0000-4000-8000-0000000000c1",
+            "work": "qits-123",
+            "workId": "00000000-0000-4000-8000-0000000000d2"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "label": "release request 00000000 to end",
+            "selection": {
+              "event": "ReleaseRequestStateChanged",
+              "when": [
+                [
+                  {
+                    "op": "exact",
+                    "path": "releaseRequestId",
+                    "value": "00000000-0000-4000-8000-0000000000c1"
+                  },
+                  {
+                    "op": "exact",
+                    "path": "state",
+                    "value": "FINALIZED"
+                  }
+                ]
+              ]
+            },
+            "timeout": "PT2H",
+            "work": "qits-123"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "body": {
+            "$.selection.when[0][0].value": {
+              "dataType": "STRING",
+              "expression": "${releaseRequestId}",
+              "type": "ProviderState"
+            }
+          },
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-project-agent-token"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.selection.when[0][0].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/workspaces/api/project-agent/waits"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "closedAt": null,
+            "createdAt": "2026-01-01T00:00:00Z",
+            "expiresAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000100",
+            "label": "release request 00000000 to end",
+            "matchedEventId": null,
+            "selection": {
+              "event": "ReleaseRequestStateChanged"
+            },
+            "state": "OPEN",
+            "work": "qits-123"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.expiresAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.label": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.selection.event": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.work": {
               "combine": "AND",
               "matchers": [
                 {

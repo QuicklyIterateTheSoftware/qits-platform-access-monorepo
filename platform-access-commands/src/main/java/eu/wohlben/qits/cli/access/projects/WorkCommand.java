@@ -1,6 +1,7 @@
 package eu.wohlben.qits.cli.access.projects;
 
 import eu.wohlben.qits.cli.tui.api.Effect;
+import eu.wohlben.qits.cli.access.agents.AgentsApi;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -151,8 +152,13 @@ public class WorkCommand implements Runnable {
                     + "whose needs are all met. TAGS appears "
                     + "when some item carries one, as its "
                     + "display text (RESERVED_FOR_HUMAN shows as reserved for human), and - for an item with "
-                    + "none. A DROPPED item shows its outcome beside the status: DROPPED (DUPLICATE).",
-                    "Each filter narrows the list; without one it shows everything."},
+                    + "none. ASSIGNEE appears when some item has one, and - for an item with none. A DROPPED item "
+                    + "shows its outcome beside the status: DROPPED (DUPLICATE).",
+                    "Each filter narrows the list; without one it shows everything.",
+                    "A project's long-running agent finds its work with --unassigned --by-priority (what it could "
+                            + "take next, in the backlog order) and --assigned-to-me (what it holds). Both may leave "
+                            + "out --project: --assigned-to-me always, --unassigned when GET /agents/api/me knows the "
+                            + "caller; the project is then the agent's own."},
             footerHeading = HelpText.EXAMPLES,
             footer = {
                     "  qits work list --project qits",
@@ -160,24 +166,38 @@ public class WorkCommand implements Runnable {
                     "  qits work list --project qits --parent qits-120 -o json",
                     "  qits work list --project qits --status DROPPED --outcome duplicate",
                     "  qits work list --project qits --tag reserved-for-human",
+                    "  qits work list --project qits --assignee developer",
+                    "  qits work list --unassigned --by-priority --limit 10",
+                    "  qits work list --assigned-to-me",
                     "",
                     "- --archetype, --status and --outcome are case-insensitive. --parent lists the children of "
                             + "one item. --tag takes the tag's display form (reserved-for-human) or its enum name "
-                            + "(RESERVED_FOR_HUMAN), either case."},
+                            + "(RESERVED_FOR_HUMAN), either case.",
+                    "- --assigned-to-me asks GET /agents/api/me for the agent's name and project, then lists the "
+                            + "items assigned to that name that are not at an end. It is for a project's "
+                            + "long-running agent; any other caller gets exit 2.",
+                    "- --assigned-to-me, --assignee and --unassigned exclude each other."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE,
                     "1:The platform refused (for example an unknown archetype or status, HTTP 400, or a project it "
                             + "does not know, HTTP 404), or cannot be reached.",
-                    "2:Used wrongly (for example no --project), not signed in, or the session ended."})
+                    "2:Used wrongly (for example no --project, two filters that exclude each other, a --limit "
+                            + "outside 1..200, or --assigned-to-me for a caller that is no project's long-running "
+                            + "agent), not signed in, or the session ended."})
     @TuiCommand(effect = Effect.READ)
     public static class ListCommand extends PlatformCommand {
+
+        /** What --assigned-to-me says to a bearer {@code /agents/api/me} does not know (HTTP 404). */
+        static final String NOT_A_PROJECT_AGENT = "--assigned-to-me is for a project's long-running agent; "
+                + "GET /agents/api/me does not know this bearer.";
 
         @CommandLine.ParentCommand
         WorkCommand work;
 
         @Completes(ProjectSource.class)
         @CommandLine.Option(names = "--project", paramLabel = "<project>",
-                description = "The project (required): its id or its slug.")
+                description = "The project: its id or its slug. Required, except with --assigned-to-me, and with "
+                        + "--unassigned for a project's long-running agent: then the agent's own project.")
         String project;
 
         @CommandLine.Option(names = "--archetype", paramLabel = "<archetype>",
@@ -201,14 +221,78 @@ public class WorkCommand implements Runnable {
                 description = "Only items carrying this tag: reserved-for-human (RESERVED_FOR_HUMAN).")
         String tag;
 
+        @CommandLine.Option(names = "--assignee", paramLabel = "<text>",
+                description = "Only items assigned to this name, such as a project's long-running agent's "
+                        + "(developer). Not with --unassigned or --assigned-to-me.")
+        String assignee;
+
+        @CommandLine.Option(names = "--unassigned",
+                description = "Only work you could take: an unassigned epic or ticket in a status an agent can "
+                        + "move, not blocked, not reserved for a human, every need met.")
+        boolean unassigned;
+
+        @CommandLine.Option(names = "--by-priority",
+                description = "The backlog order: bugs first, then priority (highest first), then oldest.")
+        boolean byPriority;
+
+        @CommandLine.Option(names = "--limit", paramLabel = "<n>",
+                description = "At most this many items, 1 to 200.")
+        Integer limit;
+
+        @CommandLine.Option(names = "--assigned-to-me",
+                description = "Only the items you hold: assigned to your name and not yet at an end. For a "
+                        + "project's long-running agent: the name and the default project come from GET "
+                        + "/agents/api/me. Not with --assignee or --unassigned.")
+        boolean assignedToMe;
+
+        @CommandLine.Option(names = "--agents-url", paramLabel = "<url>",
+                description = "The agents service's base URL, without /agents, which --assigned-to-me and "
+                        + "--unassigned ask who the caller is. Default: QITS_AGENTS_URL, else the session's idp "
+                        + "address with `idp` swapped for `agents`.")
+        String agentsUrl;
+
         @Override
         protected int execute(CliContext context) throws CliFailure, InterruptedException {
             boolean json = json(work.options.output);
-            String wanted = RepositoriesCommand.required(project, RepositoriesCommand.NAME_THE_PROJECT);
+            String named = assignee == null || assignee.isBlank() ? null : assignee.strip();
+            if (assignee != null && named == null) {
+                throw new CliFailure("--assignee is empty. Name the assignee, like developer.", CliFailure.USAGE);
+            }
+            if (assignedToMe && named != null) {
+                throw new CliFailure("--assigned-to-me and --assignee exclude each other: --assigned-to-me is "
+                        + "--assignee <your name>.", CliFailure.USAGE);
+            }
+            if (assignedToMe && unassigned) {
+                throw new CliFailure("--assigned-to-me and --unassigned exclude each other.", CliFailure.USAGE);
+            }
+            if (named != null && unassigned) {
+                throw new CliFailure("--assignee and --unassigned exclude each other.", CliFailure.USAGE);
+            }
+            if (limit != null && (limit < 1 || limit > 200)) {
+                throw new CliFailure("--limit must be from 1 to 200, not " + limit + ".", CliFailure.USAGE);
+            }
+            String wanted = project == null || project.isBlank() ? null : project.strip();
+            if (wanted == null && !assignedToMe && !unassigned) {
+                throw new CliFailure(RepositoriesCommand.NAME_THE_PROJECT, CliFailure.USAGE);
+            }
             String why = upper(outcome);
             if (why != null && !WorkEntities.OUTCOMES.contains(why)) {
                 throw new CliFailure("--outcome is one of " + String.join(", ", WorkEntities.OUTCOMES) + ", not "
                         + SafeText.line(outcome.strip()) + ".", CliFailure.USAGE);
+            }
+            boolean active = false;
+            if (assignedToMe) {
+                JsonNode me = me(context);
+                named = RepositoriesCommand.required(text(me, "name"),
+                        "GET /agents/api/me answered without the agent's name.");
+                active = true;
+                wanted = wanted != null ? wanted : RepositoriesCommand.required(ownProject(me),
+                        "GET /agents/api/me answered without the agent's project.");
+            } else if (wanted == null) {
+                // --unassigned with no --project: the agent's own project, when /me knows the caller.
+                wanted = RepositoriesCommand.required(ownProjectOrNull(context), RepositoriesCommand.NAME_THE_PROJECT
+                        + " Without it, --unassigned is for a project's long-running agent, and GET "
+                        + "/agents/api/me does not know this caller.");
             }
             ProjectsApi api = work.api(context);
             String parentEntity = parent == null || parent.isBlank() ? null : parent.strip();
@@ -216,7 +300,7 @@ public class WorkCommand implements Runnable {
             // sends --tag as it was given, trimmed, and leaves the 400 for an unknown one to it.
             String wantedTag = tag == null || tag.isBlank() ? null : tag.strip();
             JsonNode answer = api.projectWork(wanted, upper(archetype), upper(status), parentEntity, why, null,
-                    wantedTag);
+                    wantedTag, new ProjectsApi.WorkQuery(named, unassigned, active, byPriority, limit));
             List<JsonNode> entities = WorkEntities.list(answer);
             if (why != null) {
                 // Again here: a service older than qits-248 ignores ?outcome= and answers every row.
@@ -238,6 +322,33 @@ public class WorkCommand implements Runnable {
             }
             WorkEntities.printRows(context.out(), "", entities);
             return 0;
+        }
+
+        /** Who the caller is, as a project's long-running agent; a usage failure on HTTP 404 (any other bearer). */
+        private JsonNode me(CliContext context) throws CliFailure, InterruptedException {
+            try {
+                return AgentsApi.connect(context, agentsUrl).me();
+            } catch (CliFailure refused) {
+                if (refused.status() == 404) {
+                    throw new CliFailure(NOT_A_PROJECT_AGENT, CliFailure.USAGE);
+                }
+                throw refused;
+            }
+        }
+
+        /** The agent's own project, or null when {@code /agents/api/me} does not answer for this caller. */
+        private String ownProjectOrNull(CliContext context) throws InterruptedException {
+            try {
+                return ownProject(AgentsApi.connect(context, agentsUrl).me());
+            } catch (CliFailure notAnAgent) {
+                return null;
+            }
+        }
+
+        /** {@code /me}'s project: its id, which the path takes as it is, else its slug. */
+        public static String ownProject(JsonNode me) {
+            String id = text(me, "projectId");
+            return id.isBlank() ? text(me, "project") : id;
         }
     }
 

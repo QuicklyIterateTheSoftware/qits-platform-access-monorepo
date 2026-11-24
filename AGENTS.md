@@ -267,7 +267,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                under it asks the records search with the same filters (ObserveQueryCommand)
     waits/     qits wait: the --when grammar (WhenGrammar, a copy of qits-eventstream-javalib's
                selection grammar and limits, producing its wire JSON; keep the two in step), the
-               --timeout reader, the presets and list/cancel on qits-workspaces' agent waits
+               --timeout reader, the presets and list/cancel on qits-workspaces' agent waits. A third
+               holder (epic qits-2520): with no --agent, --desk or variable, a project's long-running
+               agent on /workspaces/api/project-agent/waits, each declaration held for --work, else the
+               preset's item (wait work, wait branch on ticket/<id> or epic/<id>). Its rows are
+               WaitsContract's, sent with the state's own bearer
     waits/     qits wait: the --when grammar (WhenGrammar, a copy of qits-eventstream-javalib's
                selection grammar and limits, producing its wire JSON; keep the two in step), the
                --timeout reader, the presets and list/cancel on qits-workspaces' agent waits
@@ -400,6 +404,10 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                (PlatformEndpoints), or, for register with no session, IdpUrl's default
     agents/    qits agents: the group (AgentsCommand), whose verbs are workspaces/AgentCommands; only
                its `claude` group is Interaction.LOCAL.
+               AgentsApi (epic qits-2520) is qits-agents-service's client, one door: GET /agents/api/me,
+               which `qits work list --assigned-to-me` (and `--unassigned` without --project) asks who
+               the caller is. Its row is AgentsContract (`a running agent calling as itself`); the
+               golden-masters pin `qits.agents-golden-masters.version` was a first adoption, set by hand
                qits agents claude: what Claude Code runs. hook work-links (WorkLinks, the id matching;
                LinkProjects, the slug cache, refreshed by the same command's hidden --refresh started
                detached). The hook path never waits for the network and never fails: errors print nothing
@@ -680,7 +688,10 @@ pin records that state; and `qits projects desk prompt` /
 is running`, both pending until a golden-masters pin records that state; and `qits release-request
 hold-deploy` (qits-2268): `setReleaseRequestDeployHold` with `hold: true` in `a release request
 awaiting approval` and with `hold: false` (`--off`) in `a release request whose deploy is held`,
-pending until a golden-masters pin records them. A path the recorder froze
+pending until a golden-masters pin records them; and `qits work list --unassigned --by-priority
+--limit 10` and `--assigned-to-me` (epic qits-2520): `listProjectWork` in `work for a long-running agent
+to take and hold` and in `work a long-running agent holds`, pending until the pin reaches
+qits-projects-service 2026.1124.202345. A path the recorder froze
 under both `ids` and `strings` (`qualityGates[*].checks[*].runId`) holds a whole UUID in some
 elements only, so no row consumes it: qits-pact-consumer would match it as a UUID.
 

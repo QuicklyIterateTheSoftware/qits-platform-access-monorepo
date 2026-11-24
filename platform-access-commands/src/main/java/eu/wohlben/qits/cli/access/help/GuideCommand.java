@@ -39,16 +39,18 @@ import java.util.Locale;
                 "The platform serves it, so it is always the current text. Without --for it prints the variant for "
                         + "where it runs: on a workstation signed in with `qits login`, the workstation guide (sign-in, "
                         + "Git, registries, builds, releases); inside the platform (QITS_TOKEN, or in-platform mode), "
-                        + "the brief of the agent, desk or refinement room the token belongs to, with the development "
+                        + "the brief of the agent, project agent, desk or refinement room the token belongs to, with the development "
                         + "flow.",
                 "When the service sends a guide-hash, the output leads with a `guide-hash: <hash>` line before the "
                         + "markdown; an older service that sends none prints the markdown alone. --hash-only prints "
                         + "just that line, to check cheaply whether the guide changed."},
         footerHeading = HelpText.EXAMPLES,
         footer = {"  qits help guide", "  qits help guide --list", "  qits help guide --for agent",
+                "  qits help guide --for project-agent",
                 "  qits help guide --hash-only",
                 "",
-                "- Variants: workstation, agent, desk, refinement. --for picks one, to read what another holder reads.",
+                "- Variants: workstation, agent, project-agent, desk, refinement. --for picks one, to read what another "
+                        + "holder reads. project-agent is a project's long-running agent (qits-2520).",
                 "- Reads GET /projects/api/guide (with ?for=<variant>), and GET /projects/api/guide/variants for "
                         + "--list.",
                 "- --hash-only prints `guide-hash: <hash>` alone and nothing else; it fails when the service sends "
@@ -60,10 +62,10 @@ import java.util.Locale;
                         + "session ended."})
 public class GuideCommand extends PlatformCommand {
 
-    static final List<String> VARIANTS = List.of("workstation", "agent", "desk", "refinement");
+    static final List<String> VARIANTS = List.of("workstation", "agent", "project-agent", "desk", "refinement");
 
     @CommandLine.Option(names = "--for", paramLabel = "<variant>",
-            description = "The variant to print: workstation, agent, desk or refinement. Default: the one for where "
+            description = "The variant to print: workstation, agent, project-agent, desk or refinement. Default: the one for where "
                     + "this runs.")
     String variant;
 
