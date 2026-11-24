@@ -10,7 +10,8 @@ that session fresh), `qits projects|repositories|work|ideas|pitches|release-requ
 qits-artifacts' docs store, for the ui-builder named agent; qits-2156), `qits ci runs|run|retry|cancel|report` (qits-ci's runs, a
 run's step logs, a retry, a cancel, a run's release reports), `qits database diagram` (a repository's entity
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
-golden master records), `qits users` (the idp's users: invite, register, list,
+golden master records), `qits orchestrator` (qits-orchestrator's processes and their runs: processes, runs, start, run;
+qits-2490), `qits users` (the idp's users: invite, register, list,
 delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
 revoke; qits-1944), `qits service-clients` (the idp's service clients: list; qits-2531),
 `qits network-access` (this workstation onto the private edge through a
@@ -364,6 +365,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                (qits-2271) is declineDeploymentRequest in `a deployment request held for decline`, pending until
                the pin reaches 2026.1116.213739 (published). A decline is final: nothing un-declines it, and the
                request's release request ends WITHDRAWN
+    orchestrator/ qits orchestrator processes|runs|start|run (qits-2490), on qits-orchestrator's
+               /orchestrator/api (OrchestratorApi): listProcesses, listProcessRuns, startProcessRun,
+               getProcessRun (?bodies=false unless --bodies) and getProcessRunStep, exactly
+               the five the landing app's Orchestrator pages call, so qits-ci's pact parity needs no
+               exclusion for the provider. Its rows are OrchestratorContract
     agentmcp/  qits agent-mcp credentials list|set|delete, on qits-projects' agent MCP catalog
                (AgentMcpApi; epic qits-765). Its rows belong to ProjectsContract (AgentMcpContract)
     remembered/ qits remembered-devices list and revoke (qits-1944), on the idp's

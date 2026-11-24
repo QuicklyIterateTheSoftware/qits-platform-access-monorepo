@@ -53,6 +53,7 @@ contracts:
     qits-idp-service: { packages: [maven] }
     qits-deployments-service: { packages: [maven] }
     qits-network-access-service: { packages: [maven] }
+    qits-orchestrator-service: { packages: [maven] }
 
   # qits-2465: pact parity with qits-landing-app, checked by qits-ci on every release request. An
   # operation landing makes that the CLI does not must be listed here with a reason.
@@ -99,7 +100,6 @@ contracts:
         getTelemetryTrace: "landing show-telemetry-trace (ui); the qits CLI has no command for it yet"
         listTelemetryTraces: "landing show-telemetry-traces (ui); the qits CLI has no command for it yet"
         searchTelemetryLogs: "landing show-telemetry-logs (ui); the qits CLI has no command for it yet"
-      qits-orchestrator-service: "the qits CLI calls no qits-orchestrator-service door; landing pages: open-orchestrator-step, show-orchestrator-process, start-orchestrator-dry-run"
       qits-projects-service:
         getProject: "landing open-project (ui); the qits CLI has no command for it yet"
         getReleaseRequest: "landing show-release-request (ui); the qits CLI has no command for it yet"
