@@ -3443,7 +3443,7 @@ qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ## qits maintenance
 
-Jobs of qits-maintenance: automations lists a release request's release-request automations and their state, automation run re-runs one kind, and bump shows how one job went.
+Jobs of qits-maintenance: automations lists a release request's release-request automations and their state, automation run re-runs one kind, bump shows how one job went, and sbom lists an artifact's released versions and their SBOM ingestion.
 
 ### Notes
 
@@ -3550,6 +3550,76 @@ qits maintenance bump 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 ```
 
 - Run it again to follow a job: REQUESTED and RUNNING are not finished.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits maintenance sbom
+
+One artifact's released versions and whether qits-maintenance has read each one's SBOM. `versions` lists them; `reread` queues a fresh read of one.
+
+## qits maintenance sbom versions
+
+List one artifact's released versions, newest first, and whether qits-maintenance has read each one's SBOM.
+
+```
+qits maintenance sbom versions --ecosystem <maven|npm|docker|daemon> --name <name> [--maintenance-url <url>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>]
+```
+
+| Name | What it does |
+|---|---|
+| `--ecosystem <maven\|npm\|docker\|daemon>` | Required. The package ecosystem. |
+| `--name <name>` | Required. The artifact's name, as the ecosystem spells it (eu.wohlben.qits:qits-eventstream). |
+| `--maintenance-url <url>` | The maintenance service's base URL, without /maintenance. Default: QITS_MAINTENANCE_URL, else the session's idp address with `idp` swapped for `maintenance`. |
+| `-o, --output table\|json` | table (the default): one line per field. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project: its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects, where --project, --repository and --request are looked up. Default: QITS_PROJECTS_URL, else derived like --maintenance-url. |
+| `--repository <repository>` | The repository: its id or name. |
+
+### Examples
+
+```
+qits maintenance sbom versions --ecosystem maven --name eu.wohlben.qits:qits-eventstream
+```
+
+- Empty means the platform has never seen a released version of this artifact.
+- STATUS is PENDING, INGESTED, MISSING or FAILED; `sbom reread` queues a fresh read of a FAILED or MISSING one.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits maintenance sbom reread
+
+Queue a fresh read of one released version's SBOM.
+
+The read happens asynchronously: this only queues it and prints the job's id. Run `qits maintenance sbom versions` again, once it has had time to run, to see the result.
+
+```
+qits maintenance sbom reread --ecosystem <maven|npm|docker|daemon> --name <name> --version <version> [--maintenance-url <url>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>]
+```
+
+| Name | What it does |
+|---|---|
+| `--ecosystem <maven\|npm\|docker\|daemon>` | Required. The package ecosystem. |
+| `--name <name>` | Required. The artifact's name, as the ecosystem spells it (eu.wohlben.qits:qits-eventstream). |
+| `--version <version>` | Required. The released version to read again. |
+| `--maintenance-url <url>` | The maintenance service's base URL, without /maintenance. Default: QITS_MAINTENANCE_URL, else the session's idp address with `idp` swapped for `maintenance`. |
+| `-o, --output table\|json` | table (the default): one line per field. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project: its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects, where --project, --repository and --request are looked up. Default: QITS_PROJECTS_URL, else derived like --maintenance-url. |
+| `--repository <repository>` | The repository: its id or name. |
+
+### Examples
+
+```
+qits maintenance sbom reread --ecosystem maven --name eu.wohlben.qits:qits-eventstream --version 2026.811.1
+```
 
 ### Exit codes
 
