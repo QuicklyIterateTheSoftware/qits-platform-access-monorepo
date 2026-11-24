@@ -17,6 +17,9 @@ Commands:
   failed, and why; the line coverage of the tree and of the change; the pacts and provider states the
   change adds or removes; the entity diagram's tables and columns it changes); `qits ci report submit` is the
   CI step's side that collects and uploads them.
+- `qits orchestrator processes|runs|start|run` lists qits-orchestrator's technical processes (gc,
+  scan, sbom-check), a kind's runs, starts one (`--dry-run` where the kind offers it) and shows a
+  run with its steps, or one step with its request and response.
 - `qits users invite|register|list|delete` manages the platform's users on the idp: an admin
   mints a register token, the new user spends it and gets a generated password, shown once.
 - `qits remembered-devices list|revoke` shows the browsers the idp remembers for you (the ones
@@ -695,6 +698,7 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits remembered-devices list
     qits remembered-devices revoke --device <id>
     qits service-clients list
+    qits orchestrator processes|runs --kind <kind>|start --kind <kind> [--dry-run]|run --id <id> [--step <step id>]
     qits events [--filter=<names>]
     qits events query [--filter=<names>] [--since <time>] [--until <time>] [--limit <n>] [-o json]
     qits observe --filter <conditions> [--filter <conditions> …] [-o json]
@@ -1436,6 +1440,26 @@ with the reason.
     qits maintenance --project qits --repository qits-landing-app automations --request qits-landing-app-rr-7
     qits maintenance --project qits --repository qits-landing-app automation run --request qits-landing-app-rr-7 --kind screenshot-baselines
     qits maintenance bump 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+
+### qits orchestrator
+
+qits-orchestrator's technical processes and their runs (qits-2490), on the same five doors the
+landing app's Orchestrator pages call: `processes` (`GET /orchestrator/api/processes`) prints KIND,
+NAME, DRY RUN and STEPS; `runs --kind <kind> [--limit <n>]` (`GET .../processes/{kind}/runs`) prints
+each run's whole id, status, trigger, dry run, start, end and summary, newest first; `start --kind
+<kind> [--dry-run]` (`POST .../processes/{kind}/runs` with `{"dryRun": …}`) prints the new run's id;
+`run --id <id>` (`GET /orchestrator/api/runs/{id}?bodies=false`) prints the run and a table of its
+steps, `--bodies` asks for every step's request body and response too, and `--step <step id>` (`GET
+.../runs/{id}/steps/{stepId}`) prints that one step whole. `start`'s refusals each get a sentence
+above the service's own: 400 a dry run of a kind without one, 403 a kind the caller may not start
+(a `qits:agent` token may not start scan or sbom-check), 404 an unknown kind, 409 one of that kind
+still active. The address is `--orchestrator-url`, else `QITS_ORCHESTRATOR_URL`, else the edge's
+`orchestrator` host. `-o json` prints the service's answer.
+
+    qits orchestrator processes
+    qits orchestrator runs --kind scan --limit 5
+    qits orchestrator start --kind gc --dry-run
+    qits orchestrator run --id <run id> --step internal.follow
 
 ### qits deployments settings
 

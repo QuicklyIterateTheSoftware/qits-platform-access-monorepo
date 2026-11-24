@@ -1,0 +1,1065 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "listProcesses"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator processes",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator processes: listProcesses",
+      "key": "31a12fa1",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "the scan process",
+          "params": {
+            "kind": "scan"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/orchestrator/api/processes"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "dryRunnable": true,
+              "kind": "gc",
+              "name": "Garbage collection",
+              "steps": [
+                {
+                  "dependsOn": [
+                    "pins.deployments"
+                  ],
+                  "id": "usage.before",
+                  "name": "Disk usage before",
+                  "target": "containers"
+                }
+              ]
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$[*].dryRunnable": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].steps": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$[*].steps[*].dependsOn": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$[*].steps[*].dependsOn[*]": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].steps[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].steps[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].steps[*].target": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "getProcessRun"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator run",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator run: getProcessRun",
+      "key": "8a30d4e4",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a finished scan run",
+          "params": {
+            "kind": "scan",
+            "runId": "00000000-0000-4000-8000-000000000001",
+            "stepId": "internal.follow"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/runs/${runId}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/orchestrator/api/runs/00000000-0000-4000-8000-000000000001",
+        "query": {
+          "bodies": [
+            "false"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "dryRun": false,
+            "finishedAt": "2026-01-01T00:00:00Z",
+            "id": "00000000-0000-4000-8000-000000000001",
+            "kind": "scan",
+            "startedAt": "2026-01-01T00:00:00Z",
+            "status": "SUCCEEDED",
+            "steps": [
+              {
+                "error": null,
+                "httpStatus": 202,
+                "id": "internal.request",
+                "status": "SUCCEEDED",
+                "summary": "queued scan 00000000-0000-4000-8000-000000000002",
+                "target": "maintenance"
+              }
+            ],
+            "summary": "internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); internal.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)",
+            "trigger": "scheduled"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.dryRun": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.finishedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.startedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.steps": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.steps[*].httpStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.steps[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.steps[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.steps[*].summary": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.steps[*].target": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.summary": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.trigger": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "getProcessRunStep"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator run",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator run: getProcessRunStep",
+      "key": "f0e74008",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a finished scan run",
+          "params": {
+            "kind": "scan",
+            "runId": "00000000-0000-4000-8000-000000000001",
+            "stepId": "internal.follow"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/runs/${runId}/steps/${stepId}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/orchestrator/api/runs/00000000-0000-4000-8000-000000000001/steps/internal.follow"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": null,
+            "finishedAt": "2026-01-01T00:00:00Z",
+            "httpStatus": 200,
+            "id": "internal.follow",
+            "name": "Follow the internal scan",
+            "request": {
+              "method": "GET",
+              "url": "http://dev-qits-maintenance:8080/maintenance/api/scans/00000000-0000-4000-8000-000000000002"
+            },
+            "response": "{\"id\":\"00000000-0000-4000-8000-000000000002\",\"scope\":\"INTERNAL\",\"repository\":null,\"trigger\":\"MANUAL\",\"status\":\"SUCCEEDED\",\"startedAt\":\"2026-01-01T00:00:00Z\",\"finishedAt\":\"2026-01-01T00:00:00Z\",\"message\":null}",
+            "responseBytes": 208,
+            "startedAt": "2026-01-01T00:00:00Z",
+            "status": "SUCCEEDED",
+            "summary": "INTERNAL scan SUCCEEDED",
+            "target": "maintenance"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.finishedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.httpStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.request.method": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.request.url": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.response": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.responseBytes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.startedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.summary": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.target": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "listProcessRuns"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator runs",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator runs: listProcessRuns",
+      "key": "d1533574",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a finished scan run",
+          "params": {
+            "kind": "scan",
+            "runId": "00000000-0000-4000-8000-000000000001",
+            "stepId": "internal.follow"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/processes/${kind}/runs",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/orchestrator/api/processes/scan/runs"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "dryRun": false,
+              "finishedAt": "2026-01-01T00:00:00Z",
+              "id": "00000000-0000-4000-8000-000000000001",
+              "startedAt": "2026-01-01T00:00:00Z",
+              "status": "SUCCEEDED",
+              "summary": "internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); internal.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)",
+              "trigger": "scheduled"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].dryRun": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].finishedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$[*].id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].startedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].summary": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].trigger": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "startProcessRun"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator start",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator start: startProcessRun",
+      "key": "1e7ec255",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a running gc run",
+          "params": {
+            "kind": "gc",
+            "runId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "dryRun": true
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/processes/${kind}/runs",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/orchestrator/api/processes/gc/runs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "message": "a gc run is already active: 00000000-0000-4000-8000-000000000001"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 409
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "startProcessRun"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator start",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator start: startProcessRun",
+      "key": "dae292d7",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "no active gc run",
+          "params": {
+            "kind": "gc"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "dryRun": true
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/processes/${kind}/runs",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/orchestrator/api/processes/gc/runs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "00000000-0000-4000-8000-000000000001"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "startProcessRun"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator start",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator start: startProcessRun",
+      "key": "3699c737",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "no active scan run",
+          "params": {
+            "kind": "scan"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "dryRun": false
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/processes/${kind}/runs",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/orchestrator/api/processes/scan/runs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "00000000-0000-4000-8000-000000000001"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-orchestrator-service",
+            "operationId": "startProcessRun"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits orchestrator start",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits orchestrator start: startProcessRun",
+      "key": "6c7240ff",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "the scan process",
+          "params": {
+            "kind": "scan"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "dryRun": true
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/orchestrator/api/processes/${kind}/runs",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/orchestrator/api/processes/scan/runs"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "message": "the scan process has no dry run: the peer door it calls has no dry-run mode, so a run of it always does the real work; start it with {\"dryRun\":false}"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-orchestrator-service"
+  }
+}

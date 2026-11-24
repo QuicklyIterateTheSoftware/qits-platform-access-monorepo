@@ -7,6 +7,7 @@ import eu.wohlben.qits.cli.access.idp.IdpContract;
 import eu.wohlben.qits.cli.access.maintenance.MaintenanceContract;
 import eu.wohlben.qits.cli.access.networkaccess.NetworkAccessContract;
 import eu.wohlben.qits.cli.access.observe.ObservabilityContract;
+import eu.wohlben.qits.cli.access.orchestrator.OrchestratorContract;
 import eu.wohlben.qits.cli.access.projects.ProjectsContract;
 import eu.wohlben.qits.cli.access.publish.ArtifactsContract;
 import eu.wohlben.qits.cli.access.workspaces.WorkspaceDaemonContract;
@@ -28,6 +29,7 @@ public final class Contracts {
             ArtifactsContract.CONTRACT,
             CiContract.CONTRACT,
             MaintenanceContract.CONTRACT,
+            OrchestratorContract.CONTRACT,
             DeploymentsContract.CONTRACT,
             ObservabilityContract.CONTRACT,
             EventsContract.CONTRACT,

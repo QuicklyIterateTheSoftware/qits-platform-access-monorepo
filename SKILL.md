@@ -3627,6 +3627,134 @@ qits maintenance sbom reread --ecosystem maven --name eu.wohlben.qits:qits-event
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
+## qits orchestrator
+
+The technical processes of qits-orchestrator, such as garbage collection, the manifest scan and the SBOM check: list them with their steps, list one kind's past and current executions, start one (or a dry rehearsal where the kind offers it), and show one with its steps and what each step asked and was answered.
+
+### Notes
+
+- Reading takes qits:admin, qits:admin-agent, qits:desk-admin, qits:system or qits:agent. Starting takes the same roles, but a commissioned agent (qits:agent alone) may start only the kinds open to one.
+- --output and --orchestrator-url may come before or after the command.
+
+## qits orchestrator processes
+
+List every technical process the orchestrator knows: its kind, its name, whether it offers a dry rehearsal, and how many steps it has. -o json adds each one's description and its steps with their targets and dependencies.
+
+```
+qits orchestrator processes [--orchestrator-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--orchestrator-url <url>` | The orchestrator service's base URL, without /orchestrator. Default: QITS_ORCHESTRATOR_URL, else the session's idp address with `idp` swapped for `orchestrator`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits orchestrator processes
+qits orchestrator processes -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits orchestrator runs
+
+List one kind's executions, newest first: id, status, what started it (a person or the schedule), whether it was a dry rehearsal, when it started and ended, and its summary.
+
+```
+qits orchestrator runs --kind <kind> [--limit <n>] [--orchestrator-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--kind <kind>` | Required. The process's kind, as the processes listing names it: gc, scan, sbom-check. |
+| `--limit <n>` | At most this many, newest first. Default: the service's, 20. |
+| `--orchestrator-url <url>` | The orchestrator service's base URL, without /orchestrator. Default: QITS_ORCHESTRATOR_URL, else the session's idp address with `idp` swapped for `orchestrator`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits orchestrator runs --kind scan
+qits orchestrator runs --kind gc --limit 5 -o json
+```
+
+- Without --limit the service answers its default, 20. An unknown kind is HTTP 404.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits orchestrator start
+
+Start an execution of one process now, beside its schedule, and print its id. With --dry-run it rehearses: every step asks its target what it would do and changes nothing, for the kinds that offer that.
+
+```
+qits orchestrator start --kind <kind> [--dry-run] [--orchestrator-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--kind <kind>` | Required. The process's kind, as the processes listing names it: gc, scan, sbom-check. |
+| `--dry-run` | Rehearse: plan every step and change nothing. Only for a kind that offers it. |
+| `--orchestrator-url <url>` | The orchestrator service's base URL, without /orchestrator. Default: QITS_ORCHESTRATOR_URL, else the session's idp address with `idp` swapped for `orchestrator`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits orchestrator start --kind scan
+qits orchestrator start --kind gc --dry-run
+```
+
+- Refusals: 400 a dry rehearsal of a kind without one, 403 a kind not open to the caller (a commissioned agent may not start scan or sbom-check), 404 an unknown kind, 409 one of that kind is still active.
+- Follow it with `qits orchestrator run --id <id>` until its status is no longer RUNNING.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits orchestrator run
+
+Show one execution: its status, trigger and summary, and each of its steps with its status, target, HTTP status and summary. With --step, that one step whole, with the request it sent and the response it got.
+
+```
+qits orchestrator run --id <run id> [--bodies] [--orchestrator-url <url>] [--output table|json] [--step <step id>]
+```
+
+| Name | What it does |
+|---|---|
+| `--id <run id>` | Required. The execution's id, as starting it printed it or the runs listing shows it. |
+| `--bodies` | Include every step's request body and response. |
+| `--orchestrator-url <url>` | The orchestrator service's base URL, without /orchestrator. Default: QITS_ORCHESTRATOR_URL, else the session's idp address with `idp` swapped for `orchestrator`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--step <step id>` | One step of it, by its id (internal.follow, artifacts.plan). |
+
+### Examples
+
+```
+qits orchestrator run --id 00000000-0000-4000-8000-000000000001
+qits orchestrator run --id 00000000-0000-4000-8000-000000000001 --bodies
+qits orchestrator run --id 00000000-0000-4000-8000-000000000001 --step internal.follow
+```
+
+- Without --bodies the steps' request bodies and responses are left out (their size stays, as responseBytes); a gc execution's answers can be large. --step always has them.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
 ## qits users
 
 The people who sign in to the platform, on the idp: invite mints a register token, register spends one on a new username and shows the generated password once, list shows the users and their roles, and delete removes one.

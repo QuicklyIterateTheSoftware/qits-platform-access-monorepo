@@ -39,6 +39,11 @@ public final class PlatformUrls {
         return resolve("maintenance", "--maintenance-url", "QITS_MAINTENANCE_URL", flag, env, idpUrl);
     }
 
+    /** qits-orchestrator: the technical processes and their runs under {@code /orchestrator/api} (qits-2490). */
+    public static String orchestrator(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
+        return resolve("orchestrator", "--orchestrator-url", "QITS_ORCHESTRATOR_URL", flag, env, idpUrl);
+    }
+
     /** qits-deployments: the settings doors under {@code /deployments/api/settings}. */
     public static String deployments(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
         return resolve("deployments", "--deployments-url", "QITS_DEPLOYMENTS_URL", flag, env, idpUrl);
