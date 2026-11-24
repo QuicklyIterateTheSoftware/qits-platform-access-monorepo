@@ -1,0 +1,778 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator processes
+KIND        NAME                DRY RUN  STEPS
+gc          Garbage collection  yes      21
+sbom-check  SBOM check          no       1
+scan        Manifest scan       no       4
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator processes
+KIND        NAME                DRY RUN  STEPS
+gc          Garbage collection  yes      21
+sbom-check  SBOM check          no       1
+scan        Manifest scan       no       4
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator runs --kind scan -o json
+[ {
+  "id" : "00000000-0000-4000-8000-000000000001",
+  "kind" : "scan",
+  "trigger" : "scheduled",
+  "dryRun" : false,
+  "status" : "SUCCEEDED",
+  "startedAt" : "2026-01-01T00:00:00Z",
+  "finishedAt" : "2026-01-01T00:00:00Z",
+  "summary" : "internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); intern
+al.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000
+-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)"
+} ]
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator runs --kind scan -o json
+[ {
+  "id" : "00000000-0000-4000-8000-000000000001",
+  "kind" : "scan",
+  "trigger" : "scheduled",
+  "dryRun" : false,
+  "status" : "SUCCEEDED",
+  "startedAt" : "2026-01-01T00:00:00Z",
+  "finishedAt" : "2026-01-01T00:00:00Z",
+  "summary" : "internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); intern
+al.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000
+-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)"
+} ]
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator run --id 00000000-0000-4000-8000-000000000001
+id             00000000-0000-4000-8000-000000000001
+kind           scan
+status         SUCCEEDED
+trigger        scheduled
+dryRun         no
+startedAt      2026-01-01 00:00:00 UTC
+finishedAt     2026-01-01 00:00:00 UTC
+summary        internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); intern
+al.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000
+-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)
+
+STEP              STATUS     TARGET       HTTP  SUMMARY
+internal.request  SUCCEEDED  maintenance  202   queued scan 00000000-0000-4000-8000-000000000002
+internal.follow   SUCCEEDED  maintenance  200   INTERNAL scan SUCCEEDED
+external.request  SUCCEEDED  maintenance  202   queued scan 00000000-0000-4000-8000-000000000003
+external.follow   SUCCEEDED  maintenance  200   EXTERNAL scan SUCCEEDED
+$
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator run --id 00000000-0000-4000-8000-000000000001
+id             00000000-0000-4000-8000-000000000001
+kind           scan
+status         SUCCEEDED
+trigger        scheduled
+dryRun         no
+startedAt      2026-01-01 00:00:00 UTC
+finishedAt     2026-01-01 00:00:00 UTC
+summary        internal.request SUCCEEDED (queued scan 00000000-0000-4000-8000-000000000002); intern
+al.follow SUCCEEDED (INTERNAL scan SUCCEEDED); external.request SUCCEEDED (queued scan 00000000-0000
+-4000-8000-000000000003); external.follow SUCCEEDED (EXTERNAL scan SUCCEEDED)
+
+STEP              STATUS     TARGET       HTTP  SUMMARY
+internal.request  SUCCEEDED  maintenance  202   queued scan 00000000-0000-4000-8000-000000000002
+internal.follow   SUCCEEDED  maintenance  200   INTERNAL scan SUCCEEDED
+external.request  SUCCEEDED  maintenance  202   queued scan 00000000-0000-4000-8000-000000000003
+external.follow   SUCCEEDED  maintenance  200   EXTERNAL scan SUCCEEDED
+$
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator start --kind scan
+This credential may not start a scan run.
+403 - this credential is qits:agent, which reads but does not write
+Your roles do not allow this (HTTP 403): POST http://127.0.0.1:47080/orchestrator/api/processes/scan
+/runs
+$ echo $?
+1
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits orchestrator start --kind scan
+This credential may not start a scan run.
+403 - this credential is qits:agent, which reads but does not write
+Your roles do not allow this (HTTP 403): POST http://127.0.0.1:47080/orchestrator/api/processes/scan
+/runs
+$ echo $?
+1
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
