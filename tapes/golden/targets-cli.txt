@@ -599,17 +599,20 @@ $ qits targets list -o json
   "reservations" : {
     "ci" : 2,
     "workspace" : 2,
-    "desk" : 1
+    "desk" : 1,
+    "agent" : 0
   },
   "maximums" : {
     "ci" : null,
     "workspace" : null,
-    "desk" : null
+    "desk" : null,
+    "agent" : null
   },
   "used" : {
     "ci" : 1,
     "workspace" : 1,
-    "desk" : 0
+    "desk" : 0,
+    "agent" : 0
   },
   "login" : {
     "claude" : "PRESENT",
@@ -617,9 +620,6 @@ $ qits targets list -o json
     "checkedAt" : "2026-01-01T00:00:00Z"
   },
   "credentialVolume" : "qits-system-runner-dot-claude-00000000",
-  "loginCommand" : null,
-  "kimiLoginCommand" : null,
-  "connected" : true,
 ────────────────────────────────────────────────────────────────────────────────
 $ qits targets list -o json
 [ {
@@ -630,17 +630,20 @@ $ qits targets list -o json
   "reservations" : {
     "ci" : 2,
     "workspace" : 2,
-    "desk" : 1
+    "desk" : 1,
+    "agent" : 0
   },
   "maximums" : {
     "ci" : null,
     "workspace" : null,
-    "desk" : null
+    "desk" : null,
+    "agent" : null
   },
   "used" : {
     "ci" : 1,
     "workspace" : 1,
-    "desk" : 0
+    "desk" : 0,
+    "agent" : 0
   },
   "login" : {
     "claude" : "PRESENT",
@@ -648,9 +651,6 @@ $ qits targets list -o json
     "checkedAt" : "2026-01-01T00:00:00Z"
   },
   "credentialVolume" : "qits-system-runner-dot-claude-00000000",
-  "loginCommand" : null,
-  "kimiLoginCommand" : null,
-  "connected" : true,
 ────────────────────────────────────────────────────────────────────────────────
 $ qits targets greenlight --target lab
 403 - this credential is qits:agent, which reads but does not write
