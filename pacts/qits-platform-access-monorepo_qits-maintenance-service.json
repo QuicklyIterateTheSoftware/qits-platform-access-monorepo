@@ -876,6 +876,320 @@
         "status": 200
       },
       "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-maintenance-service",
+            "operationId": "ingestArtifactSbom"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits maintenance sbom reread",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits maintenance sbom reread: ingestArtifactSbom",
+      "key": "6e9ec123",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "manifests that pin artifacts",
+          "params": {
+            "repoName": "contract-service"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "ecosystem": "maven",
+            "name": "eu.wohlben.qits:qits-eventstream",
+            "version": "2026.811.1"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/maintenance/api/artifacts/ingest"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "id": "00000000-0000-4000-8000-000000000001"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 202
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-maintenance-service",
+            "operationId": "listArtifactVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits maintenance sbom versions",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits maintenance sbom versions: listArtifactVersions",
+      "key": "bf6049ab",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an artifact released in several versions",
+          "params": {
+            "ecosystem": "maven",
+            "name": "eu.wohlben.qits:contract-core"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "query": {
+            "ecosystem": {
+              "dataType": "RAW",
+              "expression": "${ecosystem}",
+              "type": "ProviderState"
+            },
+            "name": {
+              "dataType": "RAW",
+              "expression": "${name}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/maintenance/api/artifacts/versions",
+        "query": {
+          "ecosystem": [
+            "maven"
+          ],
+          "name": [
+            "eu.wohlben.qits:contract-core"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "occurredAt": "2026-01-01T00:00:00Z",
+              "repository": "contract-javalib",
+              "sbomError": "the sbom answer is not a CycloneDX document",
+              "sbomStatus": "PENDING",
+              "version": "2026.1104.1"
+            },
+            {
+              "occurredAt": "2026-01-01T00:00:00Z",
+              "repository": "contract-javalib",
+              "sbomError": "the sbom answer is not a CycloneDX document",
+              "sbomStatus": "PENDING",
+              "version": "2026.1104.1"
+            },
+            {
+              "occurredAt": "2026-01-01T00:00:00Z",
+              "repository": "contract-javalib",
+              "sbomError": "the sbom answer is not a CycloneDX document",
+              "sbomStatus": "PENDING",
+              "version": "2026.1104.1"
+            },
+            {
+              "occurredAt": "2026-01-01T00:00:00Z",
+              "repository": "contract-javalib",
+              "sbomError": "the sbom answer is not a CycloneDX document",
+              "sbomStatus": "PENDING",
+              "version": "2026.1104.1"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 4,
+                  "min": 4
+                }
+              ]
+            },
+            "$[*].occurredAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$[*].repository": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
+                }
+              ]
+            },
+            "$[*].sbomError": {
+              "combine": "OR",
+              "matchers": [
+                {
+                  "match": "type"
+                },
+                {
+                  "match": "null"
+                }
+              ]
+            },
+            "$[*].sbomStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-maintenance-service",
+            "operationId": "listArtifactVersions"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits maintenance sbom versions",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits maintenance sbom versions: listArtifactVersions",
+      "key": "a64755d6",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "no released artifacts"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/maintenance/api/artifacts/versions",
+        "query": {
+          "ecosystem": [
+            "maven"
+          ],
+          "name": [
+            "eu.wohlben.qits:contract-core"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": [],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
     }
   ],
   "metadata": {

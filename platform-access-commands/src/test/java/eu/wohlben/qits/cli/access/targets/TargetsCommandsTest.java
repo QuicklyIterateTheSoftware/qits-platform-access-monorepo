@@ -114,7 +114,7 @@ class TargetsCommandsTest {
         assertThat(table.out()).contains("NAME").contains("SLOTS (used/reserved[≤max], total used/total)")
                 .contains("LOGIN")
                 .containsPattern("localhost\\s+yes\\s+2026.1023.1");
-        assertThat(table.out()).contains("ci 1/2, ws 0/2, desk 0/1, total 1/6");
+        assertThat(table.out()).contains("ci 1/2, ws 0/2, desk 0/1, agent 0/0, total 1/6");
         assertThat(table.out()).contains("claude:PRESENT kimi:ABSENT");
 
         Result json = run("targets", "list", "-o", "json");
@@ -135,7 +135,7 @@ class TargetsCommandsTest {
         Result table = run("targets", "list");
 
         assertThat(table.exit()).as(table.err()).isZero();
-        assertThat(table.out()).contains("ci 0/0, ws 5/1, desk 0/1, total 5/8");
+        assertThat(table.out()).contains("ci 0/0, ws 5/1, desk 0/1, agent 0/0, total 5/8");
     }
 
     @Test
@@ -209,7 +209,7 @@ class TargetsCommandsTest {
         Result show = run("targets", "show", "--target", TARGET);
 
         assertThat(show.exit()).as(show.err()).isZero();
-        assertThat(show.out()).contains("ci 1/2≤2, ws 0/2, desk 0/1≤0, total 1/6");
+        assertThat(show.out()).contains("ci 1/2≤2, ws 0/2, desk 0/1≤0, agent 0/0, total 1/6");
     }
 
     @Test
@@ -219,7 +219,7 @@ class TargetsCommandsTest {
         Result show = run("targets", "show", "--target", TARGET);
 
         assertThat(show.exit()).as(show.err()).isZero();
-        assertThat(show.out()).contains("ci 1/2, ws 0/2, desk 0/1, total 1/6");
+        assertThat(show.out()).contains("ci 1/2, ws 0/2, desk 0/1, agent 0/0, total 1/6");
     }
 
     @Test
@@ -230,7 +230,82 @@ class TargetsCommandsTest {
         Result table = run("targets", "list");
 
         assertThat(table.exit()).as(table.err()).isZero();
-        assertThat(table.out()).contains("ci 1/2≤2, ws 0/2, desk 0/1, total 1/6");
+        assertThat(table.out()).contains("ci 1/2≤2, ws 0/2, desk 0/1, agent 0/0, total 1/6");
+    }
+
+    // --- agent slot type (qits-2591) ---
+
+    @Test
+    void showRendersAnAgentReservationMaximumAndUsedAndCountsItInTheTotal() {
+        String agentTarget = target("PRESENT", null)
+                .replace("\"reservations\":{\"ci\":2,\"workspace\":2,\"desk\":1}",
+                        "\"reservations\":{\"ci\":2,\"workspace\":2,\"desk\":1,\"agent\":3}")
+                .replace("\"used\":{\"ci\":1,\"workspace\":0,\"desk\":0}",
+                        "\"used\":{\"ci\":1,\"workspace\":0,\"desk\":0,\"agent\":1},\"maximums\":{\"agent\":2}")
+                .replace("\"slotsTotal\":6", "\"slotsTotal\":10");
+        platform.answer("GET", "/system/api/targets/" + TARGET, agentTarget);
+
+        Result show = run("targets", "show", "--target", TARGET);
+
+        assertThat(show.exit()).as(show.err()).isZero();
+        assertThat(show.out()).contains("ci 1/2, ws 0/2, desk 0/1, agent 1/3≤2, total 2/10");
+    }
+
+    @Test
+    void createSendsReservedAgent() throws Exception {
+        platform.answer("POST", "/system/api/targets", 201, registration());
+
+        Result created = run("targets", "create", "--name", "localhost", "--reserved-agent", "1");
+
+        assertThat(created.exit()).as(created.err()).isZero();
+        JsonNode sent = JSON.readTree(platform.requests("POST", "/system/api/targets").getFirst().body());
+        assertThat(sent.path("reservations").path("agent").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void updateSendsReservedAgentAndMaxAgent() throws Exception {
+        platform.answer("PATCH", "/system/api/targets/" + TARGET, target("PRESENT", null));
+
+        Result updated = run("targets", "update", "--target", TARGET, "--reserved-agent", "1", "--max-agent", "2");
+
+        assertThat(updated.exit()).as(updated.err()).isZero();
+        JsonNode sent = JSON.readTree(platform.requests("PATCH", "/system/api/targets/" + TARGET).getFirst().body());
+        assertThat(sent.path("reservations").path("agent").asInt()).isEqualTo(1);
+        assertThat(sent.path("reservations").has("ci")).isFalse();
+        assertThat(sent.path("maximums").path("agent").asInt()).isEqualTo(2);
+        assertThat(sent.path("maximums").has("ci")).isFalse();
+    }
+
+    @Test
+    void updateMaxAgentNoneSendsAnExplicitNullForTheMaximum() throws Exception {
+        platform.answer("PATCH", "/system/api/targets/" + TARGET, target("PRESENT", null));
+
+        Result updated = run("targets", "update", "--target", TARGET, "--max-agent", "none");
+
+        assertThat(updated.exit()).as(updated.err()).isZero();
+        JsonNode sent = JSON.readTree(platform.requests("PATCH", "/system/api/targets/" + TARGET).getFirst().body());
+        assertThat(sent.path("maximums").has("agent")).isTrue();
+        assertThat(sent.path("maximums").get("agent").isNull()).isTrue();
+    }
+
+    @Test
+    void updateWithNeitherReservedAgentNorMaxAgentOmitsAgentEntirely() throws Exception {
+        platform.answer("PATCH", "/system/api/targets/" + TARGET, target("PRESENT", null));
+
+        Result updated = run("targets", "update", "--target", TARGET, "--reserved-ci", "3");
+
+        assertThat(updated.exit()).as(updated.err()).isZero();
+        JsonNode sent = JSON.readTree(platform.requests("PATCH", "/system/api/targets/" + TARGET).getFirst().body());
+        assertThat(sent.path("reservations").has("agent")).isFalse();
+        assertThat(sent.has("maximums")).isFalse();
+    }
+
+    @Test
+    void updateHelpNamesReservedAgentAndMaxAgent() {
+        Result help = run("targets", "update", "--help");
+
+        assertThat(help.exit()).as(help.err()).isZero();
+        assertThat(help.out()).contains("--reserved-agent").contains("--max-agent");
     }
 
     @Test

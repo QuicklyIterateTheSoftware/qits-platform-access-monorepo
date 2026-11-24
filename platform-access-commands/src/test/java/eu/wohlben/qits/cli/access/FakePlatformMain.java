@@ -182,6 +182,9 @@ public final class FakePlatformMain {
         platform.answer("GET", automations, golden("qits-maintenance-service", "qits-maintenance",
                 "a release request with automations", "listReleaseRequestAutomations"));
         refuse("POST", automations + "/cli-tapes/runs");
+        platform.answer("GET", "/maintenance/api/artifacts/versions", golden("qits-maintenance-service",
+                "qits-maintenance", "an artifact released in several versions", "listArtifactVersions"));
+        refuse("POST", "/maintenance/api/artifacts/ingest");
     }
 
     /** qits-orchestrator (qits-2490): its processes, a finished scan run, and a start it refuses. */

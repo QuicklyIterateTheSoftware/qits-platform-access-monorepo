@@ -420,9 +420,14 @@ class McpToolCatalogTest {
     void noAddressIsEverAnArgumentAndNoNameBreaksTheClientRule() {
         for (Tool tool : catalog.tools()) {
             assertThat(tool.name()).matches(NAME);
+            // "version" is a real argument on maintenance_sbom_reread (the released version to read
+            // again), never the binary's own -V/--version: that is exactly why the command cannot use
+            // mixinStandardHelpOptions (AGENTS.md), so nothing named "version" here is ever the mixin's.
+            Set<String> forbidden = tool.name().equals("maintenance_sbom_reread")
+                    ? Set.of("help") : Set.of("help", "version");
             assertThat(properties(tool).keySet()).as(tool.name())
                     .noneSatisfy(name -> assertThat(name).endsWith("-url"))
-                    .doesNotContain("help", "version")
+                    .doesNotContainAnyElementsOf(forbidden)
                     .allSatisfy(name -> assertThat(name).matches("^[A-Za-z0-9_.-]{1,64}$"));
         }
     }
@@ -448,7 +453,7 @@ class McpToolCatalogTest {
                 "ui-builder_routes", "ui-builder_freeze", "ui-builder_golden-masters", "ui-builder_entities", "work_dossier_list", "work_dossier_get",
                 "work_refinement_show", "work_design_list", "work_design_get",
                 "release-request_list", "ci_runs", "ci_run", "ci_report_show", "maintenance_automations",
-                "maintenance_bump", "orchestrator_processes", "orchestrator_runs", "orchestrator_run",
+                "maintenance_bump", "maintenance_sbom_versions", "orchestrator_processes", "orchestrator_runs", "orchestrator_run",
                 "deployments_settings_list", "deployments_settings_preview",
                 "deployments_database_moves", "deployments_database_move-status",
                 "agent-mcp_credentials_list",

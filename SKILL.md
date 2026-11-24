@@ -3443,7 +3443,7 @@ qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ## qits maintenance
 
-Jobs of qits-maintenance: automations lists a release request's release-request automations and their state, automation run re-runs one kind, and bump shows how one job went.
+Jobs of qits-maintenance: automations lists a release request's release-request automations and their state, automation run re-runs one kind, bump shows how one job went, and sbom lists an artifact's released versions and their SBOM ingestion.
 
 ### Notes
 
@@ -3550,6 +3550,76 @@ qits maintenance bump 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 ```
 
 - Run it again to follow a job: REQUESTED and RUNNING are not finished.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits maintenance sbom
+
+One artifact's released versions and whether qits-maintenance has read each one's SBOM. `versions` lists them; `reread` queues a fresh read of one.
+
+## qits maintenance sbom versions
+
+List one artifact's released versions, newest first, and whether qits-maintenance has read each one's SBOM.
+
+```
+qits maintenance sbom versions --ecosystem <maven|npm|docker|daemon> --name <name> [--maintenance-url <url>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>]
+```
+
+| Name | What it does |
+|---|---|
+| `--ecosystem <maven\|npm\|docker\|daemon>` | Required. The package ecosystem. |
+| `--name <name>` | Required. The artifact's name, as the ecosystem spells it (eu.wohlben.qits:qits-eventstream). |
+| `--maintenance-url <url>` | The maintenance service's base URL, without /maintenance. Default: QITS_MAINTENANCE_URL, else the session's idp address with `idp` swapped for `maintenance`. |
+| `-o, --output table\|json` | table (the default): one line per field. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project: its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects, where --project, --repository and --request are looked up. Default: QITS_PROJECTS_URL, else derived like --maintenance-url. |
+| `--repository <repository>` | The repository: its id or name. |
+
+### Examples
+
+```
+qits maintenance sbom versions --ecosystem maven --name eu.wohlben.qits:qits-eventstream
+```
+
+- Empty means the platform has never seen a released version of this artifact.
+- STATUS is PENDING, INGESTED, MISSING or FAILED; `sbom reread` queues a fresh read of a FAILED or MISSING one.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits maintenance sbom reread
+
+Queue a fresh read of one released version's SBOM.
+
+The read happens asynchronously: this only queues it and prints the job's id. Run `qits maintenance sbom versions` again, once it has had time to run, to see the result.
+
+```
+qits maintenance sbom reread --ecosystem <maven|npm|docker|daemon> --name <name> --version <version> [--maintenance-url <url>] [--output table|json] [--project <project>] [--projects-url <url>] [--repository <repository>]
+```
+
+| Name | What it does |
+|---|---|
+| `--ecosystem <maven\|npm\|docker\|daemon>` | Required. The package ecosystem. |
+| `--name <name>` | Required. The artifact's name, as the ecosystem spells it (eu.wohlben.qits:qits-eventstream). |
+| `--version <version>` | Required. The released version to read again. |
+| `--maintenance-url <url>` | The maintenance service's base URL, without /maintenance. Default: QITS_MAINTENANCE_URL, else the session's idp address with `idp` swapped for `maintenance`. |
+| `-o, --output table\|json` | table (the default): one line per field. json: the service's answer, pretty-printed. |
+| `--project <project>` | The project: its id, slug or name. |
+| `--projects-url <url>` | The projects service's base URL, without /projects, where --project, --repository and --request are looked up. Default: QITS_PROJECTS_URL, else derived like --maintenance-url. |
+| `--repository <repository>` | The repository: its id or name. |
+
+### Examples
+
+```
+qits maintenance sbom reread --ecosystem maven --name eu.wohlben.qits:qits-eventstream --version 2026.811.1
+```
 
 ### Exit codes
 
@@ -4986,7 +5056,7 @@ A target is named by its name or its id (`qits targets list` shows both).
 
 ## qits targets list
 
-Every target, by name: connected or not, version, slots, login and quarantine. Slots show ci, workspace and desk as used over reserved (with a maximum where set), then all used over the target's slot total. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is a limit: a type never runs more leases than its maximum.
+Every target, by name: connected or not, version, slots, login and quarantine. Slots show ci, workspace, desk and agent as used over reserved (with a maximum where set), then all used over the target's slot total. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is a limit: a type never runs more leases than its maximum.
 
 GET /system/api/targets. Any credential may call it, qits:agent included.
 
@@ -5047,12 +5117,12 @@ qits targets show --target localhost -o json
 
 Declare a target and print the line that installs its runner, with a one-time registration token in it.
 
-POST /system/api/targets with {name, description?, reservations?: {ci, workspace, desk}, slots?} (HTTP 201 {target, registrationToken, installLine}). It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
+POST /system/api/targets with {name, description?, reservations?: {ci, workspace, desk, agent}, slots?} (HTTP 201 {target, registrationToken, installLine}). It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
 
 THE INSTALL LINE IS SHOWN ONLY THIS ONCE: it is printed alone on stdout and nowhere else. Run it on the target's own machine. Lost, `qits targets rotate-token` makes a new one.
 
 ```
-qits targets create --name <name> [--description <text>] [--output table|json] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--slots <n>] [--system-url <url>]
+qits targets create --name <name> [--description <text>] [--output table|json] [--reserved-agent <n>] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--slots <n>] [--system-url <url>]
 ```
 
 | Name | What it does |
@@ -5060,6 +5130,7 @@ qits targets create --name <name> [--description <text>] [--output table|json] [
 | `--name <name>` | Required. The new target's name. |
 | `--description <text>` | Free text. |
 | `-o, --output table\|json` | table (the default): for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
+| `--reserved-agent <n>` | Slots reserved for long-running agents. |
 | `--reserved-ci <n>` | Slots reserved for CI. |
 | `--reserved-desk <n>` | Slots reserved for the desk. |
 | `--reserved-workspace <n>` | Slots reserved for workspaces. |
@@ -5124,20 +5195,22 @@ qits targets rotate-token --target buildbox --slots 8
 
 Change a target's description, slot reservations or slot maximums. Only what is given is sent; a reservation or maximum left out keeps its value. A reservation is a floor, not a limit: a type may use more while shared slots are free. A maximum is the limit: a type never runs more leases than its maximum on that target. `none` clears a maximum.
 
-PATCH /system/api/targets/{id} with {description?, reservations?: {ci?, workspace?, desk?}, maximums?: {ci?, workspace?, desk?}}. It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
+PATCH /system/api/targets/{id} with {description?, reservations?: {ci?, workspace?, desk?, agent?}, maximums?: {ci?, workspace?, desk?, agent?}}. It needs qits:admin, qits:admin-agent, qits:desk-admin or qits:system, which a person's token, the delivery desk's or qits-system's own carries. qits:agent alone is refused (HTTP 403) by design.
 
 ```
-qits targets update --target <name|id> [--description <text>] [--max-ci <n>|none] [--max-desk <n>|none] [--max-workspace <n>|none] [--output table|json] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--system-url <url>]
+qits targets update --target <name|id> [--description <text>] [--max-agent <n>|none] [--max-ci <n>|none] [--max-desk <n>|none] [--max-workspace <n>|none] [--output table|json] [--reserved-agent <n>] [--reserved-ci <n>] [--reserved-desk <n>] [--reserved-workspace <n>] [--system-url <url>]
 ```
 
 | Name | What it does |
 |---|---|
 | `--target <name\|id>` | Required. The target's name or id. |
 | `--description <text>` | Free text. |
+| `--max-agent <n>\|none` | Maximum slots this target ever runs for agent leases; `none` clears it, leaving no ceiling. |
 | `--max-ci <n>\|none` | Maximum slots this target ever runs for CI leases; `none` clears it, leaving no ceiling. |
 | `--max-desk <n>\|none` | Maximum slots this target ever runs for desk leases; `none` clears it, leaving no ceiling. |
 | `--max-workspace <n>\|none` | Maximum slots this target ever runs for workspace leases; `none` clears it, leaving no ceiling. |
 | `-o, --output table\|json` | table (the default): for a person. json: the service's answer, pretty-printed, with control characters written as escapes. |
+| `--reserved-agent <n>` | Slots reserved for long-running agents. |
 | `--reserved-ci <n>` | Slots reserved for CI. |
 | `--reserved-desk <n>` | Slots reserved for the desk. |
 | `--reserved-workspace <n>` | Slots reserved for workspaces. |
@@ -5279,12 +5352,12 @@ qits targets delete --target localhost
 
 ## qits targets leases
 
-Leases, oldest first: filter by target, slot type (ci, workspace or desk) or state. show reads one lease; end ends one.
+Leases, oldest first: filter by target, slot type (ci, workspace, desk or agent) or state. show reads one lease; end ends one.
 
 GET /system/api/leases?targetId=&slotType=&state=. qits:admin, qits:admin-agent, qits:desk-admin and qits:agent read every lease; qits:system reads only its own.
 
 ```
-qits targets leases [--output table|json] [--state <state>] [--system-url <url>] [--target <name|id>] [--type ci|workspace|desk]
+qits targets leases [--output table|json] [--state <state>] [--system-url <url>] [--target <name|id>] [--type ci|workspace|desk|agent]
 ```
 
 | Name | What it does |
@@ -5293,7 +5366,7 @@ qits targets leases [--output table|json] [--state <state>] [--system-url <url>]
 | `--state <state>` | Only this state: QUEUED, GRANTED, RUNNING, EXITED, FAILED, ENDING or ENDED. |
 | `--system-url <url>` | qits-system-service's base URL, without /system. Default: QITS_SYSTEM_URL, else derived from the idp address, like the other services. |
 | `--target <name\|id>` | Only this target's leases. |
-| `--type ci\|workspace\|desk` | Only this slot type. |
+| `--type ci\|workspace\|desk\|agent` | Only this slot type. |
 
 ### Examples
 
