@@ -663,7 +663,7 @@
  │   healthcheck         Ask a connected target for a health check now. The result arrives with a  │
  │   login-check         Ask a connected target to probe its credential volume's sign-in again. Th │
  │   delete              Decommission a target: retire its runner and give its credentials back.   │
- │   leases              Leases, oldest first: filter by target, slot type (ci, workspace or desk) │
+ │   leases              Leases, oldest first: filter by target, slot type (ci, workspace, desk or │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits targets
@@ -694,7 +694,7 @@
  │   healthcheck         Ask a connected target for a health check now. The result arrives with a  │
  │   login-check         Ask a connected target to probe its credential volume's sign-in again. Th │
  │   delete              Decommission a target: retire its runner and give its credentials back.   │
- │   leases              Leases, oldest first: filter by target, slot type (ci, workspace or desk) │
+ │   leases              Leases, oldest first: filter by target, slot type (ci, workspace, desk or │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits targets
@@ -854,8 +854,8 @@
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits targets list
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
- │ NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)  LOGIN           │
- │ lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, total 2/6            claude:PRESENT  │
+ │ NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)   LOGIN          │
+ │ lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, agent 0/0, total 2/6  claude:PRESENT │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -885,8 +885,8 @@
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits targets list
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
- │ NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)  LOGIN           │
- │ lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, total 2/6            claude:PRESENT  │
+ │ NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)   LOGIN          │
+ │ lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, agent 0/0, total 2/6  claude:PRESENT │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │

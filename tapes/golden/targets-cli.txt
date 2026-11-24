@@ -529,10 +529,10 @@
 
 ────────────────────────────────────────────────────────────────────────────────
 $ qits targets list
-NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)  LOGIN
-        QUARANTINED
-lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, total 2/6            claude:PRESENT kimi:
-ABSENT  no
+NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)   LOGIN
+         QUARANTINED
+lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, agent 0/0, total 2/6  claude:PRESENT kimi
+:ABSENT  no
 $
 
 
@@ -560,10 +560,10 @@ $
 
 ────────────────────────────────────────────────────────────────────────────────
 $ qits targets list
-NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)  LOGIN
-        QUARANTINED
-lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, total 2/6            claude:PRESENT kimi:
-ABSENT  no
+NAME  CONNECTED  VERSION         SLOTS (used/reserved[≤max], total used/total)   LOGIN
+         QUARANTINED
+lab   yes        frozen-token-1  ci 1/2, ws 1/2, desk 0/1, agent 0/0, total 2/6  claude:PRESENT kimi
+:ABSENT  no
 $
 
 
