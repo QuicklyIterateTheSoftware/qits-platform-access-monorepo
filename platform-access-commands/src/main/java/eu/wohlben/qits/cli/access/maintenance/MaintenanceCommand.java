@@ -26,10 +26,11 @@ import java.util.List;
 import static eu.wohlben.qits.cli.access.projects.ProjectsApi.text;
 
 @CommandLine.Command(name = "maintenance", mixinStandardHelpOptions = true,
-        subcommands = {MaintenanceCommand.AutomationsCommand.class, AutomationCommand.class, MaintenanceCommand.BumpCommand.class},
+        subcommands = {MaintenanceCommand.AutomationsCommand.class, AutomationCommand.class,
+                MaintenanceCommand.BumpCommand.class, SbomCommand.class},
         description = {"Jobs of qits-maintenance: automations lists a release request's release-request "
-                        + "automations and their state, automation run re-runs one kind, and bump shows how one "
-                        + "job went."},
+                        + "automations and their state, automation run re-runs one kind, bump shows how one "
+                        + "job went, and sbom lists an artifact's released versions and their SBOM ingestion."},
         footerHeading = "%nNotes:%n",
         footer = {"- --project, --repository, --output and the two -url options may come before or after the command."})
 public class MaintenanceCommand implements Runnable {

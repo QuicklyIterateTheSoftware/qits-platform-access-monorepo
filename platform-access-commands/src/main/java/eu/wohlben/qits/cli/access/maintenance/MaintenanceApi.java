@@ -52,6 +52,31 @@ public final class MaintenanceApi {
     }
 
     /**
+     * {@code [{version, repository, occurredAt, sbomStatus (PENDING|INGESTED|MISSING|FAILED),
+     * sbomError, ingestedAt}]}, newest first: one artifact's released versions and each one's SBOM
+     * ingestion. Empty for an artifact the platform has never seen released. HTTP 400 for an
+     * unknown ecosystem or a blank name.
+     */
+    public JsonNode listArtifactVersions(String ecosystem, String name) throws CliFailure, InterruptedException {
+        String query = "?ecosystem=" + URLEncoder.encode(ecosystem.strip(), StandardCharsets.UTF_8)
+                + "&name=" + URLEncoder.encode(name.strip(), StandardCharsets.UTF_8);
+        return client.get(uri("/maintenance/api/artifacts/versions" + query));
+    }
+
+    /**
+     * {@code {"id":…}}: the SBOM read this queues for one released version, read asynchronously
+     * (the answer only carries the queued job's id, not the SBOM). A write: HTTP 403 for a
+     * {@code qits:agent} token.
+     */
+    public JsonNode ingestArtifactSbom(String ecosystem, String name, String version) throws CliFailure, InterruptedException {
+        ObjectNode body = JsonNodeFactory.instance.objectNode();
+        body.put("ecosystem", ecosystem.strip());
+        body.put("name", name.strip());
+        body.put("version", version.strip());
+        return client.post(uri("/maintenance/api/artifacts/ingest"), body);
+    }
+
+    /**
      * {@code {provider, pacts:[{consumerRepository, groupId, artifactId, pactVersion,
      * deployedVersions}]}}: for each consumer of {@code provider} that is deployed somewhere, or kept
      * as a rollback target, the newest pact package not above each such version (ticket qits-1765).
