@@ -732,12 +732,12 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits agents draft show|save|discard <agent> | --work <work>
     qits targets list | show --target <name|id>
     qits targets create --name <name> [--description <text>] [--reserved-ci <n>] [--reserved-workspace <n>] \
-        [--reserved-desk <n>]
+        [--reserved-desk <n>] [--reserved-agent <n>]
     qits targets rotate-token --target <name|id>
     qits targets update --target <name|id> [--reserved-ci <n>] [--reserved-workspace <n>] [--reserved-desk <n>] \
-        [--description <text>]
+        [--reserved-agent <n>] [--description <text>]
     qits targets greenlight|healthcheck|login-check|delete --target <name|id>
-    qits targets leases [--target <name|id>] [--type ci|workspace|desk] [--state <state>]
+    qits targets leases [--target <name|id>] [--type ci|workspace|desk|agent] [--state <state>]
     qits targets leases show <lease id>
     qits targets leases end <lease id> [--reason <text>]
     qits targets sign-in --target <name|id> [--harness claude|kimi] [--timeout <duration>]
@@ -2120,16 +2120,18 @@ targets list` shows both); `--target` resolves a name by reading `listTargets`.
     qits targets list                             GET  /system/api/targets
     qits targets show --target <name|id>          GET  /system/api/targets/{id}
     qits targets create --name <name>             POST /system/api/targets
-      [--description <text>] [--reserved-ci <n>] [--reserved-workspace <n>] [--reserved-desk <n>] [--slots <n>]
+      [--description <text>] [--reserved-ci <n>] [--reserved-workspace <n>] [--reserved-desk <n>]
+      [--reserved-agent <n>] [--slots <n>]
     qits targets rotate-token --target <name|id>  POST /system/api/targets/{id}/registration-token
       [--slots <n>]
     qits targets update --target <name|id>        PATCH /system/api/targets/{id}
-      [--reserved-ci <n>] [--reserved-workspace <n>] [--reserved-desk <n>] [--description <text>]
+      [--reserved-ci <n>] [--reserved-workspace <n>] [--reserved-desk <n>] [--reserved-agent <n>]
+      [--description <text>]
     qits targets greenlight|healthcheck|login-check
                                                    POST /system/api/targets/{id}/<verb> (no body)
     qits targets delete --target <name|id>        DELETE /system/api/targets/{id}
     qits targets leases [--target <name|id>]      GET  /system/api/leases?targetId=&slotType=&state=
-      [--type ci|workspace|desk] [--state <state>]
+      [--type ci|workspace|desk|agent] [--state <state>]
     qits targets leases show <lease id>           GET  /system/api/leases/{id}
     qits targets leases end <lease id>            DELETE /system/api/leases/{id}?reason=
       [--reason <text>]
@@ -2148,8 +2150,8 @@ end any lease and are audited (`target_audit`, `LEASE_END`), or `qits:system`, w
 lease already ENDING that an operator ends goes ENDED at once (epic qits-1621). Each command's help names its door and
 roles.
 
-`qits targets create` declares a target (`{name, description?, reservations?: {ci, workspace, desk},
-slots?}`; a reservation left out is not sent, and with none given `reservations` is left out) and
+`qits targets create` declares a target (`{name, description?, reservations?: {ci, workspace, desk,
+agent}, slots?}`; a reservation left out is not sent, and with none given `reservations` is left out) and
 `qits targets rotate-token` mints a new registration token and its install line. On a target whose
 runner has not registered yet this is the first token's replacement; on a REGISTERED target
 running the new install line reinstalls its runner under the same target — the id is kept, and the
