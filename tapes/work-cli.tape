@@ -2,7 +2,8 @@
 # and as JSON, and a write the platform refuses - blocking an item, which a qits:agent token may
 # not do (403, exit 1). The answers are qits-projects' golden masters; --project is the slug, as
 # the screen's dropdown fills it in.
-# Last, what a project's long-running agent could take next, in the backlog order (epic qits-2520).
+# Last, the options a project's long-running agent picks its next work with (epic qits-2520). They
+# are shown as help, because the fake platform replays one unfiltered list whatever the query asks.
 #
 # Against the fake platform tapes/prepare.sh starts (FakePlatformMain). Each command is typed while
 # hidden and shown once its prompt is back, so every frame of the text golden is a finished screen
@@ -61,7 +62,7 @@ Hide
 Type "clear"
 Enter
 Wait /^\$$/
-Type "qits work list --project contract-00000001 --unassigned --by-priority --limit 3"
+Type "qits work list --help | grep -A 2 -E -- '--(unassigned|by-priority|limit|assigned-to-me)'"
 Enter
 Wait /^\$$/
 Show
