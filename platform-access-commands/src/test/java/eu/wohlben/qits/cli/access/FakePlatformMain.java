@@ -171,10 +171,11 @@ public final class FakePlatformMain {
         refuse("POST", "/ci/api/runs/" + RUN + "/retry");
     }
 
-    /** No recording of the settings doors yet (DeploymentsContract's rows are pending): a fixture. */
+    /** No recording of the settings or egress-grants doors yet (DeploymentsContract's rows are pending): fixtures. */
     private void deployments() {
         platform.answer("GET", "/deployments/api/settings", fixture("deployment-settings.json"));
         refuse("DELETE", "/deployments/api/settings/qits-ci/dev/WEBHOOK_URL");
+        platform.answer("GET", "/deployments/api/egress-grants", fixture("egress-grants.json"));
     }
 
     private void maintenance() {

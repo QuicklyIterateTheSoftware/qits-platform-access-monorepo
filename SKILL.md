@@ -3454,6 +3454,50 @@ qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
+## qits egress
+
+The outbound routes a repository has declared it needs. grants reads them.
+
+## qits egress grants
+
+The outbound routes a repository has declared it needs, in its own .config/qits/egress.yml, read off the version qits-deployments has deployed. This only reads what was declared; it never grants or changes one.
+
+### Notes
+
+- --output and --deployments-url may come before or after the command.
+
+## qits egress grants list
+
+List every repository's declared egress grants: each route's application, name, target, the secret it is injected with, its methods and the version it was declared at.
+
+A repository the deployer could not read the declaration of (a bad egress.yml, a version it has not deployed) shows under Refused instead, with the reason.
+
+```
+qits egress grants list [--application <application>] [--deployments-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--application <application>` | Only this application's routes: qits-edge. |
+| `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
+| `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+
+### Examples
+
+```
+qits egress grants list
+qits egress grants list --application qits-edge
+qits egress grants list -o json
+```
+
+- --application filters the table; the service always answers every repository.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
 ## qits maintenance
 
 Jobs of qits-maintenance: automations lists a release request's release-request automations and their state, automation run re-runs one kind, bump shows how one job went, and sbom lists an artifact's released versions and their SBOM ingestion.

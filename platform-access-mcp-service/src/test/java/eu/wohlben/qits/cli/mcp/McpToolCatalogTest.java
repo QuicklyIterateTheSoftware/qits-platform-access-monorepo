@@ -456,6 +456,7 @@ class McpToolCatalogTest {
                 "maintenance_bump", "maintenance_sbom_versions", "orchestrator_processes", "orchestrator_runs", "orchestrator_run",
                 "deployments_settings_list", "deployments_settings_preview",
                 "deployments_database_moves", "deployments_database_move-status",
+                "egress_grants_list",
                 "agent-mcp_credentials_list",
                 "events", "events_query", "observe", "observe_query", "observe_sources", "observe_errors",
                 "observe_slow-spans", "observe_metrics", "help_skill", "help_guide", "agents_claude_hook_work-links",

@@ -13,6 +13,7 @@ import eu.wohlben.qits.cli.access.networkaccess.NetworkAccessCommand;
 import eu.wohlben.qits.cli.access.daemon.SessionDaemonCommand;
 import eu.wohlben.qits.cli.access.database.DatabaseCommand;
 import eu.wohlben.qits.cli.access.deployments.DeploymentsCommand;
+import eu.wohlben.qits.cli.access.egress.EgressCommand;
 import eu.wohlben.qits.cli.access.events.EventsCommand;
 import eu.wohlben.qits.cli.access.git.GitCredentialCommand;
 import eu.wohlben.qits.cli.access.git.GitLoginCommand;
@@ -58,7 +59,7 @@ import picocli.CommandLine;
         subcommands = {LoginCommand.class, SessionDaemonCommand.class, CheckoutDaemonCommand.class, CheckoutCommand.class,
                 ProjectsCommand.class,
                 RepositoriesCommand.class, WorkCommand.class, IdeasCommand.class, PitchesCommand.class, UiBuilderCommand.class,
-                ReleaseRequestCommand.class, CiCommand.class, DatabaseCommand.class, ContractsCommand.class, DeploymentsCommand.class, MaintenanceCommand.class, OrchestratorCommand.class, UsersCommand.class,
+                ReleaseRequestCommand.class, CiCommand.class, DatabaseCommand.class, ContractsCommand.class, DeploymentsCommand.class, EgressCommand.class, MaintenanceCommand.class, OrchestratorCommand.class, UsersCommand.class,
                 RememberedDevicesCommand.class, ServiceClientsCommand.class,
                 EventsCommand.class,
                 ObserveCommand.class, WaitCommand.class, WorkspacesCommand.class, TargetsCommand.class, GitLoginCommand.class, GitCredentialCommand.class, RegistryLoginCommand.class,

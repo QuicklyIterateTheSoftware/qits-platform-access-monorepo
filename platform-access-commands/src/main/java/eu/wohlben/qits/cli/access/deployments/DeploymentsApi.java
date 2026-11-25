@@ -14,9 +14,10 @@ import java.nio.charset.StandardCharsets;
  * The qits-deployments doors the CLI calls, read as JSON trees like every platform answer: the
  * settings ({@code /deployments/api/settings}, epic qits-765), the per-application, per-environment
  * values the deployer hands a service, and the database moves ({@code
- * /deployments/api/database-moves}, qits-2175), and a held deployment request's approval or decline
+ * /deployments/api/database-moves}, qits-2175), a held deployment request's approval or decline
  * ({@code /deployments/api/deployment-requests/{id}/approve}, qits-2268; {@code .../decline},
- * qits-2271).
+ * qits-2271), and the egress grants every deployed repository declares ({@code
+ * /deployments/api/egress-grants}, qits-2611).
  * <p>
  * A secret's {@code value} is null in every answer: the service never sends one back.
  */
@@ -131,6 +132,16 @@ public final class DeploymentsApi {
         ObjectNode body = JsonNodeFactory.instance.objectNode();
         putIfGiven(body, "note", note);
         return client.post(uri("/deployments/api/deployment-requests/" + segment(id) + "/decline"), body);
+    }
+
+    /**
+     * {@code {version, routes:[{application, environment, deployedVersion, name, target, secret,
+     * inject, methods}], refused:[{application, deployedVersion, reason}]}} (qits-2611): the egress
+     * grants declared in each repository's own {@code .config/qits/egress.yml}, at the version
+     * deployed. A {@code platform:} route's {@code secret} and {@code inject} are null.
+     */
+    public JsonNode egressGrants() throws CliFailure, InterruptedException {
+        return client.get(uri("/deployments/api/egress-grants"));
     }
 
     private static void putIfGiven(ObjectNode body, String name, String value) {
