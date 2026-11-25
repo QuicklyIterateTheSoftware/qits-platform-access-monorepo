@@ -657,7 +657,7 @@
  │   automations       ▸ List a release request's release-request automations and their state: the │
  │   automation          One release-request automation of a release request. `run` re-runs a kind │
  │   bump                Show one qits-maintenance job: its mode, status, the sentence about how i │
- │                                                                                                 │
+ │   sbom                One artifact's released versions and whether qits-maintenance has read ea │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -688,7 +688,7 @@
  │   automations       ▸ List a release request's release-request automations and their state: the │
  │   automation          One release-request automation of a release request. `run` re-runs a kind │
  │   bump                Show one qits-maintenance job: its mode, status, the sentence about how i │
- │                                                                                                 │
+ │   sbom                One artifact's released versions and whether qits-maintenance has read ea │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │

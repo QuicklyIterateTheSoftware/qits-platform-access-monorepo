@@ -714,3 +714,65 @@ $
 
 
 ────────────────────────────────────────────────────────────────────────────────
+$ qits wait --help | grep -A 3 -- '--work'
+                 [--timeout=<duration>] [--until=<instant>] [--work=<item>]
+                 [--workspaces-url=<url>] [--when=<conditions>]... [COMMAND]
+Declare what this holder waits on: a domain event that fits a selection. The
+platform gives the holder a turn when one arrives, or when the timeout passes.
+The command returns at once; it never blocks.
+--
+work item: --work <item>, else the item `wait work` names, else the <id> of a
+`wait branch` on ticket/<id> or epic/<id>. Its list and cancel go to its own
+door, list narrowed to --work when given.
+      --after=<duration>     A timer: wake the holder after this long, with no
+                               event. 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H), as
+                               --timeout; the most is 24h, and the platform
+--
+      --work=<item>          The work item this wait is for: a project's
+                               long-running agent names one on every wait
+                               (qits-2520). Its qualified id (qits-123) or its
+                               id. Default: the item of `wait work`, or the
+--
+      --workspaces-url=<url> The workspaces service's base URL, without
+                               /workspaces. Default: QITS_WORKSPACES_URL, else
+                               derived from the idp address, like the other
+                               services.
+--
+  2   Used wrongly (no holder and no --work, both --agent and --desk, no
+        --event and no timer, a --when, --timeout, --after or --until that
+        cannot be read or is over a limit, a timer given with a selection or
+        --timeout, an --until in the past), not signed in, or the session ended.
+--
+  qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a --work qits-123
+────────────────────────────────────────────────────────────────────────────────
+$ qits wait --help | grep -A 3 -- '--work'
+                 [--timeout=<duration>] [--until=<instant>] [--work=<item>]
+                 [--workspaces-url=<url>] [--when=<conditions>]... [COMMAND]
+Declare what this holder waits on: a domain event that fits a selection. The
+platform gives the holder a turn when one arrives, or when the timeout passes.
+The command returns at once; it never blocks.
+--
+work item: --work <item>, else the item `wait work` names, else the <id> of a
+`wait branch` on ticket/<id> or epic/<id>. Its list and cancel go to its own
+door, list narrowed to --work when given.
+      --after=<duration>     A timer: wake the holder after this long, with no
+                               event. 30m, 2h, 1h30m, 1d or ISO-8601 (PT2H), as
+                               --timeout; the most is 24h, and the platform
+--
+      --work=<item>          The work item this wait is for: a project's
+                               long-running agent names one on every wait
+                               (qits-2520). Its qualified id (qits-123) or its
+                               id. Default: the item of `wait work`, or the
+--
+      --workspaces-url=<url> The workspaces service's base URL, without
+                               /workspaces. Default: QITS_WORKSPACES_URL, else
+                               derived from the idp address, like the other
+                               services.
+--
+  2   Used wrongly (no holder and no --work, both --agent and --desk, no
+        --event and no timer, a --when, --timeout, --after or --until that
+        cannot be read or is over a limit, a timer given with a selection or
+        --timeout, an --until in the past), not signed in, or the session ended.
+--
+  qits wait ci-run 0d9e8f7a-6b5c-4d3e-8f2a-1b0c9d8e7f6a --work qits-123
+────────────────────────────────────────────────────────────────────────────────

@@ -784,10 +784,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list
@@ -815,10 +815,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list
@@ -1032,10 +1032,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list --project contract-00000001
@@ -1063,10 +1063,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list --project contract-00000001
@@ -1094,10 +1094,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list --project contract-00000001
@@ -1125,10 +1125,10 @@
  │   --parent            (any)                                                                     │
  │   --outcome           (any)                                                                     │
  │   --tag               (any)                                                                     │
- │   --projects-url      (any)                                                                     │
- │   --output            (any)                                                                     │
- │   --entity            (any)                                                                     │
- │                                                                                                 │
+ │   --assignee          (any)                                                                     │
+ │   --unassigned        (any)                                                                     │
+ │   --by-priority       (any)                                                                     │
+ │   --limit             (any)                                                                     │
  │ ↑↓ move · ⏎ choose · ␛ back · / search · ⌃R run · q quit                                        │
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits work list --project contract-00000001

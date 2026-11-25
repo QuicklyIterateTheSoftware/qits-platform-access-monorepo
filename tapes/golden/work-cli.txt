@@ -714,3 +714,65 @@ $
 
 
 ────────────────────────────────────────────────────────────────────────────────
+$ qits work list --project contract-00000001 --unassigned --by-priority --limit 3
+ID                    ARCHETYPE  STATUS              TITLE                 UPDATED
+contract-00000001-1   EPIC       REPORTED            Reported epic         2026-01-01 00:00:00 UTC
+contract-00000001-2   TICKET     REPORTED            Reported ticket       2026-01-01 00:00:00 UTC
+contract-00000001-3   EPIC       REFINED             Refined epic          2026-01-01 00:00:00 UTC
+contract-00000001-4   TICKET     REFINED             Refined ticket        2026-01-01 00:00:00 UTC
+contract-00000001-5   EPIC       READY_FOR_DEV       Ready for dev epic    2026-01-01 00:00:00 UTC
+contract-00000001-6   TICKET     READY_FOR_DEV       Ready for dev ticket  2026-01-01 00:00:00 UTC
+contract-00000001-7   EPIC       IMPLEMENTING        Implementing epic     2026-01-01 00:00:00 UTC
+contract-00000001-8   TICKET     IMPLEMENTING        Implementing ticket   2026-01-01 00:00:00 UTC
+contract-00000001-9   EPIC       IMPLEMENTED         Implemented epic      2026-01-01 00:00:00 UTC
+contract-00000001-10  TICKET     IMPLEMENTED         Implemented ticket    2026-01-01 00:00:00 UTC
+contract-00000001-11  EPIC       VERIFYING           Verifying epic        2026-01-01 00:00:00 UTC
+contract-00000001-12  TICKET     VERIFYING           Verifying ticket      2026-01-01 00:00:00 UTC
+contract-00000001-13  EPIC       VERIFIED            Verified epic         2026-01-01 00:00:00 UTC
+contract-00000001-14  TICKET     VERIFIED            Verified ticket       2026-01-01 00:00:00 UTC
+contract-00000001-15  EPIC       DONE                Done epic             2026-01-01 00:00:00 UTC
+contract-00000001-16  TICKET     DONE                Done ticket           2026-01-01 00:00:00 UTC
+contract-00000001-17  EPIC       DROPPED (OBSOLETE)  Dropped epic          2026-01-01 00:00:00 UTC
+contract-00000001-18  TICKET     DROPPED (OBSOLETE)  Dropped ticket        2026-01-01 00:00:00 UTC
+contract-00000001-19  EPIC       IMPLEMENTING        Started epic          2026-01-01 00:00:00 UTC
+contract-00000001-20  FEATURE    IMPLEMENTING        Started feature       2026-01-01 00:00:00 UTC
+contract-00000001-21  TASK       IMPLEMENTING        Started task          2026-01-01 00:00:00 UTC
+$
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits work list --project contract-00000001 --unassigned --by-priority --limit 3
+ID                    ARCHETYPE  STATUS              TITLE                 UPDATED
+contract-00000001-1   EPIC       REPORTED            Reported epic         2026-01-01 00:00:00 UTC
+contract-00000001-2   TICKET     REPORTED            Reported ticket       2026-01-01 00:00:00 UTC
+contract-00000001-3   EPIC       REFINED             Refined epic          2026-01-01 00:00:00 UTC
+contract-00000001-4   TICKET     REFINED             Refined ticket        2026-01-01 00:00:00 UTC
+contract-00000001-5   EPIC       READY_FOR_DEV       Ready for dev epic    2026-01-01 00:00:00 UTC
+contract-00000001-6   TICKET     READY_FOR_DEV       Ready for dev ticket  2026-01-01 00:00:00 UTC
+contract-00000001-7   EPIC       IMPLEMENTING        Implementing epic     2026-01-01 00:00:00 UTC
+contract-00000001-8   TICKET     IMPLEMENTING        Implementing ticket   2026-01-01 00:00:00 UTC
+contract-00000001-9   EPIC       IMPLEMENTED         Implemented epic      2026-01-01 00:00:00 UTC
+contract-00000001-10  TICKET     IMPLEMENTED         Implemented ticket    2026-01-01 00:00:00 UTC
+contract-00000001-11  EPIC       VERIFYING           Verifying epic        2026-01-01 00:00:00 UTC
+contract-00000001-12  TICKET     VERIFYING           Verifying ticket      2026-01-01 00:00:00 UTC
+contract-00000001-13  EPIC       VERIFIED            Verified epic         2026-01-01 00:00:00 UTC
+contract-00000001-14  TICKET     VERIFIED            Verified ticket       2026-01-01 00:00:00 UTC
+contract-00000001-15  EPIC       DONE                Done epic             2026-01-01 00:00:00 UTC
+contract-00000001-16  TICKET     DONE                Done ticket           2026-01-01 00:00:00 UTC
+contract-00000001-17  EPIC       DROPPED (OBSOLETE)  Dropped epic          2026-01-01 00:00:00 UTC
+contract-00000001-18  TICKET     DROPPED (OBSOLETE)  Dropped ticket        2026-01-01 00:00:00 UTC
+contract-00000001-19  EPIC       IMPLEMENTING        Started epic          2026-01-01 00:00:00 UTC
+contract-00000001-20  FEATURE    IMPLEMENTING        Started feature       2026-01-01 00:00:00 UTC
+contract-00000001-21  TASK       IMPLEMENTING        Started task          2026-01-01 00:00:00 UTC
+$
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────

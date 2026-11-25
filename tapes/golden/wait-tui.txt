@@ -781,9 +781,9 @@
  │   --state           ▸ (any)                                                                     │
  │   --agent             (any)                                                                     │
  │   --desk              (any)                                                                     │
+ │   --work              (any)                                                                     │
  │   --workspaces-url    (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -812,9 +812,9 @@
  │   --state           ▸ (any)                                                                     │
  │   --agent             (any)                                                                     │
  │   --desk              (any)                                                                     │
+ │   --work              (any)                                                                     │
  │   --workspaces-url    (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -843,9 +843,9 @@
  │   --state           ▸ (any)                                                                     │
  │   --agent             (any)                                                                     │
  │   --desk              (any)                                                                     │
+ │   --work              (any)                                                                     │
  │   --workspaces-url    (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -874,9 +874,9 @@
  │   --state           ▸ (any)                                                                     │
  │   --agent             (any)                                                                     │
  │   --desk              (any)                                                                     │
+ │   --work              (any)                                                                     │
  │   --workspaces-url    (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
