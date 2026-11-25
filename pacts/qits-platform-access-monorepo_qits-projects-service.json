@@ -1692,18 +1692,6 @@
               {
                 "description": "A person on a workstation: sign-in, Git, registries, builds and releases.",
                 "name": "workstation"
-              },
-              {
-                "description": "A person on a workstation: sign-in, Git, registries, builds and releases.",
-                "name": "workstation"
-              },
-              {
-                "description": "A person on a workstation: sign-in, Git, registries, builds and releases.",
-                "name": "workstation"
-              },
-              {
-                "description": "A person on a workstation: sign-in, Git, registries, builds and releases.",
-                "name": "workstation"
               }
             ]
           },
@@ -1722,8 +1710,7 @@
               "matchers": [
                 {
                   "match": "type",
-                  "max": 4,
-                  "min": 4
+                  "min": 0
                 }
               ]
             },

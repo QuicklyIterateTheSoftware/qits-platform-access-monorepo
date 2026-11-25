@@ -1498,6 +1498,8 @@ public final class ProjectsContract {
                 GUIDE_VARIANTS)
                 .consumes(held(GUIDE_SHIPS, "listDevelopmentGuideVariants",
                         List.of("variants[].name", "variants[].description")))
+                // Open-ended: the variants grow (qits-2520 adds project-agent).
+                .anyLength("variants")
                 .request("GET /projects/api/guide/variants"));
 
         // qits repositories
