@@ -56,6 +56,8 @@ public final class EgressForward {
 
     static final int CHUNK = 64 * 1024;
     static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
+    /** The whole upgrade, connect included; a little over the connect timeout, so that one speaks first. */
+    static final Duration HANDSHAKE_TIMEOUT = Duration.ofSeconds(45);
     /** How long a close frame this side sent waits for the other side's before the socket is dropped. */
     static final Duration CLOSE_GRACE = Duration.ofSeconds(10);
 
@@ -180,7 +182,13 @@ public final class EgressForward {
                         .connectTimeout(CONNECT_TIMEOUT)
                         .header("Authorization", "Bearer " + bearer)
                         .buildAsync(uri, pipe)
-                        .get();
+                        .get(HANDSHAKE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException stuck) {
+                // The JDK completes the handshake on the common ForkJoinPool; a pool that never
+                // frees a worker, or a door that never answers, must not hold the client forever.
+                log("the forward door did not answer the upgrade within " + HANDSHAKE_TIMEOUT.toSeconds()
+                        + " s; closed the connection from " + from);
+                return;
             } catch (ExecutionException failed) {
                 log(refusal(failed.getCause()) + "; closed the connection from " + from);
                 return;

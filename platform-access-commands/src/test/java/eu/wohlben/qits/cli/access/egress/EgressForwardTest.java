@@ -51,13 +51,25 @@ class EgressForwardTest {
                 new InetSocketAddress("127.0.0.1", 0), new PrintStream(log, true, StandardCharsets.UTF_8),
                 new FakeTime(T0));
         forward.bind();
-        running = CompletableFuture.supplyAsync(() -> {
+        running = onOwnThread(forward::run);
+    }
+
+    /**
+     * Runs on a thread of its own, never on the common pool. The JDK completes every WebSocket
+     * handshake on the common ForkJoinPool (HttpClientImpl.sendAsync's whenCompleteAsync on
+     * ASYNC_POOL), so a listener or sender parked there, beside other classes' blocked tasks in the
+     * gate's full run, left no worker for the upgrade: every connection hung (qits-2655).
+     */
+    private static <T> CompletableFuture<T> onOwnThread(java.util.concurrent.Callable<T> work) {
+        CompletableFuture<T> done = new CompletableFuture<>();
+        Thread.ofPlatform().daemon().name("egress-forward-test").start(() -> {
             try {
-                return forward.run();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
+                done.complete(work.call());
+            } catch (Throwable e) {
+                done.completeExceptionally(e);
             }
         });
+        return done;
     }
 
     @AfterEach
@@ -112,17 +124,14 @@ class EgressForwardTest {
         new Random(2655).nextBytes(payload);
 
         try (Socket client = connect()) {
-            CompletableFuture<Void> sent = CompletableFuture.runAsync(() -> {
-                try {
-                    OutputStream out = client.getOutputStream();
-                    // Several writes, so the forwarder sends many frames and the door echoes each.
-                    for (int i = 0; i < payload.length; i += 100_000) {
-                        out.write(payload, i, Math.min(100_000, payload.length - i));
-                    }
-                    out.flush();
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
+            CompletableFuture<Void> sent = onOwnThread(() -> {
+                OutputStream out = client.getOutputStream();
+                // Several writes, so the forwarder sends many frames and the door echoes each.
+                for (int i = 0; i < payload.length; i += 100_000) {
+                    out.write(payload, i, Math.min(100_000, payload.length - i));
                 }
+                out.flush();
+                return null;
             });
             byte[] back = client.getInputStream().readNBytes(payload.length);
             sent.get(10, TimeUnit.SECONDS);
@@ -242,6 +251,17 @@ class EgressForwardTest {
 
         assertThat(r.exit()).isEqualTo(2);
         assertThat(r.err()).contains("--listen takes host:port");
+    }
+
+    @Test
+    void withNoBearerItFailsAtOnceWithOneLineAndNeverListens(@org.junit.jupiter.api.io.TempDir java.nio.file.Path home) {
+        // No QITS_TOKEN and no session file: nothing to send, so it refuses before it binds.
+        Result r = command(Map.of("XDG_CONFIG_HOME", home.toString()),
+                "egress", "forward", "--listen", "127.0.0.1:0", "--url", "ws://127.0.0.1:1" + ForwardCommand.DOOR);
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(r.err().lines().toList()).singleElement().satisfies(line -> assertThat(line).contains("qits login"));
+        assertThat(r.err()).doesNotContain("listening");
     }
 
     @Test
