@@ -265,6 +265,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
     observe/   qits observe: the --filter grammar, the reconnecting WebSocket stream, the line form,
                and SafeText (terminal control characters out of every streamed value); `query`
                under it asks the records search with the same filters (ObserveQueryCommand)
+    egress/    qits egress: grants list (qits-deployments' declared egress routes) and forward
+               (EgressForward, qits-2655): a local listener whose every TCP connection is a byte
+               pipe over a WebSocket of its own to qits-egress's /egress/api/forward, with the
+               command's bearer, NO_PROXY, binary frames and request(1) back-pressure;
+               Interaction.STREAMING, so the MCP service does not serve it
     waits/     qits wait: the --when grammar (WhenGrammar, a copy of qits-eventstream-javalib's
                selection grammar and limits, producing its wire JSON; keep the two in step), the
                --timeout reader, the presets and list/cancel on qits-workspaces' agent waits. A third
@@ -622,7 +627,7 @@ a real idp: `FakeIdp` is an idp in the test's own process (`com.sun.net.httpserv
 an fcntl lock works between processes and a test in one JVM would only prove the in-process gate.
 `FakePlatform` is the edge and the services: canned JSON by method and path, and an SSE route whose
 connections follow scripts. `FakeSocketServer` is a WebSocket server on a plain `ServerSocket` (the
-RFC 6455 handshake; text, ping, pong and close frames), one script per connection; it needs only the
+RFC 6455 handshake; text, binary, ping, pong and close frames), one script per connection; it needs only the
 JDK, so a native proof can run it from `target/test-classes`. `PlatformCommandsTest` runs picocli in the test's process with its own
 `CliContext` (environment, stdout, stderr, clock), so a command test needs no second process.
 
