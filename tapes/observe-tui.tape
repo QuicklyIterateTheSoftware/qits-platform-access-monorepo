@@ -1,6 +1,7 @@
 # qits observe, on the screen: `qits tui`, down to observe, --filter typed into its field, run
 # with Ctrl+R - a stream, so the box says `streaming` and fills with the records - and then stopped
-# and quit.
+# and quit. Then, in a second `qits tui`, observe's issues group and its list, run with Ctrl+R
+# (epic qits-2538).
 #
 # The stop is not shown. The stream's first and last notes (connected, stopped) carry
 # a wall-clock stamp, and the box shows stdout and stderr as one: sixteen records push the first one
@@ -93,6 +94,73 @@ Sleep 2s
 Hide
 Ctrl+C
 Sleep 1s
+Type "q"
+Wait /^\$$/
+Sleep 500ms
+Show
+Sleep 500ms
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits tui"
+Enter
+Wait+Screen /⌃R run · q quit/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Type "/observe "
+Wait+Screen /(?s)\/observe  ┐.*│ . observe +▸/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Enter
+Wait+Screen /┌ observe ─/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Type "/issues "
+Wait+Screen /(?s)\/issues  ┐.*│ . issues +▸/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Enter
+Wait+Screen /┌ observe ▸ issues ─/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Type "/list "
+Wait+Screen /(?s)\/list  ┐.*│ . list +▸/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Enter
+Wait+Screen /┌ observe ▸ issues ▸ list ─/
+Sleep 500ms
+Show
+Sleep 1s
+
+Hide
+Ctrl+R
+Wait+Screen /exit 0/
+Sleep 500ms
+Show
+Sleep 2s
+
+Hide
 Type "q"
 Wait /^\$$/
 Sleep 500ms

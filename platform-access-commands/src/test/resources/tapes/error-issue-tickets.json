@@ -1,0 +1,36 @@
+{
+  "entities": [
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "archetype": "TICKET",
+      "projectId": "00000000-0000-4000-8000-000000000001",
+      "number": 1,
+      "qualifiedId": "contract-00000001-1",
+      "title": "Export answers 500 for an empty quarter",
+      "excerpt": null,
+      "slug": "export-answers-500-for-an-empty-quarter",
+      "slugScope": "00000000-0000-4000-8000-000000000001",
+      "status": "REPORTED",
+      "statusBefore": null,
+      "ticketType": "BUG",
+      "impetus": "The CSV export answers 500 when the range holds no invoice.",
+      "assignee": null,
+      "createdBy": "contract-seeder",
+      "supersededBy": null,
+      "outcome": null,
+      "repositoryId": null,
+      "implementedAt": null,
+      "implementingAt": null,
+      "parent": null,
+      "position": null,
+      "priority": 0,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z",
+      "changedBy": null,
+      "blocked": false,
+      "tags": [],
+      "needs": [],
+      "unmetNeeds": 0
+    }
+  ]
+}

@@ -822,7 +822,16 @@ class WorkCommandsTest {
         Result r = detailsOf("qits-751", UNTAGGED_TICKET_ROW);
 
         assertThat(r.exit()).as(r.err()).isZero();
-        assertThat(r.out()).doesNotContain("needs");
+        assertThat(r.out()).doesNotContain("needs").doesNotContain("error issue");
+    }
+
+    @Test
+    void detailsNamesTheErrorIssueATicketWasMadeFrom() {
+        Result r = detailsOf("qits-751", UNTAGGED_TICKET_ROW.replace("\"tags\":[]",
+                "\"tags\":[],\"errorIssue\":\"0123456789abcdef0123456789abcdef\""));
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).containsPattern("(?m)^\\s+error issue\\s+0123456789abcdef0123456789abcdef$");
     }
 
     @Test

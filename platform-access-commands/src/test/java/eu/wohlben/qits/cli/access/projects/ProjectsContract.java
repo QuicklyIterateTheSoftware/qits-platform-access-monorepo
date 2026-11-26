@@ -250,6 +250,14 @@ public final class ProjectsContract {
      */
     static final String NEEDS_ANOTHER = "a ticket that needs another";
 
+    /**
+     * A ticket made from an error issue (epic qits-2538): it carries the issue's fingerprint as
+     * {@code errorIssue}, which {@code getWork} answers and {@code listProjectWork?errorIssue=}
+     * filters by; the list entries do not carry it. Pending until the pin reaches
+     * qits-projects-service 2026.1126.34009, which records this state.
+     */
+    static final String TICKET_FROM_ERROR_ISSUE = "a ticket made from an error issue";
+
     /** One need as the NEEDS column and the details' needs rows print it. */
     static final List<String> NEED = List.of("qualifiedId", "status", "currentStatus", "met");
 
@@ -851,6 +859,24 @@ public final class ProjectsContract {
         assertThat(WorkEntities.needs(item, false)).isNotEmpty().allSatisfy(n ->
                 assertThat(WorkEntities.needLine(n)).contains(" at ").contains("(now "));
         assertThat(item.path("unmetNeeds").asInt()).isPositive();
+    };
+
+    /** {@code qits observe issues show}'s tickets: the project's tickets made from the issue, one line each. */
+    private static final Call ERROR_ISSUE_TICKETS = (api, params, recorded) -> {
+        List<JsonNode> tickets = WorkEntities.list(api.errorIssueTickets(params.get("projectId"),
+                params.get("errorIssue")));
+        assertThat(tickets).isNotEmpty().allSatisfy(t -> {
+            assertThat(ProjectsApi.text(t, "qualifiedId")).isNotBlank();
+            assertThat(ProjectsApi.text(t, "status")).isNotBlank();
+            assertThat(ProjectsApi.text(t, "title")).isNotBlank();
+        });
+    };
+
+    /** {@code qits work details}' {@code error issue} line: the fingerprint the ticket was made from. */
+    private static final Call GET_ERROR_ISSUE = (api, params, recorded) -> {
+        JsonNode item = api.work(params.get("qualifiedId"));
+        assertThat(ProjectsApi.text(item, "qualifiedId")).isEqualTo(params.get("qualifiedId"));
+        assertThat(ProjectsApi.text(item, "errorIssue")).isEqualTo(params.get("errorIssue"));
     };
 
     /**
@@ -1846,6 +1872,17 @@ public final class ProjectsContract {
                 .consumes(held(NEEDS_ANOTHER, "getWork", concat(List.of("qualifiedId", "unmetNeeds"),
                         prefixed("needs[].", NEED))))
                 .anyLength("needs")
+                .request("GET /projects/api/work/{qualifiedId}"));
+
+        // the tickets made from an error issue (epic qits-2538)
+        rows.add(row("qits observe issues show", TICKET_FROM_ERROR_ISSUE, "listProjectWork", "errorIssueTickets",
+                ERROR_ISSUE_TICKETS)
+                .consumes(held(TICKET_FROM_ERROR_ISSUE, "listProjectWork",
+                        prefixed("entities[].", List.of("qualifiedId", "status", "title"))))
+                .anyLength("entities")
+                .request("GET /projects/api/projects/{projectId}/work?errorIssue={errorIssue}"));
+        rows.add(row("qits work details", TICKET_FROM_ERROR_ISSUE, "getWork", "work", GET_ERROR_ISSUE)
+                .consumes(held(TICKET_FROM_ERROR_ISSUE, "getWork", List.of("qualifiedId", "errorIssue")))
                 .request("GET /projects/api/work/{qualifiedId}"));
 
         // a work item named by its qualified id outside qits work

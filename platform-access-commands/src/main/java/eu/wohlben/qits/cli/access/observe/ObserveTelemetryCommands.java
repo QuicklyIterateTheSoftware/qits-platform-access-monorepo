@@ -32,6 +32,9 @@ import java.util.Map;
  * not 404, so {@code sources} is how a caller tells "nothing happened" from "wrong bucket".
  * Everything in a record is written by the process that sent it, so text goes through {@link
  * SafeText}.
+ * <p>
+ * {@link TelemetryRead} also carries the error-issue doors {@link ObserveIssuesCommand} calls
+ * (epic qits-2538), so every call to qits-observability's REST side goes through one class.
  */
 final class ObserveTelemetryCommands {
 
@@ -39,6 +42,7 @@ final class ObserveTelemetryCommands {
     }
 
     static final String TELEMETRY = "/observability/api/telemetry";
+    static final String ERROR_ISSUES = "/observability/api/error-issues";
 
     /** What every read takes: where the service is and how to answer. */
     abstract static class TelemetryRead extends PlatformCommand {
@@ -54,18 +58,33 @@ final class ObserveTelemetryCommands {
         String output;
 
         JsonNode get(CliContext context, String path, List<String> query) throws CliFailure, InterruptedException {
+            return new PlatformClient(context.credential()).get(uri(context, TELEMETRY + path, query));
+        }
+
+        /** A read of the stored error issues (epic qits-2538), under {@code /observability/api/error-issues}. */
+        JsonNode issues(CliContext context, String path, List<String> query) throws CliFailure, InterruptedException {
+            return new PlatformClient(context.credential()).get(uri(context, ERROR_ISSUES + path, query));
+        }
+
+        /** Dismisses one error issue: a person's decision, so the agent credential gets 403. */
+        JsonNode dismiss(CliContext context, String fingerprint) throws CliFailure, InterruptedException {
+            return new PlatformClient(context.credential())
+                    .post(uri(context, ERROR_ISSUES + "/" + fingerprint + "/dismiss", List.of()));
+        }
+
+        private URI uri(CliContext context, String path, List<String> query)
+                throws CliFailure, InterruptedException {
             String base = PlatformUrls.observability(observabilityUrl, context.env(), context.idpUrl());
-            URI uri;
             try {
-                uri = URI.create(base + TELEMETRY + path + (query.isEmpty() ? "" : "?" + String.join("&", query)));
+                URI uri = URI.create(base + path + (query.isEmpty() ? "" : "?" + String.join("&", query)));
                 if (uri.getHost() == null) {
                     throw new IllegalArgumentException("no host");
                 }
+                return uri;
             } catch (IllegalArgumentException e) {
                 throw new CliFailure("'" + base + "' is not a usable observability address. Give an http or https "
                         + "base URL.", CliFailure.USAGE);
             }
-            return new PlatformClient(context.credential()).get(uri);
         }
 
         boolean json() throws CliFailure {

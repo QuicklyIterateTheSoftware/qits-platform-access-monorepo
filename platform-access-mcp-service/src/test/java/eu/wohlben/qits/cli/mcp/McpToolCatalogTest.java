@@ -459,7 +459,7 @@ class McpToolCatalogTest {
                 "egress_grants_list",
                 "agent-mcp_credentials_list",
                 "events", "events_query", "observe", "observe_query", "observe_sources", "observe_errors",
-                "observe_slow-spans", "observe_metrics", "help_skill", "help_guide", "agents_claude_hook_work-links",
+                "observe_slow-spans", "observe_metrics", "observe_issues_list", "observe_issues_show", "help_skill", "help_guide", "agents_claude_hook_work-links",
                 "agents_claude_statusline_work-items", "artifacts_publish_exists", "artifacts_fetch_deployed-pacts",
                 "changelog_bump-message",
                 "workspaces_list", "workspaces_show", "workspaces_active-process", "workspaces_items",

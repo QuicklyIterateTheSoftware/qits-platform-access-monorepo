@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
@@ -138,6 +139,11 @@ public final class FakePlatformMain {
         // `--project` goes into the path as it is given: the slug the screen's dropdown fills in, or the uuid.
         platform.answer("GET", "/projects/api/projects/" + PROJECT + "/work", work);
         platform.answer("GET", "/projects/api/projects/" + PROJECT_SLUG + "/work", work);
+        // `qits observe issues show --project <slug>`: the tickets made from the issue (epic qits-2538).
+        // A fixture until the pinned golden masters record `a ticket made from an error issue`.
+        String tickets = fixture("error-issue-tickets.json");
+        platform.route("GET", "/projects/api/projects/" + PROJECT_SLUG + "/work", request -> new FakePlatform.Answer(
+                200, request.query() != null && request.query().startsWith("errorIssue=") ? tickets : work, Map.of()));
         refuse("POST", "/projects/api/work/" + PROJECT_SLUG + "-1/blocked");
     }
 
@@ -279,8 +285,19 @@ public final class FakePlatformMain {
         recorded.path("records").forEach(frame -> frames.add(frame.toString()));
         fixtureTree("observe-stream.json").forEach(frame -> frames.add(frame.toString()));
         String search = recorded.toString();
+        // The stored error issues (epic qits-2538): fixtures until the pinned golden masters record
+        // `stored error issues`. A dismissal is a write, refused as the agent's token is.
+        String issues = "/observability/api/error-issues";
+        String issueList = fixture("error-issues.json");
+        String issue = fixture("error-issue.json");
         sockets.everyConnection = connection -> {
-            if (connection.path.startsWith("/observability/stream")) {
+            if (connection.path.startsWith(issues + "/") && connection.path.contains("/dismiss")) {
+                connection.refuse(403, "");
+            } else if (connection.path.startsWith(issues + "/")) {
+                connection.answer(issue);
+            } else if (connection.path.equals(issues) || connection.path.startsWith(issues + "?")) {
+                connection.answer(issueList);
+            } else if (connection.path.startsWith("/observability/stream")) {
                 connection.accept();
                 connection.awaitText();
                 for (String frame : frames) {

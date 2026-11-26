@@ -329,6 +329,7 @@ final class WorkEntities {
         optional(rows, e, "position", "position");
         optional(rows, e, "repository", "repositoryId");
         optional(rows, e, "inspired by", "inspiredBy");
+        optional(rows, e, "error issue", "errorIssue");
         optional(rows, e, supersededByLabel(e), "supersededBy");
         if (!text(e, "implementedAt").isEmpty()) {
             rows.add(List.of("implemented", Table.time(text(e, "implementedAt"))));
