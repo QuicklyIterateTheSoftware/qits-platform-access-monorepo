@@ -76,6 +76,7 @@ contracts:
         listRepositorySummaries: "landing show-project-ci (ui); the qits CLI has no command for it yet"
       qits-deployments-service:
         getDeploymentRequest: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
+        getEgressGrants: "the qits CLI `egress grants list` (qits-2523, qits-2661); landing has no egress page yet"
         listDeploymentRequests: "landing show-project-deployment-requests (ui); the qits CLI has no command for it yet"
         listDeployments: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
         listEnvironments: "landing show-deployment-request (ui); the qits CLI has no command for it yet"
