@@ -22259,6 +22259,11 @@
                 "description": "The long-form Markdown body.",
                 "type": "string"
               },
+              "errorIssue": {
+                "description": "The qits-observability error issue this ticket was made from: its fingerprint, 32 lower-case hex digits. Not checked against qits-observability; one error issue may have any number of tickets. A ticket's alone.",
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
               "impetus": {
                 "description": "Why a ticket came about, in the reporter's words; usually one sentence.",
                 "pattern": "\\S",
@@ -22415,6 +22420,30 @@
               ]
             },
             "$.properties.description.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.pattern": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.type": {
               "combine": "AND",
               "matchers": [
                 {
@@ -29474,6 +29503,14 @@
                   "string"
                 ]
               },
+              "errorIssue": {
+                "description": "The qits-observability error issue this ticket was made from: its fingerprint, 32 lower-case hex digits. Not checked against qits-observability; one error issue may have any number of tickets. A ticket's alone.",
+                "pattern": "^[0-9a-f]{32}$",
+                "type": [
+                  "string",
+                  "string"
+                ]
+              },
               "impetus": {
                 "description": "Why a ticket came about, in the reporter's words; usually one sentence.",
                 "pattern": "\\S",
@@ -29669,6 +29706,40 @@
               ]
             },
             "$.properties.description.type[*]": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.pattern": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 2,
+                  "min": 2
+                }
+              ]
+            },
+            "$.properties.errorIssue.type[*]": {
               "combine": "AND",
               "matchers": [
                 {
