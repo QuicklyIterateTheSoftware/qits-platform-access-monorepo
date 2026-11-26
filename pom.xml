@@ -114,7 +114,7 @@
         <!-- qits-agents' recordings, for the GET /agents/api/me of `qits work list` (epic
              qits-2520). Pinned by hand once, as a first adoption gets no maintenance bump; bumped by
              qits-maintenance like the others from here on. -->
-        <qits.agents-golden-masters.version>2026.1125.234246</qits.agents-golden-masters.version>
+        <qits.agents-golden-masters.version>2026.1126.152922</qits.agents-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
              reads. -->
