@@ -80,7 +80,8 @@ final class TargetsApi {
      * is a hard ceiling per slot type, as opposed to {@code reservations}' floor: a key left out
      * keeps its value, an explicit JSON {@code null} clears it (no ceiling), and {@code 0} is a real
      * ceiling. HTTP 409 {@code MAXIMUM_BELOW_RESERVATION}: a maximum would be below that type's
-     * reservation.
+     * reservation. HTTP 400 {@code SLOTS_EXCEED_MEMORY} (qits-2581): the target's reported memory can
+     * never hold them; the message names the limit and is printed as given.
      */
     JsonNode patchTarget(String id, JsonNode change) throws CliFailure, InterruptedException {
         return client.patch(uri(targetPath(id)), change, "application/json");
