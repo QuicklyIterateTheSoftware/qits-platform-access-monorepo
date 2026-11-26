@@ -135,10 +135,13 @@ public final class DeploymentsApi {
     }
 
     /**
-     * {@code {version, routes:[{application, environment, deployedVersion, name, target, secret,
-     * inject, methods}], refused:[{application, deployedVersion, reason}]}} (qits-2611): the egress
-     * grants declared in each repository's own {@code .config/qits/egress.yml}, at the version
-     * deployed. A {@code platform:} route's {@code secret} and {@code inject} are null.
+     * {@code {version, routes:[{principal, application, environment, deployedVersion, name, target,
+     * secret, inject, methods}], refused:[{principal, application, deployedVersion, reason}]}}
+     * (qits-2611, qits-2661): the egress grants declared in each repository's own {@code
+     * .config/qits/egress.yml}, at the version deployed, and each project's own, in its wrapper's.
+     * {@code principal} is {@code application:<application>} for an application route, else {@code
+     * project:<projectId>}, whose own {@code application} is null. A route with no secret has null
+     * {@code secret} and {@code inject}.
      */
     public JsonNode egressGrants() throws CliFailure, InterruptedException {
         return client.get(uri("/deployments/api/egress-grants"));

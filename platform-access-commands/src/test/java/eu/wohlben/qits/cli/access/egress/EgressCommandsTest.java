@@ -51,6 +51,8 @@ class EgressCommandsTest {
         env.put("QITS_DEPLOYMENTS_URL", platform.url());
         new SessionFile(home.resolve("qits")).write(new Session(idp.url(), "qits-cli", FakeIdp.SECRET + "access-0",
                 T0.plus(Duration.ofMinutes(10)), idp.issueRefreshToken(), T0.plus(Duration.ofDays(30))));
+        // qits-edge and qits-idp carry no "principal" (an older provider, or an application route
+        // the fixture leaves it off to prove the fallback); the project route names its own.
         platform.answer("GET", GRANTS, """
                 {"version":1764061200000,
                  "routes":[{"application":"qits-edge","environment":"dev","deployedVersion":"2026.1201.101010",
@@ -58,7 +60,11 @@ class EgressCommandsTest {
                             "inject":"bearer","methods":["DELETE","GET","POST","PUT"]},
                            {"application":"qits-idp","environment":"dev","deployedVersion":"2026.1130.1",
                             "name":"idp-events","target":"https://events.internal","secret":null,
-                            "inject":null,"methods":["GET"]}],
+                            "inject":null,"methods":["GET"]},
+                           {"principal":"project:00000000-0000-4000-8000-000000000001","application":null,
+                            "environment":null,"deployedVersion":"0f1e2d3c4b5a",
+                            "name":"github","target":"https://api.github.com","secret":"GITHUB_READ",
+                            "inject":"bearer","methods":["GET","HEAD"]}],
                  "refused":[{"application":"qits-broken","deployedVersion":"2026.1129.1","reason":"egress.yml is not valid YAML"}]}
                 """);
     }
@@ -84,13 +90,17 @@ class EgressCommandsTest {
         Result r = run("egress", "grants", "list");
 
         assertThat(r.exit()).as(r.err()).isZero();
-        assertThat(r.out()).contains("APPLICATION").contains("ROUTE").contains("TARGET").contains("SECRET")
-                .contains("METHODS").contains("VERSION")
-                .contains("qits-edge").contains("hetzner").contains("https://api.hetzner.cloud")
-                .contains("HETZNER_DNS").contains("DELETE,GET,POST,PUT").contains("2026.1201.101010")
-                .contains("qits-idp").contains("idp-events").contains("2026.1130.1")
-                .contains("Refused:").contains("REASON").contains("qits-broken").contains("egress.yml is not valid YAML");
-        // A route with no secret shows a dash, never a blank cell or the literal "null".
+        assertThat(r.out()).contains("PRINCIPAL").contains("ROUTE").contains("TARGET").contains("SECRET")
+                .contains("INJECT").contains("METHODS").contains("VERSION")
+                // A route with no "principal" of its own falls back to application:<application>.
+                .contains("application:qits-edge").contains("hetzner").contains("https://api.hetzner.cloud")
+                .contains("HETZNER_DNS").contains("bearer").contains("DELETE,GET,POST,PUT").contains("2026.1201.101010")
+                .contains("application:qits-idp").contains("idp-events").contains("2026.1130.1")
+                // A route that carries its own principal (a project route) is never given the fallback.
+                .contains("project:00000000-0000-4000-8000-000000000001").contains("github")
+                .contains("Refused:").contains("REASON").contains("application:qits-broken")
+                .contains("egress.yml is not valid YAML");
+        // A route with no secret shows a dash, never a blank cell or the literal "null", in SECRET or INJECT.
         String idpLine = r.out().lines().filter(l -> l.contains("idp-events")).findFirst().orElseThrow();
         assertThat(idpLine).doesNotContain("null");
         assertThat(idpLine.trim().split("\\s+")).contains("-");
@@ -110,10 +120,38 @@ class EgressCommandsTest {
         Result r = run("egress", "grants", "list", "--application", "qits-edge");
 
         assertThat(r.exit()).as(r.err()).isZero();
-        assertThat(r.out()).contains("qits-edge").doesNotContain("qits-idp")
+        assertThat(r.out()).contains("hetzner").doesNotContain("idp-events").doesNotContain("github")
                 // the refused section is unaffected by the filter: it is not an application's own routes
                 .contains("Refused:").contains("qits-broken");
         assertThat(platform.requests("GET", GRANTS)).hasSize(1);
+    }
+
+    @Test
+    void principalFiltersOnAnExactMatch() {
+        // --principal application:qits-edge is the same filter --application qits-edge is shorthand for.
+        Result r = run("egress", "grants", "list", "--principal", "application:qits-edge");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).contains("hetzner").doesNotContain("idp-events").doesNotContain("github");
+    }
+
+    @Test
+    void principalFiltersAProjectRouteWithNoFallback() {
+        Result r = run("egress", "grants", "list", "--principal", "project:00000000-0000-4000-8000-000000000001");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        assertThat(r.out()).contains("github").doesNotContain("hetzner").doesNotContain("idp-events");
+        String githubLine = r.out().lines().filter(l -> l.contains("github")).findFirst().orElseThrow();
+        assertThat(githubLine).startsWith("project:00000000-0000-4000-8000-000000000001");
+    }
+
+    @Test
+    void principalAndApplicationTogetherIsAUsageError() {
+        Result r = run("egress", "grants", "list", "--principal", "application:qits-edge", "--application", "qits-edge");
+
+        assertThat(r.exit()).isEqualTo(2);
+        assertThat(r.err()).contains("--principal and --application cannot both be given.");
+        assertThat(platform.requests).isEmpty();
     }
 
     @Test
@@ -121,7 +159,7 @@ class EgressCommandsTest {
         Result r = run("egress", "grants", "list", "--application", "no-such-app");
 
         assertThat(r.exit()).as(r.err()).isZero();
-        assertThat(r.out()).contains("No egress grants for no-such-app.").contains("Refused:");
+        assertThat(r.out()).contains("No egress grants for application:no-such-app.").contains("Refused:");
     }
 
     @Test

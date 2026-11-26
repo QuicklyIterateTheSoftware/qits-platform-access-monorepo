@@ -3468,29 +3468,32 @@ The outbound routes a repository has declared it needs, in its own .config/qits/
 
 ## qits egress grants list
 
-List every repository's declared egress grants: each route's application, name, target, the secret it is injected with, its methods and the version it was declared at.
+List every repository's declared egress grants: each route's principal, name, target, the secret it is injected with, how it is injected, its methods and the version it was declared at.
 
 A repository the deployer could not read the declaration of (a bad egress.yml, a version it has not deployed) shows under Refused instead, with the reason.
 
 ```
-qits egress grants list [--application <application>] [--deployments-url <url>] [--output table|json]
+qits egress grants list [--application <application>] [--deployments-url <url>] [--output table|json] [--principal <principal>]
 ```
 
 | Name | What it does |
 |---|---|
-| `--application <application>` | Only this application's routes: qits-edge. |
+| `--application <application>` | Shorthand for --principal application:<application>. |
 | `--deployments-url <url>` | The deployments service's base URL, without /deployments. Default: QITS_DEPLOYMENTS_URL, else the session's idp address with `idp` swapped for `deployments`. |
 | `-o, --output table\|json` | table (the default): aligned columns. json: the service's answer, pretty-printed. |
+| `--principal <principal>` | Only this principal's routes, an exact match: application:qits-edge, or project:<project id>. |
 
 ### Examples
 
 ```
 qits egress grants list
+qits egress grants list --principal application:qits-edge
+qits egress grants list --principal project:00000000-0000-4000-8000-000000000001
 qits egress grants list --application qits-edge
 qits egress grants list -o json
 ```
 
-- --application filters the table; the service always answers every repository.
+- --principal filters the table on an exact match; --application is shorthand for --principal application:<application>. The service always answers every repository.
 
 ### Exit codes
 

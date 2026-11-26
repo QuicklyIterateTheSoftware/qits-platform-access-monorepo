@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <b>What {@code qits deployments settings} and {@code qits deployments database} ask
  * qits-deployments, and why</b> (epic qits-765, qits-1390; qits-2175): settings list, set, delete and
  * preview, database move, moves, move-status and abort (qits-2243), requests approve (qits-2268) and
- * decline (qits-2271), and {@code qits egress grants list} (qits-2611, qits-2616), through {@link
+ * decline (qits-2271), and {@code qits egress grants list} (qits-2611, qits-2616, qits-2661), through {@link
  * DeploymentsApi}, written to {@code pacts/qits-platform-access-monorepo_qits-deployments-service.json}
  * once the provider records them.
  * <p>
@@ -87,8 +87,9 @@ public final class DeploymentsContract {
     /** The settings table, and the mask that needs `secret`. */
     static final List<String> SETTING = List.of("application", "environment", "key", "value", "secret", "updatedBy");
 
-    /** The egress grants table: what `qits egress grants list` reads of one route. */
-    static final List<String> GRANT = List.of("application", "name", "target", "secret", "methods", "deployedVersion");
+    /** The egress grants table: what `qits egress grants list` reads of one route (qits-2661: principal, inject). */
+    static final List<String> GRANT = List.of("principal", "application", "name", "target", "secret", "inject",
+            "methods", "deployedVersion");
 
     @FunctionalInterface
     interface Call {
@@ -190,17 +191,23 @@ public final class DeploymentsContract {
         assertThat(bytes.toString(StandardCharsets.UTF_8)).contains("declined by");
     };
 
-    /** The repository, route name, target and methods are each read; a route with no secret is still read. */
+    /**
+     * The repository, route name, target and methods are each read; a route with no secret is still
+     * read, and so is its principal (qits-2661: an application route's own, never falling back here,
+     * since the provider always sends one).
+     */
     private static final Call LIST_EGRESS_GRANTS = (api, params, recorded) -> {
         JsonNode answer = api.egressGrants();
         List<JsonNode> routes = new ArrayList<>();
         answer.path("routes").forEach(routes::add);
         assertThat(routes).isNotEmpty().allSatisfy(route -> {
+            assertThat(route.path("principal").asText()).isNotBlank();
             assertThat(route.path("application").asText()).isNotBlank();
             assertThat(route.path("name").asText()).isNotBlank();
             assertThat(route.path("target").asText()).isNotBlank();
             assertThat(route.path("deployedVersion").asText()).isNotBlank();
             assertThat(route.has("secret")).isTrue();
+            assertThat(route.has("inject")).isTrue();
             assertThat(route.path("methods").isArray()).isTrue();
         });
     };
@@ -251,10 +258,12 @@ public final class DeploymentsContract {
                     "declineDeploymentRequest", DECLINE_REQUEST)
                     .consumes(BASE.held(HELD_FOR_DECLINE, "declineDeploymentRequest", DECLINED))
                     .request("POST /deployments/api/deployment-requests/{id}/decline"),
-            row("qits egress grants list", EGRESS_ONE_ROUTE, "listEgressGrants", "egressGrants", LIST_EGRESS_GRANTS)
-                    .consumes(BASE.held(EGRESS_ONE_ROUTE, "listEgressGrants", GRANT.stream().map(p -> "routes[]." + p).toList()))
+            // The operationId is the provider's own (docs/openapi.yml), getEgressGrants: qits-2661 found it
+            // named listEgressGrants here, which no golden master ever matches, so the row never went live.
+            row("qits egress grants list", EGRESS_ONE_ROUTE, "getEgressGrants", "egressGrants", LIST_EGRESS_GRANTS)
+                    .consumes(BASE.held(EGRESS_ONE_ROUTE, "getEgressGrants", GRANT.stream().map(p -> "routes[]." + p).toList()))
                     .request("GET /deployments/api/egress-grants"),
-            row("qits egress grants list", EGRESS_EMPTY, "listEgressGrants", "egressGrants", LIST_EGRESS_GRANTS_EMPTY)
+            row("qits egress grants list", EGRESS_EMPTY, "getEgressGrants", "egressGrants", LIST_EGRESS_GRANTS_EMPTY)
                     .request("GET /deployments/api/egress-grants"));
 
     public static final CliPact CONTRACT = BASE.client(DeploymentsApi.class).rows(ROWS);

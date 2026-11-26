@@ -1777,6 +1777,195 @@
         "status": 200
       },
       "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "getEgressGrants"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits egress grants list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits egress grants list: getEgressGrants",
+      "key": "f5f4a64a",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an egress grant table with one route"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/deployments/api/egress-grants"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "routes": [
+              {
+                "application": "qits-edge",
+                "deployedVersion": "2026.1201.101010",
+                "inject": "bearer",
+                "methods": [
+                  "DELETE",
+                  "DELETE",
+                  "DELETE",
+                  "DELETE"
+                ],
+                "name": "hetzner",
+                "principal": "application:qits-edge",
+                "secret": "HETZNER_DNS",
+                "target": "https://api.hetzner.cloud"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.routes": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 1,
+                  "min": 1
+                }
+              ]
+            },
+            "$.routes[*].application": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].deployedVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].inject": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].methods": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 4,
+                  "min": 4
+                }
+              ]
+            },
+            "$.routes[*].methods[*]": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].principal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].secret": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.routes[*].target": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-deployments-service",
+            "operationId": "getEgressGrants"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits egress grants list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits egress grants list: getEgressGrants",
+      "key": "d7194148",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "an empty egress grant table"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/deployments/api/egress-grants"
+      },
+      "response": {
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
     }
   ],
   "metadata": {
