@@ -49,7 +49,7 @@
          commands jar the program is built from. -->
     <groupId>eu.wohlben</groupId>
     <artifactId>qits</artifactId>
-    <version>2026.1126.33114</version>
+    <version>2026.1126.72028</version>
     <packaging>pom</packaging>
     <name>qits-platform-access-cli</name>
 
