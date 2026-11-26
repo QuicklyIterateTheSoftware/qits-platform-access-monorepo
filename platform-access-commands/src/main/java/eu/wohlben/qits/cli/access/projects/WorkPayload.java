@@ -30,7 +30,7 @@ import java.util.Set;
  * document the running service serves. Never a copy kept here, so it cannot describe a payload the
  * service no longer takes.
  */
-final class WorkPayload {
+public final class WorkPayload {
 
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
@@ -43,7 +43,7 @@ final class WorkPayload {
      * nothing but blanks (a closed stdin, {@code </dev/null}, or the TUI, which closes it). Anything
      * else must be one JSON object, or it is a usage error and nothing is sent.
      */
-    static ObjectNode read(CliContext context) throws CliFailure {
+    public static ObjectNode read(CliContext context) throws CliFailure {
         if (context.stdinIsTerminal()) {
             return null;
         }

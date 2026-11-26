@@ -1,0 +1,941 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "getToggles"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles list: getToggles",
+      "key": "95af455d",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle is declared, asked by an admin",
+          "params": {
+            "authorization": "Bearer contract-qits-admin",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-admin"
+          ]
+        },
+        "method": "GET",
+        "path": "/toggles/api/toggles"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "declaredDefault": false,
+              "lastUsedAt": null,
+              "removalTicket": null,
+              "rules": [
+                {
+                  "afterInstant": null,
+                  "kind": "STATIC",
+                  "userSubjects": null,
+                  "value": false
+                }
+              ],
+              "slug": "toggles-smoke",
+              "version": 0
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$[*].declaredDefault": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].rules": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$[*].rules[*].kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].rules[*].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].slug": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "putToggleRules"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles set-rules",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles set-rules: putToggleRules",
+      "key": "faa2af34",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle is declared, asked by an admin",
+          "params": {
+            "authorization": "Bearer contract-qits-admin",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "rules": [
+              {
+                "afterInstant": null,
+                "kind": "USER",
+                "userSubjects": [
+                  "tok-project-agent-qits-developer"
+                ],
+                "value": true
+              },
+              {
+                "afterInstant": "2026-12-01T00:00:00Z",
+                "kind": "TIME",
+                "userSubjects": null,
+                "value": true
+              },
+              {
+                "afterInstant": null,
+                "kind": "STATIC",
+                "userSubjects": null,
+                "value": false
+              }
+            ],
+            "version": 0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}/rules",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-admin"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "PUT",
+        "path": "/toggles/api/toggles/toggles-smoke/rules"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "declaredDefault": false,
+            "description": "Smoke toggle of qits-toggles itself: proves evaluation and, since no pact uses it, retirement live.",
+            "firstDeclaredAt": "2026-01-01T00:00:00Z",
+            "lastUsedAt": null,
+            "removalTicket": null,
+            "rules": [
+              {
+                "kind": "USER",
+                "value": true
+              }
+            ],
+            "slug": "toggles-smoke",
+            "type": "BOOLEAN",
+            "version": 1
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.declaredDefault": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstDeclaredAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.rules": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.rules[*].kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.rules[*].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.slug": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "putToggleRules"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles set-rules",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles set-rules: putToggleRules",
+      "key": "fabc2584",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle is declared, asked by an agent",
+          "params": {
+            "authorization": "Bearer contract-qits-agent",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "rules": [
+              {
+                "afterInstant": null,
+                "kind": "USER",
+                "userSubjects": [
+                  "tok-project-agent-qits-developer"
+                ],
+                "value": true
+              },
+              {
+                "afterInstant": "2026-12-01T00:00:00Z",
+                "kind": "TIME",
+                "userSubjects": null,
+                "value": true
+              },
+              {
+                "afterInstant": null,
+                "kind": "STATIC",
+                "userSubjects": null,
+                "value": false
+              }
+            ],
+            "version": 0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}/rules",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-agent"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "PUT",
+        "path": "/toggles/api/toggles/toggles-smoke/rules"
+      },
+      "response": {
+        "status": 403
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "putToggleRules"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles set-rules",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles set-rules: putToggleRules",
+      "key": "4dedc734",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle is declared, sent malformed rules by an admin",
+          "params": {
+            "authorization": "Bearer contract-qits-admin",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "rules": [
+              {
+                "afterInstant": null,
+                "kind": "STATIC",
+                "userSubjects": null,
+                "value": false
+              },
+              {
+                "afterInstant": "2026-12-01T00:00:00Z",
+                "kind": "TIME",
+                "userSubjects": null,
+                "value": true
+              }
+            ],
+            "version": 0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}/rules",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-admin"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "PUT",
+        "path": "/toggles/api/toggles/toggles-smoke/rules"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": "the STATIC rule must be the last one"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.error": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "putToggleRules"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles set-rules",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles set-rules: putToggleRules",
+      "key": "c5c3903c",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle's rules changed since an admin read them",
+          "params": {
+            "authorization": "Bearer contract-qits-admin",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "rules": [
+              {
+                "afterInstant": null,
+                "kind": "USER",
+                "userSubjects": [
+                  "tok-project-agent-qits-developer"
+                ],
+                "value": true
+              },
+              {
+                "afterInstant": "2026-12-01T00:00:00Z",
+                "kind": "TIME",
+                "userSubjects": null,
+                "value": true
+              },
+              {
+                "afterInstant": null,
+                "kind": "STATIC",
+                "userSubjects": null,
+                "value": false
+              }
+            ],
+            "version": 0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}/rules",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-admin"
+          ],
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "PUT",
+        "path": "/toggles/api/toggles/toggles-smoke/rules"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": "the rules of 'toggles-smoke' changed since version 0 was read; reload and try again"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.error": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 409
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "getToggle"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles show: getToggle",
+      "key": "1dd09d5f",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle is declared, asked by an admin",
+          "params": {
+            "authorization": "Bearer contract-qits-admin",
+            "slug": "toggles-smoke"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-admin"
+          ]
+        },
+        "method": "GET",
+        "path": "/toggles/api/toggles/toggles-smoke"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "declaredDefault": false,
+            "description": "Smoke toggle of qits-toggles itself: proves evaluation and, since no pact uses it, retirement live.",
+            "firstDeclaredAt": "2026-01-01T00:00:00Z",
+            "lastUsedAt": null,
+            "removalTicket": null,
+            "rules": [
+              {
+                "kind": "STATIC",
+                "value": false
+              }
+            ],
+            "slug": "toggles-smoke",
+            "type": "BOOLEAN",
+            "version": 0
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.declaredDefault": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstDeclaredAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.rules": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.rules[*].kind": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.rules[*].value": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.slug": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.version": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-toggles-service",
+            "operationId": "getToggle"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits toggles show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits toggles show: getToggle",
+      "key": "d9a38548",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a toggle slug is not declared",
+          "params": {
+            "authorization": "Bearer contract-qits-consumer",
+            "slug": "no-such-toggle"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "header": {
+            "Authorization": {
+              "dataType": "RAW",
+              "expression": "${authorization}",
+              "type": "ProviderState"
+            }
+          },
+          "path": {
+            "dataType": "RAW",
+            "expression": "/toggles/api/toggles/${slug}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": [
+            "Bearer contract-qits-consumer"
+          ]
+        },
+        "method": "GET",
+        "path": "/toggles/api/toggles/no-such-toggle"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": "no toggle is declared as 'no-such-toggle'"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.error": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-toggles-service"
+  }
+}

@@ -55,6 +55,7 @@ contracts:
     qits-network-access-service: { packages: [maven] }
     qits-orchestrator-service: { packages: [maven] }
     qits-agents-service: { packages: [maven] }
+    qits-toggles-service: { packages: [maven] }
 
   # qits-2465: pact parity with qits-landing-app, checked by qits-ci on every release request. An
   # operation landing makes that the CLI does not must be listed here with a reason.

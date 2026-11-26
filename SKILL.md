@@ -6000,6 +6000,107 @@ qits targets docker audit --target localhost --limit 20
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
+## qits toggles
+
+The platform's feature toggles in qits-toggles: list them, show one with its ordered rules, and replace a toggle's rules. A toggle is declared in qits-toggles-service's code and nowhere else, so there is no create and no delete here.
+
+### Notes
+
+- Rules are tried in order and the first that matches decides: USER (the caller, or the user a service acts for, is one of userSubjects), TIME (now is after afterInstant), and STATIC, which always matches and is always the last.
+- Reading takes any signed-in caller. Changing the rules takes qits:admin or qits:desk-admin.
+- --output and --toggles-url may come before or after the command.
+
+## qits toggles list
+
+List every declared toggle, sorted as the service answers: its slug, its declared default, its rules' version and how many rules it has, when a deployed consumer's pact last used it, and the removal ticket filed once none has for three days.
+
+```
+qits toggles list [--output table|json] [--toggles-url <url>]
+```
+
+| Name | What it does |
+|---|---|
+| `-o, --output table\|json` | table (the default): for people. json: the service's answer, pretty-printed. |
+| `--toggles-url <url>` | The toggles service's base URL, without /toggles. Default: QITS_TOGGLES_URL, else the session's idp address with `idp` swapped for `toggles`. |
+
+### Examples
+
+```
+qits toggles list
+qits toggles list -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits toggles show
+
+Show one toggle: its description, declared default, version and usage, and its rules in the order they are tried.
+
+```
+qits toggles show [--output table|json] [--toggles-url <url>] <slug>
+```
+
+| Name | What it does |
+|---|---|
+| `<slug>` | The toggle's slug, as the list names it. |
+| `-o, --output table\|json` | table (the default): for people. json: the service's answer, pretty-printed. |
+| `--toggles-url <url>` | The toggles service's base URL, without /toggles. Default: QITS_TOGGLES_URL, else the session's idp address with `idp` swapped for `toggles`. |
+
+### Examples
+
+```
+qits toggles show toggles-smoke
+qits toggles show toggles-smoke -o json
+```
+
+- A slug no declaration names is HTTP 404.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits toggles set-rules
+
+Replace one toggle's ordered rules.
+
+Reads {"version":<n>,"rules":[...]} on stdin and sends it unchanged to PUT /toggles/api/toggles/{slug}/rules. version is the toggle's version as it was read; a rule is {"kind":"USER"|"TIME"|"STATIC","value":true|false,"userSubjects":[...],"afterInstant":"<instant>"}, and exactly one STATIC rule comes last. Prints the toggle as it is now, with its new version.
+
+With nothing on stdin (a terminal, or empty) it sends nothing, prints the body it wants, and exits with 0.
+
+```
+qits toggles set-rules [--output table|json] [--toggles-url <url>] <slug>
+```
+
+| Name | What it does |
+|---|---|
+| `<slug>` | The toggle's slug, as the list names it. |
+| `-o, --output table\|json` | table (the default): for people. json: the service's answer, pretty-printed. |
+| `--toggles-url <url>` | The toggles service's base URL, without /toggles. Default: QITS_TOGGLES_URL, else the session's idp address with `idp` swapped for `toggles`. |
+
+### Examples
+
+```
+qits toggles set-rules toggles-smoke </dev/null
+qits toggles show toggles-smoke -o json | jq '{version, rules}' > rules.json
+qits toggles set-rules toggles-smoke < rules.json
+echo '{"version":3,"rules":[{"kind":"STATIC","value":true}]}' | qits toggles set-rules toggles-smoke
+```
+
+- The second and third lines edit the rules as they are: show prints version and rules in the shape set-rules takes.
+- Refusals: 400 rules the service does not take (it names the rule's position), 403 a caller without qits:admin or qits:desk-admin, 404 an unknown slug, 409 the rules changed since that version was read: show the toggle again and resend with its version.
+
+### Exit codes
+
+- `0` The rules are replaced, or nothing was put in and the body is described.
+- `1` The platform refused (HTTP 400, 403, 404 or 409, with the service's own sentence), or cannot be reached.
+- `2` Used wrongly (for example a body that is not a JSON object), not signed in, or the session ended.
+
 ## qits git-login
 
 Sign this workstation in for Git pushes to the platform's git host, through the browser. Run it once; afterwards Git gets its token from `qits git-credential`.

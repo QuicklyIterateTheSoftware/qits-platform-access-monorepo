@@ -304,6 +304,14 @@ class McpToolCatalogTest {
         assertThat(properties(tool("service-clients_list"))).doesNotContainKey("idp-url");
     }
 
+    /** qits-toggles (qits-2704): the reads, and set-rules taking its body as the payload. */
+    @Test
+    void theTogglesCommandsAreServed() {
+        assertThat(catalog.tool("toggles_list")).isPresent();
+        assertThat(properties(tool("toggles_show"))).containsKey("slug").doesNotContainKey("toggles-url");
+        assertThat(properties(tool("toggles_set-rules"))).containsKeys("slug", "payload");
+    }
+
     /** qits-orchestrator's processes and runs (qits-2490): the service decides who may start which kind. */
     @Test
     void theOrchestratorCommandsAreServed() {
@@ -454,6 +462,7 @@ class McpToolCatalogTest {
                 "work_refinement_show", "work_design_list", "work_design_get",
                 "release-request_list", "ci_runs", "ci_run", "ci_report_show", "maintenance_automations",
                 "maintenance_bump", "maintenance_sbom_versions", "orchestrator_processes", "orchestrator_runs", "orchestrator_run",
+                "toggles_list", "toggles_show",
                 "deployments_settings_list", "deployments_settings_preview",
                 "deployments_database_moves", "deployments_database_move-status",
                 "egress_grants_list",
@@ -484,7 +493,7 @@ class McpToolCatalogTest {
         assertThat(marked).containsExactlyInAnyOrder("work_create", "work_update", "work_transition", "work_status",
                 "work_comment_create", "work_comment_update", "work_dossier_put", "work_design_put",
                 "ideas_create", "ideas_update", "ideas_spawn", "pitches_create",
-                "pitches_add-version");
+                "pitches_add-version", "toggles_set-rules");
         Set<String> text = new TreeSet<>();
         commands.forEach((name, spec) -> {
             if (TuiCommands.inputOf(spec.userObject()) == Input.TEXT) {

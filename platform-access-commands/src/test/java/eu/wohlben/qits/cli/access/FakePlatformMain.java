@@ -106,6 +106,7 @@ public final class FakePlatformMain {
         deployments();
         maintenance();
         orchestrator();
+        toggles();
         users();
         rememberedDevices();
         serviceClients();
@@ -202,6 +203,15 @@ public final class FakePlatformMain {
         platform.answer("GET", "/orchestrator/api/runs/" + ORCHESTRATOR_RUN,
                 orchestrator("a finished scan run", "getProcessRun"));
         refuse("POST", "/orchestrator/api/processes/scan/runs");
+    }
+
+    /** qits-toggles (qits-2704): the smoke toggle, listed and shown, and a rules change it refuses. */
+    private void toggles() {
+        String state = "a toggle is declared, asked by an admin";
+        platform.answer("GET", "/toggles/api/toggles", golden("qits-toggles-service", "qits-toggles", state, "getToggles"));
+        platform.answer("GET", "/toggles/api/toggles/toggles-smoke",
+                golden("qits-toggles-service", "qits-toggles", state, "getToggle"));
+        refuse("PUT", "/toggles/api/toggles/toggles-smoke/rules");
     }
 
     private static String orchestrator(String state, String operation) {

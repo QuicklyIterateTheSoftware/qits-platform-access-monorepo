@@ -14,6 +14,7 @@ golden master records), `qits orchestrator` (qits-orchestrator's processes and t
 qits-2490), `qits users` (the idp's users: invite, register, list,
 delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
 revoke; qits-1944), `qits service-clients` (the idp's service clients: list; qits-2531),
+`qits toggles` (qits-toggles' declared feature toggles: list, show, set-rules; qits-2704),
 `qits network-access` (this workstation onto the private edge through a
 Docker companion; epic qits-1977), `qits events` (the live event
 stream), `qits wait` (an agent's declared waits in qits-workspaces), `qits workspaces` (every action
@@ -398,6 +399,14 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                (access.json). The companion is published on 127.0.0.1:47813 only, and
                NetworkAccessCommandsTest holds that exact -p argument. platform/CompanionProxy is
                the ProxySelector every HttpClient here is built with; see the README
+    toggles/   qits toggles list, show and set-rules (qits-2704, epic qits-2542): the landing app's
+               Toggles section's three doors (TogglesApi: getToggles, getToggle, putToggleRules),
+               so qits-ci's contracts.mirror parity with qits-landing-app holds. set-rules reads its
+               body through projects/WorkPayload and sends it unchanged. TogglesContract's rows are
+               recorded in qits-toggles-golden-masters (first pin set by hand, then bumped), the
+               refusals (400, 403, 404, 409) included; a rule's userSubjects and afterInstant are not
+               bound, because each is null on the rules of the other kinds and qits-pact-consumer
+               cannot express that yet
     serviceclients/ qits service-clients list (qits-2531), on the idp's GET /idp/api/service-clients
                (IdpServiceClientsApi), addressed as users/ addresses the idp. Its row
                (IdpServiceClientsContract, part of idp/IdpContract) sends `Authorization:

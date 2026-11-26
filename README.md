@@ -24,6 +24,8 @@ Commands:
   mints a register token, the new user spends it and gets a generated password, shown once.
 - `qits remembered-devices list|revoke` shows the browsers the idp remembers for you (the ones
   that sign back in without a password) and forgets one, ending every session it opened.
+- `qits toggles list|show|set-rules` shows the platform's feature toggles and replaces a toggle's
+  ordered rules, as the landing app's Toggles section does; toggles are declared in code only.
 - `qits service-clients list` shows the idp's service clients: one per platform service that
   declares `idp:client`, never a secret.
 - `qits events` prints the platform's domain events as they happen; `qits events query` prints the
@@ -1651,6 +1653,26 @@ The idp's address is found as for `qits users`. The qits MCP server serves it as
 
     qits service-clients list
     qits service-clients list -o json
+
+### qits toggles
+
+qits-toggles' declared feature toggles (qits-2704, epic qits-2542), on the same three doors as the
+landing app's Toggles section, so qits-ci's pact parity between the two holds. `list` (`GET
+/toggles/api/toggles`) prints SLUG, DEFAULT, VERSION, RULES (counted), LAST USED and REMOVAL TICKET;
+`show <slug>` (`GET /toggles/api/toggles/{slug}`) prints one toggle and its rules in the order they
+are tried; `set-rules <slug>` reads `{"version":<n>,"rules":[...]}` on stdin and sends it unchanged
+to `PUT /toggles/api/toggles/{slug}/rules`. `show -o json | jq '{version, rules}'` is that body as it
+stands. With nothing on stdin set-rules sends nothing and describes the body. A refusal (400 rules
+the service does not take, 403 a caller without `qits:admin` or `qits:desk-admin`, 404 an unknown
+slug, 409 a stale version) prints the service's own sentence and exits 1. There is no create and no
+delete, as there is none on the service: a toggle exists only by its declaration in
+qits-toggles-service's code. The address is `--toggles-url`, else `QITS_TOGGLES_URL`, else the
+`toggles` vhost. The qits MCP server serves list and show as reads and set-rules with a payload.
+
+    qits toggles list
+    qits toggles show toggles-smoke -o json
+    qits toggles show toggles-smoke -o json | jq '{version, rules}' > rules.json
+    qits toggles set-rules toggles-smoke < rules.json
 
 ### qits events
 
