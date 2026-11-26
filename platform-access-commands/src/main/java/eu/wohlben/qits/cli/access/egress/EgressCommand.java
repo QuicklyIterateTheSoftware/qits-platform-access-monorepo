@@ -4,11 +4,13 @@ import picocli.CommandLine;
 
 /**
  * {@code qits egress}: the egress a repository has declared, as qits-deployments reads it off every
- * deployed version (qits-2611, qits-2616). {@code grants} is its only group today.
+ * deployed version (qits-2611, qits-2616), and {@code forward}, the local proxy address that carries
+ * a container's outbound connections to qits-egress (epic qits-2525).
  */
 @CommandLine.Command(name = "egress", mixinStandardHelpOptions = true,
-        subcommands = {GrantsCommand.class},
-        description = "The outbound routes a repository has declared it needs. grants reads them.")
+        subcommands = {GrantsCommand.class, ForwardCommand.class},
+        description = "Outbound access through qits-egress. grants reads the routes a repository has declared it "
+                + "needs; forward carries this machine's outbound connections to the egress proxy.")
 public class EgressCommand implements Runnable {
 
     @CommandLine.Spec

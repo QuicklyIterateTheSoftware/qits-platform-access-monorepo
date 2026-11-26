@@ -54,6 +54,11 @@ public final class PlatformUrls {
         return resolve("deployments", "--deployments-url", "QITS_DEPLOYMENTS_URL", flag, env, idpUrl);
     }
 
+    /** qits-egress: the forward door {@code /egress/api/forward} of {@code qits egress forward} (epic qits-2525). */
+    public static String egress(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
+        return resolve("egress", "--url", "QITS_EGRESS_URL", flag, env, idpUrl);
+    }
+
     public static String workspaces(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
         return resolve("workspaces", "--workspaces-url", "QITS_WORKSPACES_URL", flag, env, idpUrl);
     }
