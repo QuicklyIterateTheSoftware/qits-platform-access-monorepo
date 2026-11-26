@@ -592,7 +592,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ qits ───────────────────────────────────────────────────────────────────────────────── /egress  ┐
- │   egress            ▸ The outbound routes a repository has declared it needs. grants reads them │
+ │   egress            ▸ Outbound access through qits-egress. grants reads the routes a repository │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -623,7 +623,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ qits ───────────────────────────────────────────────────────────────────────────────── /egress  ┐
- │   egress            ▸ The outbound routes a repository has declared it needs. grants reads them │
+ │   egress            ▸ Outbound access through qits-egress. grants reads the routes a repository │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -655,7 +655,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ─────────────────────────────────────────────────────────────────────────────────────────┐
  │   grants            ▸ The outbound routes a repository has declared it needs, in its own .confi │
- │                                                                                                 │
+ │   forward             Listen on a local address and carry every connection to qits-egress's pro │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -686,7 +686,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ─────────────────────────────────────────────────────────────────────────────────────────┐
  │   grants            ▸ The outbound routes a repository has declared it needs, in its own .confi │
- │                                                                                                 │
+ │   forward             Listen on a local address and carry every connection to qits-egress's pro │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
