@@ -611,7 +611,8 @@ public class TargetsCommand implements Runnable {
                     "",
                     "- A blank --description clears it. HTTP 409 RESERVATIONS_EXCEED_TOTAL: their sum is above the "
                             + "target's slots total. HTTP 409 MAXIMUM_BELOW_RESERVATION: a maximum would be below "
-                            + "that type's reservation."},
+                            + "that type's reservation. HTTP 400 SLOTS_EXCEED_MEMORY: the target's reported memory "
+                            + "can never hold the maximum or the reservations; the message names the limit."},
             exitCodeListHeading = HelpText.EXIT_CODES,
             exitCodeList = {HelpText.DONE, HelpText.REFUSED, HelpText.USAGE})
     public static class UpdateCommand extends PlatformCommand {

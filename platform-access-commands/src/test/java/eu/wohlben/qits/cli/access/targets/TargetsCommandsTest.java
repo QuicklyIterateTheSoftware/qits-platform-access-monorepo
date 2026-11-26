@@ -391,6 +391,29 @@ class TargetsCommandsTest {
     }
 
     @Test
+    void updateRefusedForMemoryPrintsTheServicesMessageAndExitsOne() {
+        // qits-2581: the service names the limit, and the CLI says it as given.
+        String message = "target workstation holds at most 3 CI lease(s) of 6 GiB"
+                + " (29.2 GiB less the 8 GiB builder), not 6";
+        platform.answer("PATCH", "/system/api/targets/" + TARGET, 400,
+                "{\"code\":\"SLOTS_EXCEED_MEMORY\",\"message\":\"" + message + "\"}");
+
+        Result refused = run("targets", "update", "--target", TARGET, "--max-ci", "6");
+
+        assertThat(refused.exit()).isEqualTo(1);
+        assertThat(refused.err()).contains("400").contains(message);
+        assertThat(refused.out()).isEmpty();
+    }
+
+    @Test
+    void updateHelpNamesTheMemoryRefusal() {
+        Result help = run("targets", "update", "--help");
+
+        assertThat(help.exit()).as(help.err()).isZero();
+        assertThat(help.out()).contains("SLOTS_EXCEED_MEMORY");
+    }
+
+    @Test
     void updateWithNothingGivenIsRefusedBeforeAnyRequest() {
         Result nothing = run("targets", "update", "--target", TARGET);
         assertThat(nothing.exit()).isEqualTo(2);
