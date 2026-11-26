@@ -3456,7 +3456,7 @@ qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
 
 ## qits egress
 
-The outbound routes a repository has declared it needs. grants reads them.
+Outbound access through qits-egress. grants reads the routes a repository has declared it needs; forward carries this machine's outbound connections to the egress proxy.
 
 ## qits egress grants
 
@@ -3497,6 +3497,37 @@ qits egress grants list -o json
 - `0` Done.
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits egress forward
+
+Listen on a local address and carry every connection to qits-egress's proxy, through the edge, over a WebSocket of its own. Point a tool's HTTPS_PROXY and HTTP_PROXY at the listener: the proxy decides what may go out, and names this credential as the caller.
+
+Each connection's upgrade carries this home's bearer (QITS_TOKEN in a workspace, else the session). A refused upgrade (401, 403) closes that connection and prints one line on stderr; the listener goes on. It never dials through a proxy itself. Notes go to stderr. Runs until SIGINT or SIGTERM.
+
+```
+qits egress forward [--listen <host:port>] [--url <wss url>]
+```
+
+| Name | What it does |
+|---|---|
+| `--listen <host:port>` | The local address to listen on. Default: 127.0.0.1:3128. Port 0 takes a free one, named on stderr. |
+| `--url <wss url>` | The forward door. Default: wss://egress.qits.<QITS_DOMAIN>/egress/api/forward, from QITS_EGRESS_URL or the session's idp address with `idp` swapped for `egress`. |
+
+### Examples
+
+```
+qits egress forward
+qits egress forward --listen 127.0.0.1:3128
+curl -x http://127.0.0.1:3128 https://example.com
+```
+
+- Any qits bearer may open a forward; what goes through it is decided per request by the proxy.
+
+### Exit codes
+
+- `0` Stopped by SIGINT or SIGTERM.
+- `1` The listening address cannot be taken.
+- `2` --listen or --url cannot be read, not signed in, or the session ended.
 
 ## qits maintenance
 

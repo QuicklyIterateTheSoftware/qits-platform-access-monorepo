@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A WebSocket server in the test's own process, on a plain {@link ServerSocket}: the RFC 6455
- * opening handshake, and text (whole or in parts), ping, pong and close frames, and a plain JSON
+ * opening handshake, and text (whole or in parts), binary, ping, pong and close frames, and a plain JSON
  * answer for a request that is no upgrade. Each connection follows a script, one
  * script per connection in order. It records the path and the Authorization header of every upgrade
  * and every text frame a client sends, so a test can check the bearer and the subscription without
@@ -44,6 +44,7 @@ public final class FakeSocketServer implements AutoCloseable {
     private static final String ACCEPT_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static final int CONTINUATION = 0x0;
     private static final int TEXT = 0x1;
+    private static final int BINARY = 0x2;
     private static final int CLOSE = 0x8;
     private static final int PING = 0x9;
     private static final int PONG = 0xA;
@@ -57,7 +58,7 @@ public final class FakeSocketServer implements AutoCloseable {
         void run(Connection connection) throws Exception;
     }
 
-    private record Frame(int opcode, byte[] payload) {
+    private record Frame(int opcode, byte[] payload, boolean fin) {
     }
 
     private final ServerSocket server;
@@ -229,6 +230,48 @@ public final class FakeSocketServer implements AutoCloseable {
             }
         }
 
+        public void sendBinary(byte[] bytes) throws IOException {
+            write(BINARY, bytes);
+        }
+
+        /**
+         * The next binary message, its continuation frames joined, answering pings on the way; null
+         * once the client sends a close frame, which is answered with one.
+         */
+        public byte[] awaitBinary() throws IOException {
+            ByteArrayOutputStream message = null;
+            while (true) {
+                Frame frame = readFrame();
+                switch (frame.opcode()) {
+                    case CLOSE -> {
+                        write(CLOSE, frame.payload());
+                        return null;
+                    }
+                    case BINARY -> message = new ByteArrayOutputStream();
+                    case CONTINUATION -> {
+                        if (message == null) {
+                            continue;
+                        }
+                    }
+                    default -> {
+                        answer(frame);
+                        continue;
+                    }
+                }
+                message.write(frame.payload());
+                if (frame.fin()) {
+                    return message.toByteArray();
+                }
+            }
+        }
+
+        /** Sends every binary message back as it came, until the client closes. */
+        public void echoBinary() throws IOException {
+            for (byte[] message = awaitBinary(); message != null; message = awaitBinary()) {
+                sendBinary(message);
+            }
+        }
+
         public void ping() throws IOException {
             write(PING, "fake".getBytes(StandardCharsets.US_ASCII));
         }
@@ -311,7 +354,7 @@ public final class FakeSocketServer implements AutoCloseable {
                     payload[i] ^= mask[i % 4];
                 }
             }
-            return new Frame(first & 0x0F, payload);
+            return new Frame(first & 0x0F, payload, (first & 0x80) != 0);
         }
 
         private void write(int opcode, byte[] payload) throws IOException {

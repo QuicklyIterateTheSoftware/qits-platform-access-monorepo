@@ -706,6 +706,8 @@ prints the unit as a diff and the two `systemctl` lines, and runs only that ques
     qits observe --filter <conditions> [--filter <conditions> …] [-o json]
     qits observe query --filter <conditions> [--filter <conditions> …] [--source <key>] \
         [--since <time>] [--until <time>] [--limit <n>] [-o json]
+    qits egress grants list [--application <application>] [-o json]
+    qits egress forward [--listen 127.0.0.1:3128] [--url <wss url>]
     qits checkout-daemon [--path <dir>] [--repository <name>] [--once] [--no-submodules]
     qits checkout sync [--path <dir>]
     qits wait --event <Name> [--when <conditions> …] [--timeout <duration>] [--label <text>]
@@ -1530,6 +1532,31 @@ settled, or a deployment request of the same release request was already approve
 qits:admin, qits:admin-agent, qits:desk-admin, qits:desk or qits:agent.
 
     qits deployments requests decline --request 6f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f --note "the change is wrong"
+
+### qits egress forward
+
+A local HTTP proxy address for a container's outbound traffic (epic qits-2525). It listens on
+`--listen` (default `127.0.0.1:3128`) and carries every accepted TCP connection over a WebSocket of
+its own to qits-egress's forward door, `wss://egress.qits.<QITS_DOMAIN>/egress/api/forward` (or
+`--url`, or `QITS_EGRESS_URL` as the base). qits-egress hands the bytes to its proxy as they are, so
+a tool speaks the ordinary HTTP proxy protocol to the listener (`CONNECT host:443`, absolute-form
+requests) and the proxy decides, per request, what may go out and names the caller.
+
+- Each upgrade carries the command's own bearer, `Authorization: Bearer`: `QITS_TOKEN` in a token
+  home, else the session. The bearer is read again for every connection, so a session is refreshed
+  as it would be for any command.
+- It dials with the JDK `HttpClient` and `NO_PROXY`: never through the network-access companion and
+  never through `HTTPS_PROXY`, which inside a container names this very listener.
+- Bytes go both ways as binary frames, one chunk at a time: the next read from the TCP client waits
+  for the last send, and the next frame is asked for (`WebSocket.request(1)`) only once the last one
+  is written. EOF from the TCP client sends a close frame; a close, error or drop of the socket
+  closes the TCP connection.
+- An upgrade refused with 401 or 403 (or anything else) closes that TCP connection and prints one
+  line on stderr with the status. The listener goes on. It stops on SIGINT or SIGTERM, and the MCP
+  service does not serve it (`Interaction.STREAMING`).
+
+    qits egress forward --listen 127.0.0.1:3128 &
+    curl -sS -o /dev/null -w '%{http_code}' -x http://127.0.0.1:3128 https://example.com
 
 ### qits agent-mcp credentials
 

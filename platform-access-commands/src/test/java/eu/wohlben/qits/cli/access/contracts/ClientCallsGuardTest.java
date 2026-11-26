@@ -74,7 +74,9 @@ class ClientCallsGuardTest {
                     + "qits-mirror's GET .../api/repositories; any failure falls back to the default registries. "
                     + "qits-mirror has no contract with the CLI yet; add rows once it has",
             "CompanionHealth", "qits network-access up and status (epic qits-1977): GET /healthz of the "
-                    + "network-access companion on this machine's loopback, never a platform service");
+                    + "network-access companion on this machine's loopback, never a platform service",
+            "EgressForward", "qits egress forward (qits-2655): a byte pipe over a WebSocket to qits-egress's "
+                    + "forward door, one per local connection; no request of its own");
 
     @Test
     void everyClassThatSendsIsAClientOrNamed() throws Exception {
