@@ -4155,7 +4155,7 @@ Conditions: F=V equal and F^=V starts with (both match case: status=ERROR, not s
 
 Fields: kind service trace span level body name status event attr.<key> resource.<key>. attr.<key> is the record's own attribute, resource.<key> its resource's. Quote a value that holds spaces: body~"connection refused".
 
-Subcommands read what the buffer holds now and do not wait: query searches it with these filters, sources lists its buckets, and errors, slow-spans and metrics sum up one bucket.
+Subcommands read what the buffer holds now and do not wait: query searches it with these filters, sources lists its buckets, and errors, slow-spans and metrics sum up one bucket. issues reads the stored error issues, which outlive the buffer.
 
 ```
 qits observe [--filter <conditions>...] [--observability-url <url>] [--output <text|json>]
@@ -4182,7 +4182,7 @@ qits observe --filter 'service=qits-ci-daemon resource.qits.ci.run_id=5f2c0a9e-1
 - F=V and F^=V match case: status=ERROR, not status=error. F~V ignores case.
 - level takes >= only (level>=WARN), and only logs have a level.
 - --filter '*' streams every record, which can be a lot.
-- The stream and the subcommands take qits:admin, qits:admin-agent, qits:desk-admin or qits:agent.
+- The stream and the subcommands take qits:admin, qits:admin-agent, qits:desk-admin or qits:agent, but for issues dismiss, which qits:agent may not.
 
 ### Exit codes
 
@@ -4361,6 +4361,113 @@ qits observe metrics --source _service/qits-ci --name http.server.active_request
 - `0` Done.
 - `1` The platform refused (the message names the status), or cannot be reached.
 - `2` Used wrongly (for example no bucket named), not signed in, or the session ended.
+
+## qits observe issues
+
+Stored error issues: every ERROR log of a platform service, folded by its fingerprint into one issue with a count, hourly counts, versions and a sample stack trace. An issue stays OPEN until a person dismisses it, and opens again when it recurs.
+
+list reads the issues, show one issue in full and the tickets made from it, dismiss closes one.
+
+## qits observe issues list
+
+The stored error issues, the last seen first: fingerprint, state, service, how often it occurred, when it was last seen, and its title (exception type and message).
+
+Reads GET /observability/api/error-issues. The fingerprint is what show and dismiss take.
+
+```
+qits observe issues list [--limit <n>] [--observability-url <url>] [--output <text|json>] [--service <name>] [--state <OPEN|DISMISSED|ALL>]
+```
+
+| Name | What it does |
+|---|---|
+| `--limit <n>` | At most n issues, 1 to 1000. Default: 200. |
+| `--observability-url <url>` | The observability service's base URL, without /observability. Default: QITS_OBSERVABILITY_URL, else the session's idp address with `idp` swapped for `observability`. |
+| `-o, --output <text\|json>` | text: aligned columns (the default). json: the service's answer. |
+| `--service <name>` | Only issues of this service.name. |
+| `--state <OPEN\|DISMISSED\|ALL>` | Only issues in this state, or ALL. Default: OPEN. |
+
+### Examples
+
+```
+qits observe issues list
+qits observe issues list --state ALL --service qits-ci
+qits observe issues list --state DISMISSED -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly (for example a --limit outside 1 to 1000), not signed in, or the session ended.
+
+## qits observe issues show
+
+One error issue in full: state, service, first and last version, code location, first and last seen, occurrences, regressions, who dismissed it, the hourly counts, the sample stack trace, and the tickets of --project made from it.
+
+Reads GET /observability/api/error-issues/{fingerprint}, then the project's tickets that carry the fingerprint as errorIssue. -o json prints {"issue": ..., "tickets": [...]}.
+
+```
+qits observe issues show [--hours <n>] [--observability-url <url>] [--output <text|json>] [--project <project>] [--projects-url <url>] <fingerprint>
+```
+
+| Name | What it does |
+|---|---|
+| `<fingerprint>` | The issue's fingerprint, 32 hex characters. |
+| `--hours <n>` | The hourly counts of the last n hours, 1 to 720. Default: 168. |
+| `--observability-url <url>` | The observability service's base URL, without /observability. Default: QITS_OBSERVABILITY_URL, else the session's idp address with `idp` swapped for `observability`. |
+| `-o, --output <text\|json>` | text: aligned columns (the default). json: the service's answer. |
+| `--project <project>` | The project whose tickets made from the issue are shown: its id or its slug. Default: qits. |
+| `--projects-url <url>` | The projects service's base URL, without /projects. Default: QITS_PROJECTS_URL, else the session's idp address with `idp` swapped for `projects`. |
+
+### Examples
+
+```
+qits observe issues show 0123456789abcdef0123456789abcdef
+qits observe issues show 0123456789abcdef0123456789abcdef --hours 24 -o json
+```
+
+- Make a ticket from an issue by naming its fingerprint as errorIssue in the ticket's payload:
+
+```
+echo '{"project":"qits","title":"...","ticketType":"BUG","impetus":"...","errorIssue":"<fingerprint>"}' | qits work create --archetype ticket
+```
+
+- One issue may have many tickets, for example a new one after a regression; show lists them all.
+- When the tickets cannot be read, the issue is still shown, with a line saying so.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (for example an unknown fingerprint, HTTP 404), or cannot be reached.
+- `2` Used wrongly (for example a fingerprint that is not 32 hex characters), not signed in, or the session ended.
+
+## qits observe issues dismiss
+
+Dismiss an error issue: it is closed until its fingerprint occurs again, when it opens again as a regression and keeps its history.
+
+Calls POST /observability/api/error-issues/{fingerprint}/dismiss. A person decides this: qits:admin, qits:admin-agent or qits:desk-admin may, and the agent credential (qits:agent) is refused with HTTP 403.
+
+```
+qits observe issues dismiss [--observability-url <url>] [--output <text|json>] <fingerprint>
+```
+
+| Name | What it does |
+|---|---|
+| `<fingerprint>` | The issue's fingerprint, 32 hex characters. |
+| `--observability-url <url>` | The observability service's base URL, without /observability. Default: QITS_OBSERVABILITY_URL, else the session's idp address with `idp` swapped for `observability`. |
+| `-o, --output <text\|json>` | text: aligned columns (the default). json: the service's answer. |
+
+### Examples
+
+```
+qits observe issues dismiss 0123456789abcdef0123456789abcdef
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (for example the agent credential, HTTP 403, or an unknown fingerprint, HTTP 404), or cannot be reached.
+- `2` Used wrongly (for example a fingerprint that is not 32 hex characters), not signed in, or the session ended.
 
 ## qits wait
 

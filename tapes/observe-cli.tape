@@ -1,12 +1,15 @@
 # qits observe, on the command line: the live telemetry stream of one service, over a WebSocket,
 # stopped with Ctrl+C; the same filter over a window of the past (`observe query`, two instants,
-# so it does not move with the clock), as lines and as JSON; and the command refusing to stream
-# without a filter (exit 2).
+# so it does not move with the clock), as lines and as JSON; the command refusing to stream
+# without a filter (exit 2); and the stored error issues (epic qits-2538): the list, one issue in
+# full with the ticket made from it, and a dismissal the agent's token is refused (exit 1).
 #
 # The stream's notes (connected, stopped) go to stderr with a wall-clock stamp in front, which no
 # two plays share, so the tape sends them to a file and shows them after the stop without the
 # stamp. The records are qits-observability's golden masters, and the stream adds a fixture's
-# (src/test/resources/tapes/observe-stream.json).
+# (src/test/resources/tapes/observe-stream.json). The error issues and their ticket are fixtures
+# too (error-issues.json, error-issue.json, error-issue-tickets.json), copies of the recordings
+# until the pinned golden masters carry them.
 #
 # Against the fake platform tapes/prepare.sh starts (FakePlatformMain). Each command is typed while
 # hidden and shown once its prompt is back, so every frame of the text golden is a finished screen
@@ -79,6 +82,39 @@ Type "clear"
 Enter
 Wait /^\$$/
 Type "qits observe"
+Enter
+Wait /^\$$/
+Type "echo $?"
+Enter
+Wait /^\$$/
+Show
+Sleep 2s
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits observe issues list"
+Enter
+Wait /^\$$/
+Show
+Sleep 2s
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits observe issues show 0123456789abcdef0123456789abcdef --project contract-00000001"
+Enter
+Wait /^\$$/
+Show
+Sleep 2s
+
+Hide
+Type "clear"
+Enter
+Wait /^\$$/
+Type "qits observe issues dismiss 0123456789abcdef0123456789abcdef"
 Enter
 Wait /^\$$/
 Type "echo $?"

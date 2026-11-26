@@ -900,3 +900,189 @@ $
 
 
 ────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues list
+FINGERPRINT                       STATE  SERVICE       COUNT  LAST-SEEN                TITLE
+fedcba9876543210fedcba9876543210  OPEN   qits-example  1      2026-01-01 00:00:00 UTC  nightly expor
+t finished with <n> failures
+0123456789abcdef0123456789abcdef  OPEN   qits-example  3      2026-01-01 00:00:00 UTC  IllegalStateE
+xception: invoice store unreachable
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues list
+FINGERPRINT                       STATE  SERVICE       COUNT  LAST-SEEN                TITLE
+fedcba9876543210fedcba9876543210  OPEN   qits-example  1      2026-01-01 00:00:00 UTC  nightly expor
+t finished with <n> failures
+0123456789abcdef0123456789abcdef  OPEN   qits-example  3      2026-01-01 00:00:00 UTC  IllegalStateE
+xception: invoice store unreachable
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues show 0123456789abcdef0123456789abcdef --project contract-00000001
+ERROR ISSUE 0123456789abcdef0123456789abcdef  IllegalStateException: invoice store unreachable
+  state        OPEN
+  service      qits-example
+  versions     2026.1230.090000 -> 2026.1231.120000
+  location     eu.example.InvoiceResource.list
+  exception    java.lang.IllegalStateException
+  message      invoice store unreachable
+  first seen   2026-01-01 00:00:00 UTC
+  last seen    2026-01-01 00:00:00 UTC
+  occurrences  3
+  regressions  0
+  last trace   6a1f0c2b9d8e47f3a5b4c3d2e1f00a01
+hourly:
+  HOUR                     COUNT
+  2026-01-01 00:00:00 UTC  2
+  2026-01-01 00:00:00 UTC  1
+stack trace:
+  java.lang.IllegalStateException: invoice store unreachable
+  at eu.example.InvoiceResource.list(InvoiceResource.java:42)
+tickets:
+  contract-00000001-1  REPORTED  Export answers 500 for an empty quarter
+logs: qits observe query --filter 'kind=log attr.qits.error.fingerprint=0123456789abcdef0123456789ab
+cdef' --since 1d
+$
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues show 0123456789abcdef0123456789abcdef --project contract-00000001
+ERROR ISSUE 0123456789abcdef0123456789abcdef  IllegalStateException: invoice store unreachable
+  state        OPEN
+  service      qits-example
+  versions     2026.1230.090000 -> 2026.1231.120000
+  location     eu.example.InvoiceResource.list
+  exception    java.lang.IllegalStateException
+  message      invoice store unreachable
+  first seen   2026-01-01 00:00:00 UTC
+  last seen    2026-01-01 00:00:00 UTC
+  occurrences  3
+  regressions  0
+  last trace   6a1f0c2b9d8e47f3a5b4c3d2e1f00a01
+hourly:
+  HOUR                     COUNT
+  2026-01-01 00:00:00 UTC  2
+  2026-01-01 00:00:00 UTC  1
+stack trace:
+  java.lang.IllegalStateException: invoice store unreachable
+  at eu.example.InvoiceResource.list(InvoiceResource.java:42)
+tickets:
+  contract-00000001-1  REPORTED  Export answers 500 for an empty quarter
+logs: qits observe query --filter 'kind=log attr.qits.error.fingerprint=0123456789abcdef0123456789ab
+cdef' --since 1d
+$
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues dismiss 0123456789abcdef0123456789abcdef
+403 - this credential is qits:agent, which reads but does not write
+Your roles do not allow this (HTTP 403): POST http://127.0.0.1:47081/observability/api/error-issues/
+0123456789abcdef0123456789abcdef/dismiss
+$ echo $?
+1
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────
+$ qits observe issues dismiss 0123456789abcdef0123456789abcdef
+403 - this credential is qits:agent, which reads but does not write
+Your roles do not allow this (HTTP 403): POST http://127.0.0.1:47081/observability/api/error-issues/
+0123456789abcdef0123456789abcdef/dismiss
+$ echo $?
+1
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────

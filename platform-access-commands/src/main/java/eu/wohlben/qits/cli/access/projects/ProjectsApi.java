@@ -377,6 +377,17 @@ public final class ProjectsApi {
                 + (query.isEmpty() ? "" : "?" + String.join("&", query))));
     }
 
+    /**
+     * {@code {"entities":[…]}}: the tickets of a project made from one error issue (epic qits-2538),
+     * {@code fingerprint} the issue's 32 hex characters, {@code project} an id or a slug. A ticket
+     * carries the fingerprint as {@code errorIssue}; the list entries do not, only the filter does.
+     */
+    public JsonNode errorIssueTickets(String project, String fingerprint) throws CliFailure, InterruptedException {
+        List<String> query = new ArrayList<>();
+        addQuery(query, "errorIssue", fingerprint);
+        return client.get(uri("/projects/api/projects/" + segment(project) + "/work?" + String.join("&", query)));
+    }
+
     /** The new item, flat. The body is the caller's payload with {@code archetype} set. */
     public JsonNode createWork(JsonNode body) throws CliFailure, InterruptedException {
         return client.post(uri(WORK), body);

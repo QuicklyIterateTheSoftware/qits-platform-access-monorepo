@@ -21,7 +21,8 @@ import java.util.Locale;
 @TuiCommand(interaction = Interaction.STREAMING, effect = Effect.READ)
 @CommandLine.Command(name = "observe", mixinStandardHelpOptions = true, subcommands = {ObserveQueryCommand.class,
         ObserveTelemetryCommands.SourcesCommand.class, ObserveTelemetryCommands.ErrorsCommand.class,
-        ObserveTelemetryCommands.SlowSpansCommand.class, ObserveTelemetryCommands.MetricsCommand.class},
+        ObserveTelemetryCommands.SlowSpansCommand.class, ObserveTelemetryCommands.MetricsCommand.class,
+        ObserveIssuesCommand.class},
         description = {
                 "Print what qits-observability takes in (logs, spans with their events, metrics) as it arrives. "
                         + "Use it to watch a service's errors or to follow one trace live. The service applies the "
@@ -38,7 +39,8 @@ import java.util.Locale;
                         + "Quote a value that holds spaces: body~\"connection refused\".",
                 "",
                 "Subcommands read what the buffer holds now and do not wait: query searches it with these filters, "
-                        + "sources lists its buckets, and errors, slow-spans and metrics sum up one bucket."},
+                        + "sources lists its buckets, and errors, slow-spans and metrics sum up one bucket. issues "
+                        + "reads the stored error issues, which outlive the buffer."},
         footerHeading = HelpText.EXAMPLES,
         footer = {
                 "  qits observe --filter 'kind=log level>=ERROR' --filter 'kind=span event=exception'",
@@ -54,7 +56,7 @@ import java.util.Locale;
                 "- level takes >= only (level>=WARN), and only logs have a level.",
                 "- --filter '*' streams every record, which can be a lot.",
                 "- The stream and the subcommands take qits:admin, qits:admin-agent, qits:desk-admin or "
-                        + "qits:agent."},
+                        + "qits:agent, but for issues dismiss, which qits:agent may not."},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:Stopped by SIGINT or SIGTERM, or stdout was closed.",
                 "1:The platform refused the socket (401, 403 or another 4xx).",

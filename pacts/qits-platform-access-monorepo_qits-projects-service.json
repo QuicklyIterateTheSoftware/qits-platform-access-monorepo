@@ -3987,6 +3987,127 @@
         "references": {
           "qits-call": {
             "app": "qits-projects-service",
+            "operationId": "listProjectWork"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits observe issues show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits observe issues show: listProjectWork",
+      "key": "1a5656bb",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a ticket made from an error issue",
+          "params": {
+            "errorIssue": "0123456789abcdef0123456789abcdef",
+            "projectId": "00000000-0000-4000-8000-000000000001",
+            "qualifiedId": "contract-00000001-1"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/projects/${projectId}/work",
+            "type": "ProviderState"
+          },
+          "query": {
+            "errorIssue": {
+              "dataType": "RAW",
+              "expression": "${errorIssue}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/projects/api/projects/00000000-0000-4000-8000-000000000001/work",
+        "query": {
+          "errorIssue": [
+            "0123456789abcdef0123456789abcdef"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "entities": [
+              {
+                "qualifiedId": "contract-00000001-1",
+                "status": "REPORTED",
+                "title": "Export answers 500 for an empty quarter"
+              }
+            ]
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.entities": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.entities[*].qualifiedId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.entities[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.entities[*].title": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
             "operationId": "addPitchVersion"
           },
           "qits-trigger": {
@@ -22259,6 +22380,11 @@
                 "description": "The long-form Markdown body.",
                 "type": "string"
               },
+              "errorIssue": {
+                "description": "The qits-observability error issue this ticket was made from: its fingerprint, 32 lower-case hex digits. Not checked against qits-observability; one error issue may have any number of tickets. A ticket's alone.",
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              },
               "impetus": {
                 "description": "Why a ticket came about, in the reporter's words; usually one sentence.",
                 "pattern": "\\S",
@@ -22415,6 +22541,30 @@
               ]
             },
             "$.properties.description.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.pattern": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.type": {
               "combine": "AND",
               "matchers": [
                 {
@@ -23666,6 +23816,93 @@
               "matchers": [
                 {
                   "match": "number"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-projects-service",
+            "operationId": "getWork"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits work details",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits work details: getWork",
+      "key": "35b182c2",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "a ticket made from an error issue",
+          "params": {
+            "errorIssue": "0123456789abcdef0123456789abcdef",
+            "projectId": "00000000-0000-4000-8000-000000000001",
+            "qualifiedId": "contract-00000001-1"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/projects/api/work/${qualifiedId}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/projects/api/work/contract-00000001-1"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "errorIssue": "0123456789abcdef0123456789abcdef",
+            "qualifiedId": "contract-00000001-1"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.errorIssue": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.qualifiedId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
                 }
               ]
             }
@@ -29474,6 +29711,14 @@
                   "string"
                 ]
               },
+              "errorIssue": {
+                "description": "The qits-observability error issue this ticket was made from: its fingerprint, 32 lower-case hex digits. Not checked against qits-observability; one error issue may have any number of tickets. A ticket's alone.",
+                "pattern": "^[0-9a-f]{32}$",
+                "type": [
+                  "string",
+                  "string"
+                ]
+              },
               "impetus": {
                 "description": "Why a ticket came about, in the reporter's words; usually one sentence.",
                 "pattern": "\\S",
@@ -29669,6 +29914,40 @@
               ]
             },
             "$.properties.description.type[*]": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.pattern": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.properties.errorIssue.type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "max": 2,
+                  "min": 2
+                }
+              ]
+            },
+            "$.properties.errorIssue.type[*]": {
               "combine": "AND",
               "matchers": [
                 {

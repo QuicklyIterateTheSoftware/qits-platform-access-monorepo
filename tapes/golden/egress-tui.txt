@@ -778,7 +778,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ────────────────────────────────────────────────────────────────────────────────┐
- │   list              ▸ List every repository's declared egress grants: each route's application, │
+ │   list              ▸ List every repository's declared egress grants: each route's principal, n │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -809,7 +809,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ────────────────────────────────────────────────────────────────────────────────┐
- │   list              ▸ List every repository's declared egress grants: each route's application, │
+ │   list              ▸ List every repository's declared egress grants: each route's principal, n │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -840,7 +840,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ──────────────────────────────────────────────────────────────────────── /list  ┐
- │   list              ▸ List every repository's declared egress grants: each route's application, │
+ │   list              ▸ List every repository's declared egress grants: each route's principal, n │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -871,7 +871,7 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ──────────────────────────────────────────────────────────────────────── /list  ┐
- │   list              ▸ List every repository's declared egress grants: each route's application, │
+ │   list              ▸ List every repository's declared egress grants: each route's principal, n │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -902,10 +902,10 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ▸ list ─────────────────────────────────────────────────────────────────────────┐
- │   --application     ▸ (any)                                                                     │
+ │   --principal       ▸ (any)                                                                     │
+ │   --application       (any)                                                                     │
  │   --deployments-url   (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -933,10 +933,10 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ▸ list ─────────────────────────────────────────────────────────────────────────┐
- │   --application     ▸ (any)                                                                     │
+ │   --principal       ▸ (any)                                                                     │
+ │   --application       (any)                                                                     │
  │   --deployments-url   (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -964,10 +964,10 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ▸ list ─────────────────────────────────────────────────────────────────────────┐
- │   --application     ▸ (any)                                                                     │
+ │   --principal       ▸ (any)                                                                     │
+ │   --application       (any)                                                                     │
  │   --deployments-url   (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -978,8 +978,8 @@
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits egress grants list
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
- │ APPLICATION  ROUTE    TARGET                     SECRET       METHODS              VERSION      │
- │ qits-edge    hetzner  https://api.hetzner.cloud  HETZNER_DNS  DELETE,GET,POST,PUT  2026.1201.10 │
+ │ PRINCIPAL              ROUTE    TARGET                     SECRET       INJECT  METHODS         │
+ │ application:qits-edge  hetzner  https://api.hetzner.cloud  HETZNER_DNS  bearer  DELETE,GET,POST │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -995,10 +995,10 @@
 ────────────────────────────────────────────────────────────────────────────────
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ egress ▸ grants ▸ list ─────────────────────────────────────────────────────────────────────────┐
- │   --application     ▸ (any)                                                                     │
+ │   --principal       ▸ (any)                                                                     │
+ │   --application       (any)                                                                     │
  │   --deployments-url   (any)                                                                     │
  │   --output            (any)                                                                     │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -1009,8 +1009,8 @@
  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
  $ qits egress grants list
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
- │ APPLICATION  ROUTE    TARGET                     SECRET       METHODS              VERSION      │
- │ qits-edge    hetzner  https://api.hetzner.cloud  HETZNER_DNS  DELETE,GET,POST,PUT  2026.1201.10 │
+ │ PRINCIPAL              ROUTE    TARGET                     SECRET       INJECT  METHODS         │
+ │ application:qits-edge  hetzner  https://api.hetzner.cloud  HETZNER_DNS  bearer  DELETE,GET,POST │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │

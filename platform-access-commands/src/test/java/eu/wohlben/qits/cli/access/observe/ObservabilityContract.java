@@ -19,11 +19,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>
  * {@code observe slow-spans} always sends its {@code --threshold-ms} (500 by default), which
  * qits-observability records with the one service's telemetry ({@code thresholdMs=500}).
+ * <p>
+ * {@code observe issues list|show|dismiss} (epic qits-2538) read and dismiss the stored error
+ * issues in {@link #STORED_ISSUES}, pending until the pin reaches qits-observability-service
+ * 2026.1126.34016. Each sends only the options given, as the recordings carry no query. {@code
+ * show}'s second call, the tickets made from the issue, is a row of the qits-projects contract:
+ * here it goes to an address nobody answers, and the command says the tickets could not be read.
+ * The hourly counts and the issue list grow and shrink, so their length is left open; the nulls a
+ * recording holds (a dismissal not made, a regression not seen) are bound nowhere.
  */
 public final class ObservabilityContract {
 
     static final String ONE_SERVICE = "telemetry from one platform service";
     static final String EVERY_KIND = "telemetry records of every kind";
+    static final String STORED_ISSUES = "stored error issues";
+    /** Where {@code observe issues show} looks for the tickets in a row: a closed port, so the read fails at once. */
+    static final String NO_PROJECTS = "http://127.0.0.1:9";
 
     private static final CliPact BASE = CliPact.of("qits-observability-service", "qits-observability");
 
@@ -33,7 +44,8 @@ public final class ObservabilityContract {
             for (String arg : args) {
                 argv.add(recorded.example(arg));
             }
-            InPlatformCli.Result result = InPlatformCli.run(Map.of("QITS_OBSERVABILITY_URL", url),
+            InPlatformCli.Result result = InPlatformCli.run(Map.of("QITS_OBSERVABILITY_URL", url,
+                            "QITS_PROJECTS_URL", NO_PROJECTS),
                     argv.toArray(String[]::new));
             assertThat(result.exit()).as(result.err()).isZero();
             assertThat(result.out()).isNotBlank();
@@ -63,15 +75,37 @@ public final class ObservabilityContract {
             read("qits observe metrics", ONE_SERVICE, "listTelemetryMetrics",
                     command("observe", "metrics", "--source", "{source}"))
                     .consumes(BASE.held(ONE_SERVICE, "listTelemetryMetrics", List.of("metrics[].name",
-                            "metrics[].value", "metrics[].unit", "metrics[].serviceName", "metrics[].attributes"))));
+                            "metrics[].value", "metrics[].unit", "metrics[].serviceName", "metrics[].attributes"))),
+            issues("qits observe issues list", "listErrorIssues", "issues", command("observe", "issues", "list"))
+                    .consumes(BASE.held(STORED_ISSUES, "listErrorIssues", List.of("issues[].fingerprint",
+                            "issues[].state", "issues[].serviceName", "issues[].occurrences", "issues[].lastSeen",
+                            "issues[].message", "truncated", "total")))
+                    .anyLength("issues")
+                    .request("GET /observability/api/error-issues"),
+            issues("qits observe issues show", "getErrorIssue", "issues",
+                    command("observe", "issues", "show", "{fingerprint}"))
+                    .consumes(BASE.held(STORED_ISSUES, "getErrorIssue", List.of("state", "serviceName",
+                            "exceptionType", "location", "message", "sampleMessage", "sampleTraceId", "firstSeen",
+                            "lastSeen", "firstVersion", "lastVersion", "occurrences", "regressions",
+                            "sampleStacktrace", "hourly[].hour", "hourly[].count")))
+                    .anyLength("hourly")
+                    .request("GET /observability/api/error-issues/{fingerprint}"),
+            issues("qits observe issues dismiss", "dismissErrorIssue", "dismiss",
+                    command("observe", "issues", "dismiss", "{fingerprint}"))
+                    .request("POST /observability/api/error-issues/{fingerprint}/dismiss"));
 
     public static final CliPact CONTRACT = BASE
             .client(ObserveQueryCommand.class, "execute")
-            .client(ObserveTelemetryCommands.TelemetryRead.class, "get")
+            .client(ObserveTelemetryCommands.TelemetryRead.class, "get", "issues", "dismiss")
             .rows(ROWS);
 
     private static CliRow read(String command, String state, String operationId, CliRow.Call call) {
         return CliRow.of(command, state, operationId, "ObserveTelemetryCommands$TelemetryRead#get", call);
+    }
+
+    private static CliRow issues(String command, String operationId, String method, CliRow.Call call) {
+        return CliRow.of(command, STORED_ISSUES, operationId, "ObserveTelemetryCommands$TelemetryRead#" + method,
+                call);
     }
 
     private ObservabilityContract() {

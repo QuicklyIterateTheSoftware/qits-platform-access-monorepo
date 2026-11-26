@@ -529,11 +529,11 @@
 
 ────────────────────────────────────────────────────────────────────────────────
 $ qits egress grants list
-APPLICATION  ROUTE    TARGET                     SECRET       METHODS              VERSION
-qits-edge    hetzner  https://api.hetzner.cloud  HETZNER_DNS  DELETE,GET,POST,PUT  2026.1201.101010
+PRINCIPAL              ROUTE    TARGET                     SECRET       INJECT  METHODS
+ VERSION
+application:qits-edge  hetzner  https://api.hetzner.cloud  HETZNER_DNS  bearer  DELETE,GET,POST,PUT
+ 2026.1201.101010
 $
-
-
 
 
 
@@ -560,11 +560,11 @@ $
 
 ────────────────────────────────────────────────────────────────────────────────
 $ qits egress grants list
-APPLICATION  ROUTE    TARGET                     SECRET       METHODS              VERSION
-qits-edge    hetzner  https://api.hetzner.cloud  HETZNER_DNS  DELETE,GET,POST,PUT  2026.1201.101010
+PRINCIPAL              ROUTE    TARGET                     SECRET       INJECT  METHODS
+ VERSION
+application:qits-edge  hetzner  https://api.hetzner.cloud  HETZNER_DNS  bearer  DELETE,GET,POST,PUT
+ 2026.1201.101010
 $
-
-
 
 
 

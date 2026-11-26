@@ -189,6 +189,429 @@
         "references": {
           "qits-call": {
             "app": "qits-observability-service",
+            "operationId": "dismissErrorIssue"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits observe issues dismiss",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits observe issues dismiss: dismissErrorIssue",
+      "key": "6d70a074",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "stored error issues",
+          "params": {
+            "dismissedFingerprint": "00112233445566778899aabbccddeeff",
+            "fingerprint": "0123456789abcdef0123456789abcdef",
+            "service": "qits-example",
+            "traceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/observability/api/error-issues/${fingerprint}/dismiss",
+            "type": "ProviderState"
+          }
+        },
+        "method": "POST",
+        "path": "/observability/api/error-issues/0123456789abcdef0123456789abcdef/dismiss"
+      },
+      "response": {
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-observability-service",
+            "operationId": "listErrorIssues"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits observe issues list",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits observe issues list: listErrorIssues",
+      "key": "1bb76775",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "stored error issues",
+          "params": {
+            "dismissedFingerprint": "00112233445566778899aabbccddeeff",
+            "fingerprint": "0123456789abcdef0123456789abcdef",
+            "service": "qits-example",
+            "traceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/observability/api/error-issues"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "issues": [
+              {
+                "fingerprint": "fedcba9876543210fedcba9876543210",
+                "lastSeen": "2026-01-01T00:00:00Z",
+                "message": "nightly export finished with <n> failures",
+                "occurrences": 1,
+                "serviceName": "qits-example",
+                "state": "OPEN"
+              }
+            ],
+            "total": 2,
+            "truncated": false
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.issues": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.issues[*].fingerprint": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.issues[*].lastSeen": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.issues[*].message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.issues[*].occurrences": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.issues[*].serviceName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.issues[*].state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.total": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.truncated": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-observability-service",
+            "operationId": "getErrorIssue"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits observe issues show",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits observe issues show: getErrorIssue",
+      "key": "af515fe1",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "stored error issues",
+          "params": {
+            "dismissedFingerprint": "00112233445566778899aabbccddeeff",
+            "fingerprint": "0123456789abcdef0123456789abcdef",
+            "service": "qits-example",
+            "traceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01"
+          }
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "RAW",
+            "expression": "/observability/api/error-issues/${fingerprint}",
+            "type": "ProviderState"
+          }
+        },
+        "method": "GET",
+        "path": "/observability/api/error-issues/0123456789abcdef0123456789abcdef"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "exceptionType": "java.lang.IllegalStateException",
+            "firstSeen": "2026-01-01T00:00:00Z",
+            "firstVersion": "2026.1230.090000",
+            "hourly": [
+              {
+                "count": 2,
+                "hour": "2026-01-01T00:00:00Z"
+              }
+            ],
+            "lastSeen": "2026-01-01T00:00:00Z",
+            "lastVersion": "2026.1231.120000",
+            "location": "eu.example.InvoiceResource.list",
+            "message": "invoice store unreachable",
+            "occurrences": 3,
+            "regressions": 0,
+            "sampleMessage": "invoice store unreachable",
+            "sampleStacktrace": "java.lang.IllegalStateException: invoice store unreachable\n\tat eu.example.InvoiceResource.list(InvoiceResource.java:42)\n",
+            "sampleTraceId": "6a1f0c2b9d8e47f3a5b4c3d2e1f00a01",
+            "serviceName": "qits-example",
+            "state": "OPEN"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.exceptionType": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstSeen": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.firstVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.hourly": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 0
+                }
+              ]
+            },
+            "$.hourly[*].count": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.hourly[*].hour": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.lastSeen": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.lastVersion": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.location": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.occurrences": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.regressions": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.sampleMessage": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sampleStacktrace": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.sampleTraceId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.serviceName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.state": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-observability-service",
             "operationId": "listTelemetryMetrics"
           },
           "qits-trigger": {
