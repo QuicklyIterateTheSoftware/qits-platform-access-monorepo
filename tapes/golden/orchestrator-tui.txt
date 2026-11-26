@@ -855,7 +855,7 @@
  $ qits orchestrator processes
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
  │ KIND        NAME                DRY RUN  STEPS                                                  │
- │ gc          Garbage collection  yes      21                                                     │
+ │ gc          Garbage collection  yes      22                                                     │
  │ sbom-check  SBOM check          no       1                                                      │
  │ scan        Manifest scan       no       4                                                      │
  │                                                                                                 │
@@ -886,7 +886,7 @@
  $ qits orchestrator processes
  ┌ output ───────────────────────────────────────────────────────────────────────────────── exit 0 ┐
  │ KIND        NAME                DRY RUN  STEPS                                                  │
- │ gc          Garbage collection  yes      21                                                     │
+ │ gc          Garbage collection  yes      22                                                     │
  │ sbom-check  SBOM check          no       1                                                      │
  │ scan        Manifest scan       no       4                                                      │
  │                                                                                                 │
