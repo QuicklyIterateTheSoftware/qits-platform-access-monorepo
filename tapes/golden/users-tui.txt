@@ -657,8 +657,8 @@
  │   invite            ▸ Mint a register token for one new user, and print it.                     │
  │   register            Spend a register token on a new username, and print the password the idp  │
  │   list                List the users: name, when each registered, and their roles. Needs qits:a │
+ │   subjects            List each user's subject id beside their name: the id a toggle's user rul │
  │   delete              Delete a user: their sign-ins and sessions go with them. Needs qits:admin │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -688,8 +688,8 @@
  │   invite            ▸ Mint a register token for one new user, and print it.                     │
  │   register            Spend a register token on a new username, and print the password the idp  │
  │   list                List the users: name, when each registered, and their roles. Needs qits:a │
+ │   subjects            List each user's subject id beside their name: the id a toggle's user rul │
  │   delete              Delete a user: their sign-ins and sessions go with them. Needs qits:admin │
- │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -717,7 +717,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ users ────────────────────────────────────────────────────────────────────────────────── /list  ┐
  │   list              ▸ List the users: name, when each registered, and their roles. Needs qits:a │
- │                                                                                                 │
+ │   subjects            List each user's subject id beside their name: the id a toggle's user rul │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │
@@ -748,7 +748,7 @@
  qits tui · qits.example.test · agent (qits:agent) via token tapes
  ┌ users ────────────────────────────────────────────────────────────────────────────────── /list  ┐
  │   list              ▸ List the users: name, when each registered, and their roles. Needs qits:a │
- │                                                                                                 │
+ │   subjects            List each user's subject id beside their name: the id a toggle's user rul │
  │                                                                                                 │
  │                                                                                                 │
  │                                                                                                 │

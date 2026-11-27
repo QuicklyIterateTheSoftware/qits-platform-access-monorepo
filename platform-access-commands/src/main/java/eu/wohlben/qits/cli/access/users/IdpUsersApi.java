@@ -20,7 +20,7 @@ import java.time.Duration;
 /**
  * The idp's user doors, read as JSON trees like the other services' APIs.
  * <p>
- * Three of them take the caller's bearer through {@link PlatformClient}. Registration does not: the
+ * Four of them take the caller's bearer through {@link PlatformClient}. Registration does not: the
  * register token in its body is the credential, and the person registering has no session yet, so
  * it is sent with no Authorization header at all.
  * <p>
@@ -33,6 +33,7 @@ public final class IdpUsersApi {
     static final String REGISTER_TOKENS = "/api/register-tokens";
     static final String REGISTER = "/api/auth/register";
     static final String USERS = "/api/users";
+    static final String USER_SUBJECTS = "/api/user-subjects";
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
@@ -56,6 +57,14 @@ public final class IdpUsersApi {
     /** {@code [{username, createdAt, roles}]}. */
     JsonNode list() throws CliFailure, InterruptedException {
         return client.get(uri(USERS));
+    }
+
+    /**
+     * {@code [{subject, username}]} (qits-2725): each account's subject, the {@code sub} a toggles USER
+     * rule matches, and its name. qits:admin or the delivery desk.
+     */
+    JsonNode subjects() throws CliFailure, InterruptedException {
+        return client.get(uri(USER_SUBJECTS));
     }
 
     void delete(String username) throws CliFailure, InterruptedException {

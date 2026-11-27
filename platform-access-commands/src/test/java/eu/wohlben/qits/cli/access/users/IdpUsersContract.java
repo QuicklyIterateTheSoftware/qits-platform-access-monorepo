@@ -22,6 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * authorization} param: each row sends that header, and the call's credential answers the state's
  * frozen token, so the verifier can send the one it seeds. {@code register} sends no bearer: the
  * register token in its body is the credential.
+ * <p>
+ * {@code qits users subjects} (qits-2725) is pending until a pinned {@code qits-idp-golden-masters}
+ * records {@code listUserSubjects} in both of its states; qits-maintenance's bump brings that pin.
  */
 public final class IdpUsersContract {
 
@@ -30,6 +33,8 @@ public final class IdpUsersContract {
 
     static final String ADMIN = "an admin signed in to the CLI";
     static final String NO_SUCH_USER = "no user with the given name";
+    /** A person whose account holds no role: the configuring reads refuse it (qits-2725). */
+    static final String NOT_AN_ADMIN = "a person without the admin role signed in to the CLI";
     static final String UNSPENT_TOKEN = "an unspent register token";
     static final String NO_SUCH_TOKEN = "no register token with the given value";
 
@@ -68,6 +73,18 @@ public final class IdpUsersContract {
         assertThat(user.path("roles").isArray()).isTrue();
     });
 
+    /** {@code subjects}: each user's subject id and name (qits-2725). */
+    private static final Call SUBJECTS = (api, recorded) ->
+            assertThat(api.subjects()).isNotEmpty().allSatisfy(user -> {
+                assertThat(UsersCommand.text(user, "subject")).isNotBlank();
+                assertThat(UsersCommand.text(user, "username")).isNotBlank();
+            });
+
+    /** A caller neither qits:admin nor the desk: the idp's 403, which the command reports as its refusal. */
+    private static final Call SUBJECTS_REFUSED = (api, recorded) ->
+            assertThatThrownBy(api::subjects)
+                    .isInstanceOfSatisfying(CliFailure.class, f -> assertThat(f.status()).isEqualTo(403));
+
     private static final Call DELETE = (api, recorded) -> api.delete(recorded.params().get("username"));
 
     /** An unknown user is the idp's 404, which the command reports as its refusal. */
@@ -95,6 +112,12 @@ public final class IdpUsersContract {
                     .header("Authorization", "{authorization}"),
             row("qits users list", ADMIN, "listUsers", "list", signedIn(LIST))
                     .consumes("[].username", "[].createdAt", "[].roles").header("Authorization", "{authorization}"),
+            row("qits users subjects", ADMIN, "listUserSubjects", "subjects", signedIn(SUBJECTS))
+                    .consumes("[].subject", "[].username").header("Authorization", "{authorization}")
+                    .request("GET /idp/api/user-subjects"),
+            row("qits users subjects", NOT_AN_ADMIN, "listUserSubjects", "subjects", signedIn(SUBJECTS_REFUSED))
+                    .consumes("error", "error_description").header("Authorization", "{authorization}")
+                    .request("GET /idp/api/user-subjects"),
             row("qits users delete", ADMIN, "deleteUser", "delete", signedIn(DELETE))
                     .header("Authorization", "{authorization}"),
             row("qits users delete", NO_SUCH_USER, "deleteUser", "delete", signedIn(DELETE_UNKNOWN))

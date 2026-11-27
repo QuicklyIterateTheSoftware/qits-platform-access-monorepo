@@ -49,7 +49,7 @@
          commands jar the program is built from. -->
     <groupId>eu.wohlben</groupId>
     <artifactId>qits</artifactId>
-    <version>2026.1127.161442</version>
+    <version>2026.1127.191509</version>
     <packaging>pom</packaging>
     <name>qits-platform-access-cli</name>
 
@@ -95,7 +95,7 @@
         <qits.workspace-daemon-golden-masters.version>2026.1111.190934</qits.workspace-daemon-golden-masters.version>
         <qits.artifacts-golden-masters.version>2026.1124.154841</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1119.60052</qits.ci-golden-masters.version>
-        <qits.idp-golden-masters.version>2026.1125.71255</qits.idp-golden-masters.version>
+        <qits.idp-golden-masters.version>2026.1127.193523</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1126.183653</qits.events-golden-masters.version>
         <qits.maintenance-golden-masters.version>2026.1126.192119</qits.maintenance-golden-masters.version>
         <!-- qits-orchestrator's recordings, for `qits orchestrator` (qits-2490). Bumped by qits-maintenance
@@ -118,7 +118,7 @@
         <!-- qits-toggles' recordings, for `qits toggles` (qits-2704, epic qits-2542): the landing
              app's Toggles section's three doors. Pinned by hand once, as a first adoption gets no
              maintenance bump; bumped by qits-maintenance like the others from here on. -->
-        <qits.toggles-golden-masters.version>2026.1126.203614</qits.toggles-golden-masters.version>
+        <qits.toggles-golden-masters.version>2026.1127.175056</qits.toggles-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
              reads. -->
