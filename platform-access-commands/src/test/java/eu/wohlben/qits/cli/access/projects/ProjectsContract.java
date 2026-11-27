@@ -276,16 +276,13 @@ public final class ProjectsContract {
             "entries[].project.name");
 
     /**
-     * What {@code qits projects delivery} reads of the project it looked up (epic qits-1440). Pending
-     * on the provider: qits-projects records {@code delivery} on its project reads from qits-1490 on,
-     * and the golden masters pinned in the root pom (2026.1019.190811) predate it, so {@link #held}
-     * binds none of these paths yet and the row binds the lookup alone. Once qits-maintenance bumps
-     * the pin past qits-1490's release, the same row binds all four: write the pact again with
-     * {@code -Dgolden.update=true} on that bump.
+     * What {@code qits projects delivery} reads of the project it looked up (epic qits-1440): three
+     * settings. {@code maxRunning} is not among them since qits-2728: nothing has read it since
+     * qits-2573 derived the desk's slots, and qits-projects stops sending it once this pact no
+     * longer asks for it. The golden masters still record it, and an unbound field is never checked.
      */
     static final List<String> DELIVERY = List.of("entries[].project.delivery.enabled",
-            "entries[].project.delivery.maxRunning", "entries[].project.delivery.startRefined",
-            "entries[].project.delivery.approves");
+            "entries[].project.delivery.startRefined", "entries[].project.delivery.approves");
 
     /** Every lookup of a repository by id or name. */
     static final List<String> REPOSITORY = List.of("entries[].repository.id", "entries[].repository.name");
@@ -936,7 +933,6 @@ public final class ProjectsContract {
             return;
         }
         assertThat(delivery.path("enabled").isBoolean()).isTrue();
-        assertThat(delivery.path("maxRunning").isInt()).isTrue();
         assertThat(delivery.path("startRefined").isBoolean()).isTrue();
         assertThat(delivery.path("approves").isArray()).isTrue();
     };

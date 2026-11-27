@@ -6053,7 +6053,6 @@
                   "delivery": {
                     "approves": [],
                     "enabled": false,
-                    "maxRunning": 2,
                     "startRefined": false
                   },
                   "id": "00000000-0000-4000-8000-000000000001",
@@ -6087,14 +6086,6 @@
               "matchers": [
                 {
                   "match": "type"
-                }
-              ]
-            },
-            "$.entries[*].project.delivery.maxRunning": {
-              "combine": "AND",
-              "matchers": [
-                {
-                  "match": "number"
                 }
               ]
             },

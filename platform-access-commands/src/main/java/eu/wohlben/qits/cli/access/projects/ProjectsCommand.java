@@ -81,9 +81,8 @@ public class ProjectsCommand implements Runnable {
      * service applies when a wrapper declares nothing, marked so.
      */
     @CommandLine.Command(name = "delivery", mixinStandardHelpOptions = true,
-            description = {"A project's delivery desk: whether its front desk holds the delivery rights, how many "
-                    + "items it keeps running at once, whether it may move a REFINED item to READY_FOR_DEV "
-                    + "itself, and the approvals it may give. The desk runs only when a person prompts it.",
+            description = {"A project's delivery desk: whether its front desk holds the delivery rights, whether "
+                    + "it may move a REFINED item to READY_FOR_DEV itself, and the approvals it may give. The desk runs only when a person prompts it.",
                     "The project's wrapper declares it in .config/qits/project.yml under front_desk.delivery. A "
                             + "setting it does not declare prints as the default, marked (default)."},
             footerHeading = HelpText.EXAMPLES,
@@ -108,7 +107,6 @@ public class ProjectsCommand implements Runnable {
         /** What the service answers for a wrapper that declares nothing ({@code ProjectDeliveryDto}). */
         static final List<List<String>> DEFAULTS = List.of(
                 List.of("enabled", "enabled", "false"),
-                List.of("maxRunning", "max_running", "2"),
                 List.of("startRefined", "start_refined", "false"),
                 List.of("approves", "approves", "none"));
 
