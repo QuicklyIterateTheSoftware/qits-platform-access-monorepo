@@ -239,6 +239,8 @@ public class TogglesCommand implements Runnable {
                     "",
                     "- The second and third lines edit the rules as they are: show prints version and rules in "
                             + "the shape set-rules takes.",
+                    "- A USER rule's userSubjects are bearer subjects: a person's is their subject id, which "
+                            + "`qits users subjects` lists; an agent's is its tok-... id.",
                     "- Refusals: 400 rules the service does not take (it names the rule's position), 403 a caller "
                             + "without qits:admin or qits:desk-admin, 404 an unknown slug, 409 the rules changed "
                             + "since that version was read: show the toggle again and resend with its version."},
@@ -260,6 +262,7 @@ public class TogglesCommand implements Runnable {
                              {"kind": "STATIC", "value": false}]}
 
                 Rules are tried in order; exactly one STATIC rule, and it is the last.
+                A person's <sub> is their subject id: `qits users subjects` lists them.
                 `qits toggles show <slug> -o json | jq '{version, rules}'` prints the current ones in this shape.""";
 
         @CommandLine.ParentCommand

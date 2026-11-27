@@ -38,6 +38,7 @@ class UsersCommandsTest {
     private static final String TOKENS = "/idp/api/register-tokens";
     private static final String REGISTER = "/idp/api/auth/register";
     private static final String USERS = "/idp/api/users";
+    private static final String SUBJECTS = "/idp/api/user-subjects";
     private static final String REGISTER_TOKEN = "rt-SECRET-4b1d";
     private static final String PASSWORD = "pw-SECRET-q7Zx9";
 
@@ -70,6 +71,10 @@ class UsersCommandsTest {
                  {"username":"jan","createdAt":"2026-10-15T10:00:00Z","roles":[]}]
                 """);
         idp.answer("DELETE", USERS + "/jan", 204, "");
+        idp.answer("GET", SUBJECTS, """
+                [{"subject":"0b5c8a52-6f8e-4a77-9d1e-3c2b1a0f9e8d","username":"admin"},
+                 {"subject":"7e4d2c19-1a3b-4c5d-8e6f-901234567890","username":"jan"}]
+                """);
     }
 
     @AfterEach
@@ -256,6 +261,38 @@ class UsersCommandsTest {
 
         assertThat(r.exit()).isEqualTo(1);
         assertThat(r.err()).contains("Managing users needs qits:admin").contains("HTTP 403");
+    }
+
+    @Test
+    void subjectsPrintsEachUsersNameAndSubject() {
+        Result r = run("users", "subjects");
+
+        assertThat(r.exit()).as(r.err()).isZero();
+        String[] lines = r.out().split("\\R");
+        assertThat(lines[0]).startsWith("USERNAME").contains("SUBJECT");
+        assertThat(lines[1]).startsWith("admin").endsWith("0b5c8a52-6f8e-4a77-9d1e-3c2b1a0f9e8d");
+        assertThat(lines[2]).startsWith("jan").endsWith("7e4d2c19-1a3b-4c5d-8e6f-901234567890");
+        assertThat(lines[1].indexOf("0b5c8a52")).isEqualTo(lines[0].indexOf("SUBJECT"));
+        assertThat(idp.requests("GET", SUBJECTS).getFirst().authorization()).isEqualTo(BEARER);
+    }
+
+    @Test
+    void subjectsJsonIsTheRawAnswer() {
+        Result r = run("users", "subjects", "-o", "json");
+
+        assertThat(r.exit()).isZero();
+        assertThat(r.out()).contains("\"subject\" : \"7e4d2c19-1a3b-4c5d-8e6f-901234567890\"")
+                .contains("\"username\" : \"jan\"");
+    }
+
+    @Test
+    void subjectsForbiddenNamesBothCallers() {
+        idp.answer("GET", SUBJECTS, 403, "{\"error\":\"access_denied\"}");
+        Result r = run("users", "subjects");
+
+        assertThat(r.exit()).isEqualTo(1);
+        assertThat(r.err()).contains("Listing user subjects needs qits:admin or the delivery desk")
+                .contains("HTTP 403");
     }
 
     @Test

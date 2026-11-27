@@ -34,16 +34,20 @@ import java.util.Optional;
  */
 @CommandLine.Command(name = "users", mixinStandardHelpOptions = true,
         subcommands = {UsersCommand.InviteCommand.class, UsersCommand.RegisterCommand.class,
-                UsersCommand.ListCommand.class, UsersCommand.DeleteCommand.class},
+                UsersCommand.ListCommand.class, UsersCommand.SubjectsCommand.class, UsersCommand.DeleteCommand.class},
         description = {"The people who sign in to the platform, on the idp: invite mints a register token, "
                 + "register spends one on a new username and shows the generated password once, list shows "
-                + "the users and their roles, and delete removes one.",
-                "invite, list and delete need qits:admin; register needs only the token, and no sign-in."},
+                + "the users and their roles, subjects shows each user's subject id (what a toggle's user rule "
+                + "names), and delete removes one.",
+                "invite, list and delete need qits:admin; subjects needs qits:admin or the delivery desk; register "
+                        + "needs only the token, and no sign-in."},
         footerHeading = "%nNotes:%n",
         footer = {"- --output and --idp-url may come before or after the command."})
 public class UsersCommand implements Runnable {
 
     static final String ADMIN = "Managing users needs qits:admin";
+
+    static final String CONFIGURING = "Listing user subjects needs qits:admin or the delivery desk";
 
     @CommandLine.Option(names = "--idp-url", paramLabel = "<url>", scope = CommandLine.ScopeType.INHERIT,
             description = "The idp's base URL, with /idp. Default: the session's idp; inside the platform "
@@ -278,6 +282,52 @@ public class UsersCommand implements Runnable {
                         Table.cell(String.join(", ", roles), 80)));
             }
             Table.print(context.out(), "", List.of("USERNAME", "CREATED", "ROLES"), rows);
+            return 0;
+        }
+    }
+
+    @CommandLine.Command(name = "subjects", mixinStandardHelpOptions = true,
+            description = {"List each user's subject id beside their name: the id a toggle's user rule names "
+                    + "(`qits toggles set-rules`). People only; an agent's subject is its tok-... id. Needs qits:admin "
+                    + "or the delivery desk."},
+            footerHeading = HelpText.EXAMPLES,
+            footer = {"  qits users subjects",
+                    "  qits users subjects -o json"},
+            exitCodeListHeading = HelpText.EXIT_CODES,
+            exitCodeList = {HelpText.DONE,
+                    "1:The idp refused (HTTP 403: the caller is neither qits:admin nor the delivery desk), or "
+                            + "cannot be reached.",
+                    HelpText.USAGE})
+    @TuiCommand(effect = Effect.READ)
+    public static class SubjectsCommand extends PlatformCommand {
+
+        @CommandLine.ParentCommand
+        UsersCommand parent;
+
+        @Override
+        protected int execute(CliContext context) throws CliFailure, InterruptedException {
+            boolean json = parent.json();
+            JsonNode subjects;
+            try {
+                subjects = parent.signedIn(context).subjects();
+            } catch (CliFailure refused) {
+                throw refused.status() == 403
+                        ? CliFailure.refused(CONFIGURING + ". " + refused.getMessage(), 403)
+                        : refused;
+            }
+            if (json) {
+                printJson(context.out(), subjects);
+                return 0;
+            }
+            if (!subjects.isArray() || subjects.isEmpty()) {
+                context.out().println("No users.");
+                return 0;
+            }
+            List<List<String>> rows = new ArrayList<>();
+            for (JsonNode user : subjects) {
+                rows.add(List.of(Table.cell(text(user, "username"), 40), Table.cell(text(user, "subject"), 40)));
+            }
+            Table.print(context.out(), "", List.of("USERNAME", "SUBJECT"), rows);
             return 0;
         }
     }

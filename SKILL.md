@@ -3848,9 +3848,9 @@ qits orchestrator run --id 00000000-0000-4000-8000-000000000001 --step internal.
 
 ## qits users
 
-The people who sign in to the platform, on the idp: invite mints a register token, register spends one on a new username and shows the generated password once, list shows the users and their roles, and delete removes one.
+The people who sign in to the platform, on the idp: invite mints a register token, register spends one on a new username and shows the generated password once, list shows the users and their roles, subjects shows each user's subject id (what a toggle's user rule names), and delete removes one.
 
-invite, list and delete need qits:admin; register needs only the token, and no sign-in.
+invite, list and delete need qits:admin; subjects needs qits:admin or the delivery desk; register needs only the token, and no sign-in.
 
 ### Notes
 
@@ -3945,6 +3945,32 @@ qits users list -o json
 
 - `0` Done.
 - `1` The idp refused (HTTP 403: the caller is not qits:admin), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits users subjects
+
+List each user's subject id beside their name: the id a toggle's user rule names (`qits toggles set-rules`). People only; an agent's subject is its tok-... id. Needs qits:admin or the delivery desk.
+
+```
+qits users subjects [--idp-url <url>] [--output table|json]
+```
+
+| Name | What it does |
+|---|---|
+| `--idp-url <url>` | The idp's base URL, with /idp. Default: the session's idp; inside the platform https://idp.qits.<QITS_DOMAIN>/idp; for register with no session, QITS_IDP_URL, else the address `qits login` uses. |
+| `-o, --output table\|json` | table (the default): for people. json: the answer as JSON, pretty-printed. |
+
+### Examples
+
+```
+qits users subjects
+qits users subjects -o json
+```
+
+### Exit codes
+
+- `0` Done.
+- `1` The idp refused (HTTP 403: the caller is neither qits:admin nor the delivery desk), or cannot be reached.
 - `2` Used wrongly, not signed in, or the session ended (run `qits login`).
 
 ## qits users delete
@@ -6093,6 +6119,7 @@ echo '{"version":3,"rules":[{"kind":"STATIC","value":true}]}' | qits toggles set
 ```
 
 - The second and third lines edit the rules as they are: show prints version and rules in the shape set-rules takes.
+- A USER rule's userSubjects are bearer subjects: a person's is their subject id, which `qits users subjects` lists; an agent's is its tok-... id.
 - Refusals: 400 rules the service does not take (it names the rule's position), 403 a caller without qits:admin or qits:desk-admin, 404 an unknown slug, 409 the rules changed since that version was read: show the toggle again and resend with its version.
 
 ### Exit codes

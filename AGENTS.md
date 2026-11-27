@@ -12,7 +12,7 @@ run's step logs, a retry, a cancel, a run's release reports), `qits database dia
 diagram, generated from its compiled classes), `qits contracts coverage` (the OpenAPI operations no
 golden master records), `qits orchestrator` (qits-orchestrator's processes and their runs: processes, runs, start, run;
 qits-2490), `qits users` (the idp's users: invite, register, list,
-delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
+subjects, delete), `qits remembered-devices` (the signed-in person's remembered browsers at the idp: list,
 revoke; qits-1944), `qits service-clients` (the idp's service clients: list; qits-2531),
 `qits toggles` (qits-toggles' declared feature toggles: list, show, set-rules; qits-2704),
 `qits network-access` (this workstation onto the private edge through a
@@ -416,6 +416,11 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                register sends no bearer: the register token is the credential, and the person has
                no session yet. The idp's address is the session's, the public vhost inside
                (PlatformEndpoints), or, for register with no session, IdpUrl's default
+               subjects (qits-2725) is GET /idp/api/user-subjects, each user's subject id and name,
+               the ids a toggle's USER rule names; qits:admin or the delivery desk. The mirror of
+               the landing Toggles editor's person picker, so contracts.mirror parity holds. Its
+               two rows (`an admin signed in to the CLI`, `a person without the admin role signed in
+               to the CLI`) are pending until a pinned qits-idp-golden-masters records them
     agents/    qits agents: the group (AgentsCommand), whose verbs are workspaces/AgentCommands; only
                its `claude` group is Interaction.LOCAL.
                AgentsApi (epic qits-2520) is qits-agents-service's client, one door: GET /agents/api/me,
