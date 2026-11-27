@@ -3,6 +3,7 @@ package eu.wohlben.qits.cli.access.git;
 import eu.wohlben.qits.cli.access.idp.IdpUrl;
 import eu.wohlben.qits.cli.access.idp.TokenClient;
 import eu.wohlben.qits.cli.access.login.Browser;
+import eu.wohlben.qits.cli.access.networkaccess.AccessState;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
 import eu.wohlben.qits.cli.access.platform.HelpText;
@@ -15,6 +16,7 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +36,10 @@ import java.util.Optional;
                 "- The git host refuses a push to any other ref, main included. A push releases nothing: ask for a "
                         + "release with `qits release-request`.",
                 "- --configure sets the credential helper for the git host only; a global helper (for example for "
-                        + "GitHub) stays."},
+                        + "GitHub) stays.",
+                "- The git host is a private app. While `qits network-access up` has the companion running, "
+                        + "--configure also sets the git host's http.<origin>.proxy to it, so Git reaches the host "
+                        + "through the tunnel; `network-access up` and `down` keep that line in step later."},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:Signed in.",
                 "1:The sign-in did not complete (the browser did not come back in time, or the idp refused).",
@@ -66,8 +71,9 @@ public class GitLoginCommand extends PlatformCommand {
     boolean noBrowser;
 
     @CommandLine.Option(names = "--configure",
-            description = "Also run the two `git config --global` commands that make Git ask "
-                    + "`qits git-credential` for this git host (and no other).")
+            description = "Also run the `git config --global` commands that make Git ask "
+                    + "`qits git-credential` for this git host (and no other), and, while the network-access "
+                    + "companion runs, send that host through it.")
     boolean configure;
 
     @Override
@@ -96,11 +102,17 @@ public class GitLoginCommand extends PlatformCommand {
             return result;
         }
 
-        List<List<String>> commands = GitSetup.commands(origin, executable());
+        List<List<String>> commands = new ArrayList<>(GitSetup.commands(origin, executable()));
+        // The git host is a private app (qits-2743): through the companion when one runs here.
+        Optional<String> proxy = AccessState.readQuietly(context.sessionFile().directory())
+                .map(AccessState::proxy).filter(value -> !value.isBlank());
+        proxy.ifPresent(value -> commands.add(GitSetup.proxyCommand(origin, value)));
         context.out().println();
         if (configure) {
             GitSetup.configure(commands, env, context.err());
             context.out().println("Git is set up: it asks `qits git-credential` for " + origin + " and for no other host.");
+            proxy.ifPresent(value -> context.out().println("It reaches " + origin
+                    + " through the network-access companion at " + value + "."));
         } else {
             context.out().println("Set Git up once, for this host only (the empty value clears its helper list first):");
             context.out().println();

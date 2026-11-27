@@ -126,6 +126,72 @@ class GitLoginCommandTest {
         assertThat(helpers()).containsExactly("", "!qits git-credential");
     }
 
+    private List<String> proxies() throws Exception {
+        Process git = new ProcessBuilder("git", "config", "--file", home.resolve("gitconfig").toString(), "--get-all",
+                GitSetup.proxyKey(ORIGIN)).start();
+        List<String> values = new String(git.getInputStream().readAllBytes(), StandardCharsets.UTF_8).lines().toList();
+        git.waitFor();
+        return values;
+    }
+
+    private void companionRunsAt(String proxy) throws Exception {
+        java.nio.file.Files.createDirectories(home.resolve("qits"));
+        java.nio.file.Files.writeString(home.resolve("qits/access.json"),
+                "{\"peerId\":\"p-1\",\"proxy\":\"" + proxy + "\",\"image\":\"i\",\"version\":\"1\"}");
+    }
+
+    /** qits-2743: the git host is private, so while the companion runs Git goes through it for that host. */
+    @Test
+    void configureSendsTheGitHostThroughARunningCompanion() throws Exception {
+        companionRunsAt("http://127.0.0.1:47813");
+
+        assertThat(gitLogin("--configure")).isZero();
+
+        assertThat(helpers()).containsExactly("", "!qits git-credential");
+        assertThat(proxies()).containsExactly("http://127.0.0.1:47813");
+        assertThat(out()).contains("through the network-access companion at http://127.0.0.1:47813");
+    }
+
+    @Test
+    void withACompanionThePrintedSetupNamesTheProxyLineToo() throws Exception {
+        companionRunsAt("http://127.0.0.1:47813");
+
+        assertThat(gitLogin()).isZero();
+
+        assertThat(out()).contains("  git config --global --replace-all http." + ORIGIN + ".proxy http://127.0.0.1:47813");
+        assertThat(home.resolve("gitconfig")).doesNotExist();
+    }
+
+    @Test
+    void withoutACompanionNoProxyIsSet() throws Exception {
+        assertThat(gitLogin("--configure")).isZero();
+
+        assertThat(proxies()).isEmpty();
+        assertThat(out()).doesNotContain(".proxy");
+    }
+
+    @Test
+    void theProxyIsForTheGitHostAloneAndUnsettingItTwiceIsDone() throws Exception {
+        assertThat(GitSetup.proxyCommand(ORIGIN, "http://127.0.0.1:47813")).containsExactly("git", "config",
+                "--global", "--replace-all", "http." + ORIGIN + ".proxy", "http://127.0.0.1:47813");
+        PrintStream quiet = new PrintStream(err, true, StandardCharsets.UTF_8);
+        GitSetup.configure(List.of(GitSetup.proxyCommand(ORIGIN, "http://127.0.0.1:47813")), env, quiet);
+        assertThat(proxies()).containsExactly("http://127.0.0.1:47813");
+
+        GitSetup.configure(List.of(GitSetup.unproxyCommand(ORIGIN)), env, quiet);
+        GitSetup.configure(List.of(GitSetup.unproxyCommand(ORIGIN)), env, quiet);
+        assertThat(proxies()).isEmpty();
+    }
+
+    @Test
+    void helpedIsTrueOnlyOnceTheCredentialHelperIsSet() throws Exception {
+        assertThat(GitSetup.helped(ORIGIN, env)).isFalse();
+        GitSetup.configure(GitSetup.commands(ORIGIN, "/opt/my tools/qits"), env,
+                new PrintStream(err, true, StandardCharsets.UTF_8));
+        assertThat(GitSetup.helped(ORIGIN, env)).isTrue();
+        assertThat(GitSetup.helped("https://github.com", env)).isFalse();
+    }
+
     @Test
     void aPathWithASpaceIsQuotedForGitAndTheShell() {
         List<List<String>> commands = GitSetup.commands(ORIGIN, "/home/a b/qits");

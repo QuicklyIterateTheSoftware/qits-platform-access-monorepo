@@ -89,7 +89,8 @@ import picocli.CommandLine;
                 "- Release only through a release request: `qits release-request create`, or `join` to add a "
                         + "branch to an open one. A push releases nothing.",
                 "- Push only branches under refs/heads/external/, after `qits git-login`. Git gets the token from "
-                        + "`qits git-credential`.",
+                        + "`qits git-credential`. The git host is a private app: on a workstation Git reaches it "
+                        + "through the companion `qits network-access up` runs.",
                 "- On a workstation, npm, Maven and Docker get the platform's registries from `qits registry-login "
                         + "--configure`: npm and Maven a token kept fresh by `qits session-daemon`, Docker its "
                         + "helper `qits docker-credential`. Do not write registry tokens by hand.",

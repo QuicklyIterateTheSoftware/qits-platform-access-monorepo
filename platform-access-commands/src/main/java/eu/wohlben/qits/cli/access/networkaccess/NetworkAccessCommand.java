@@ -2,6 +2,8 @@ package eu.wohlben.qits.cli.access.networkaccess;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.wohlben.qits.cli.access.git.GitOrigin;
+import eu.wohlben.qits.cli.access.git.GitSetup;
 import eu.wohlben.qits.cli.access.observe.SafeText;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
@@ -60,7 +62,9 @@ import java.util.regex.Pattern;
                         + "QITS_NETWORK_ACCESS_PROXY=off sends every call direct.",
                 "- Only https and wss calls to hosts under the platform's domain go through the companion; "
                         + "loopback and every QITS_URL_* address go direct. When the companion does not answer, "
-                        + "calls go direct with one warning."})
+                        + "calls go direct with one warning.",
+                "- Git follows too, for the git host only: when `qits git-login --configure` set Git up for it, "
+                        + "`up` sets that host's http.<origin>.proxy to the companion and `down` unsets it."})
 public class NetworkAccessCommand implements Runnable {
 
     /** The container, and the volume that keeps its key across recreations. */
@@ -169,6 +173,34 @@ public class NetworkAccessCommand implements Runnable {
         return "browsers: set the proxy auto-config URL to " + pacUrl(address);
     }
 
+    /**
+     * Git onto the companion, or off it (qits-2743): {@code proxy} set for {@code up}, null for
+     * {@code down}. The git host is a private app, and Git, unlike the qits commands, knows nothing
+     * of {@link CompanionProxy}, so it gets the per-origin {@code http.<origin>.proxy} for the git
+     * host alone. Only where {@code qits git-login --configure} set Git up for that host: a
+     * workstation that never pushes there keeps its Git config as it was. Never fails the command:
+     * the companion is up or down either way, and a Git that cannot be configured is one warning.
+     */
+    static void gitFollows(CliContext context, String proxy) {
+        String origin = null;
+        try {
+            origin = GitOrigin.normalize(PlatformUrls.gitHost(null, context.env(), context.idpUrl()));
+            if (!GitSetup.helped(origin, context.env())) {
+                return;
+            }
+            GitSetup.configure(List.of(proxy == null ? GitSetup.unproxyCommand(origin)
+                    : GitSetup.proxyCommand(origin, proxy)), context.env(), context.err());
+            context.out().println(proxy == null ? "git: " + origin + " goes direct again"
+                    : "git: " + origin + " goes through the companion");
+        } catch (CliFailure | IllegalArgumentException failed) {
+            context.err().println("warning: could not " + (proxy == null ? "take Git off" : "point Git at")
+                    + " the companion" + (origin == null ? "" : " for " + origin) + ": "
+                    + SafeText.line(String.valueOf(failed.getMessage())));
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     static Optional<AccessState> state(CliContext context) throws CliFailure {
         try {
             return AccessState.read(directory(context));
@@ -254,7 +286,9 @@ public class NetworkAccessCommand implements Runnable {
                     "Running it again is how the companion is upgraded to the image the platform names now.",
                     "qits commands dial the companion's CONNECT proxy directly; a browser instead needs its "
                             + "proxy auto-config URL set to http://127.0.0.1:47813/proxy.pac, which this command "
-                            + "prints once the companion is up."},
+                            + "prints once the companion is up.",
+                    "Git follows for the git host alone, once `qits git-login --configure` set it up: `up` sets "
+                            + "http.<git host>.proxy to the companion."},
             footerHeading = HelpText.EXAMPLES,
             footer = {"  qits network-access up",
                     "  qits network-access up --name laptop",
@@ -411,6 +445,7 @@ public class NetworkAccessCommand implements Runnable {
                         CliFailure.FAILED);
             }
             context.out().println("platform calls now go through the companion");
+            gitFollows(context, address);
             return 0;
         }
 
@@ -476,7 +511,8 @@ public class NetworkAccessCommand implements Runnable {
     }
 
     @CommandLine.Command(name = "down", mixinStandardHelpOptions = true,
-            description = {"Stop the network-access companion: platform calls go direct again. The device and the "
+            description = {"Stop the network-access companion: platform calls go direct again, and so does Git for "
+                    + "the git host (its http.<git host>.proxy is unset). The device and the "
                     + "companion's key stay, so the next `up` reuses them.",
                     "--revoke also revokes the device at the platform and deletes the key's volume and access.json."},
             footerHeading = HelpText.EXAMPLES,
@@ -556,6 +592,7 @@ public class NetworkAccessCommand implements Runnable {
                         + e.getMessage(), CliFailure.FAILED);
             }
             context.out().println("the companion is stopped; platform calls go direct");
+            gitFollows(context, null);
             return 0;
         }
     }

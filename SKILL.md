@@ -13,7 +13,7 @@ A workspace is the token home: on a runner node, or an admin or editor workspace
 
 - Sign in once with `qits login`, and keep `qits session-daemon` running so the session stays fresh.
 - Release only through a release request: `qits release-request create`, or `join` to add a branch to an open one. A push releases nothing.
-- Push only branches under refs/heads/external/, after `qits git-login`. Git gets the token from `qits git-credential`.
+- Push only branches under refs/heads/external/, after `qits git-login`. Git gets the token from `qits git-credential`. The git host is a private app: on a workstation Git reaches it through the companion `qits network-access up` runs.
 - On a workstation, npm, Maven and Docker get the platform's registries from `qits registry-login --configure`: npm and Maven a token kept fresh by `qits session-daemon`, Docker its helper `qits docker-credential`. Do not write registry tokens by hand.
 - qits never prints a token. The two exceptions are `qits git-credential get`, which Git runs, and `qits docker-credential get`, which Docker runs. Two commands print a secret meant for one person: `qits users invite` (a register token) and `qits users register` (the new password, once).
 - To wait for something on the platform, declare it with `qits wait` and end your turn: you get a new turn when it happens. Never poll for it in a background loop.
@@ -6140,7 +6140,7 @@ qits git-login [--configure] [--git-host <url>] [--idp-url <url>] [--no-browser]
 
 | Name | What it does |
 |---|---|
-| `--configure` | Also run the two `git config --global` commands that make Git ask `qits git-credential` for this git host (and no other). |
+| `--configure` | Also run the `git config --global` commands that make Git ask `qits git-credential` for this git host (and no other), and, while the network-access companion runs, send that host through it. |
 | `--git-host <url>` | The git host's address. Default: QITS_GIT_HOST_URL, else the idp's host with `idp` swapped for `githost` (https://githost.qits.<QITS_DOMAIN>). |
 | `--idp-url <url>` | The idp's public base URL. Default: QITS_IDP_URL, else the idp of the `qits login` session, else https://idp.qits.<QITS_DOMAIN>/idp; with none of them, the command refuses. |
 | `--no-browser` | Only print the sign-in address; do not start a browser. |
@@ -6155,6 +6155,7 @@ git push <remote> HEAD:refs/heads/external/log-view
 
 - The git host refuses a push to any other ref, main included. A push releases nothing: ask for a release with `qits release-request`.
 - --configure sets the credential helper for the git host only; a global helper (for example for GitHub) stays.
+- The git host is a private app. While `qits network-access up` has the companion running, --configure also sets the git host's http.<origin>.proxy to it, so Git reaches the host through the tunnel; `network-access up` and `down` keep that line in step later.
 
 ### Exit codes
 
@@ -6288,6 +6289,7 @@ A browser reaches the same tunnel through the companion's proxy auto-config file
 - Registering a device takes qits:admin.
 - QITS_NETWORK_ACCESS_PROXY=<url> names the companion's address instead of access.json's, and QITS_NETWORK_ACCESS_PROXY=off sends every call direct.
 - Only https and wss calls to hosts under the platform's domain go through the companion; loopback and every QITS_URL_* address go direct. When the companion does not answer, calls go direct with one warning.
+- Git follows too, for the git host only: when `qits git-login --configure` set Git up for it, `up` sets that host's http.<origin>.proxy to the companion and `down` unsets it.
 
 ## qits network-access up
 
@@ -6296,6 +6298,8 @@ Run the network-access companion and send this workstation's platform calls, and
 Running it again is how the companion is upgraded to the image the platform names now.
 
 qits commands dial the companion's CONNECT proxy directly; a browser instead needs its proxy auto-config URL set to http://127.0.0.1:47813/proxy.pac, which this command prints once the companion is up.
+
+Git follows for the git host alone, once `qits git-login --configure` set it up: `up` sets http.<git host>.proxy to the companion.
 
 ```
 qits network-access up [--dry-run] [--name <label>] [--network-access-url <url>]
@@ -6328,7 +6332,7 @@ qits network-access up --dry-run
 
 ## qits network-access down
 
-Stop the network-access companion: platform calls go direct again. The device and the companion's key stay, so the next `up` reuses them.
+Stop the network-access companion: platform calls go direct again, and so does Git for the git host (its http.<git host>.proxy is unset). The device and the companion's key stay, so the next `up` reuses them.
 
 --revoke also revokes the device at the platform and deletes the key's volume and access.json.
 

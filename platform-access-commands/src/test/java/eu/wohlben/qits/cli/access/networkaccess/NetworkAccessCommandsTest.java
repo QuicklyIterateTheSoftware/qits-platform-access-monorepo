@@ -48,6 +48,7 @@ class NetworkAccessCommandsTest {
             "/work/companion/qits-access-companion", "-v", "qits-network-access-companion:/state", REF);
     private static final List<String> LINK_MTU_ENV = List.of("-e", "QITS_COMPANION_LINK_MTU=1380");
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String GIT_ORIGIN = "https://githost.qits.example.test";
 
     private static final String COMPANION = """
             {"image":"registry.qits.wohlben.eu/qits/qits-network-access","version":"2026.1110.191501",
@@ -120,6 +121,9 @@ class NetworkAccessCommandsTest {
         env.put("FAKE_DOCKER_STDIN", stdin.toString());
         env.put("FAKE_DOCKER_KEY", KEY);
         env.put("QITS_NETWORK_ACCESS_URL", platform.url());
+        // Git's --global config is a scratch file, never the person's (or the build container's).
+        env.put("GIT_CONFIG_GLOBAL", home.resolve("gitconfig").toString());
+        env.put("QITS_GIT_HOST_URL", GIT_ORIGIN + "/git/qits");
         // The healthz probe goes where this names the companion: the fake, here.
         env.put(CompanionProxy.VARIABLE, platform.url());
         new SessionFile(home.resolve(".config/qits")).write(new Session(idp.url(), "qits-cli",
@@ -577,6 +581,71 @@ class NetworkAccessCommandsTest {
                 List.of("volume", "rm", "qits-network-access-companion"));
         assertThat(home.resolve(".config/qits/access.json")).doesNotExist();
         assertThat(result.out()).contains("peer " + PEER_ID + " revoked");
+    }
+
+    private List<String> git(String... args) throws Exception {
+        List<String> argv = new java.util.ArrayList<>(List.of("git", "config", "--file",
+                home.resolve("gitconfig").toString()));
+        argv.addAll(List.of(args));
+        Process git = new ProcessBuilder(argv).start();
+        List<String> values = new String(git.getInputStream().readAllBytes(), StandardCharsets.UTF_8).lines().toList();
+        git.waitFor();
+        return values;
+    }
+
+    private List<String> gitProxy() throws Exception {
+        return git("--get-all", "http." + GIT_ORIGIN + ".proxy");
+    }
+
+    /** What `qits git-login --configure` leaves: Git asks qits for the git host. */
+    private void gitAsksQits() throws Exception {
+        git("--add", "credential." + GIT_ORIGIN + ".helper", "");
+        git("--add", "credential." + GIT_ORIGIN + ".helper", "!qits git-credential");
+    }
+
+    /** qits-2743: the git host is private, so a set-up Git follows the companion for that host alone. */
+    @Test
+    void upSendsASetUpGitThroughTheCompanionForTheGitHostOnly() throws Exception {
+        gitAsksQits();
+
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(gitProxy()).containsExactly(platform.url());
+        assertThat(git("--get-regexp", "proxy")).hasSize(1);
+        assertThat(result.out()).contains("git: " + GIT_ORIGIN + " goes through the companion");
+    }
+
+    @Test
+    void upLeavesAGitThatNeverAsksQitsAlone() throws Exception {
+        Result result = run("network-access", "up", "--name", "laptop");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(home.resolve("gitconfig")).doesNotExist();
+        assertThat(result.out()).doesNotContain("git:");
+    }
+
+    @Test
+    void downTakesGitOffTheCompanionAgain() throws Exception {
+        gitAsksQits();
+        assertThat(run("network-access", "up", "--name", "laptop").exit()).isZero();
+
+        Result result = run("network-access", "down");
+
+        assertThat(result.exit()).as(result.err()).isZero();
+        assertThat(gitProxy()).isEmpty();
+        assertThat(git("--get-all", "credential." + GIT_ORIGIN + ".helper")).containsExactly("", "!qits git-credential");
+        assertThat(result.out()).contains("git: " + GIT_ORIGIN + " goes direct again");
+    }
+
+    @Test
+    void aCompanionThatNeverAnswersHealthyLeavesGitAlone() throws Exception {
+        gitAsksQits();
+        platform.answer("GET", "/healthz", 503, "{\"status\":\"starting\"}");
+
+        assertThat(run("network-access", "up", "--name", "laptop").exit()).isEqualTo(1);
+
+        assertThat(gitProxy()).isEmpty();
     }
 
     @Test
