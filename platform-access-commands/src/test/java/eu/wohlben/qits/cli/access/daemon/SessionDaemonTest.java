@@ -426,4 +426,48 @@ class SessionDaemonTest {
         assertThat(recorder.tokens).hasSize(1);
         assertThat(refreshedAt).hasSize(1);
     }
+
+    /** qits-2743: the companion's Git line is looked at once the session is read, then every step. */
+    @Test
+    void theTickLooksAtTheStartAndAtMostEveryStepAndLogsWhatItSays() throws Exception {
+        seed(T0.plusSeconds(900), idp.issueRefreshToken(), T0.plus(Duration.ofDays(30)));
+        List<Instant> looked = new ArrayList<>();
+        SessionDaemon daemon = new SessionDaemon(store, MARGIN, time, time, TokenClient::new,
+                new PrintStream(log, true, StandardCharsets.UTF_8), SessionListener.NONE, session -> {
+                    looked.add(time.instant());
+                    return looked.size() == 1 ? List.of("git: the line is set") : List.of();
+                });
+        time.afterSleep = () -> {
+            if (time.instant().isAfter(T0.plusSeconds(60))) {
+                daemon.stop();
+            }
+        };
+
+        assertThat(daemon.run()).isZero();
+
+        assertThat(looked.getFirst()).isEqualTo(T0);
+        assertThat(looked).hasSizeGreaterThanOrEqualTo(4);
+        for (int i = 1; i < looked.size(); i++) {
+            assertThat(Duration.between(looked.get(i - 1), looked.get(i))).isGreaterThanOrEqualTo(SessionDaemon.TICK_EVERY);
+        }
+        assertThat(count(log(), "git: the line is set")).isEqualTo(1);
+    }
+
+    @Test
+    void aFailingTickIsOneLogLineAndTheDaemonCarriesOn() throws Exception {
+        seed(T0.plusSeconds(900), idp.issueRefreshToken(), T0.plus(Duration.ofDays(30)));
+        SessionDaemon daemon = new SessionDaemon(store, MARGIN, time, time, TokenClient::new,
+                new PrintStream(log, true, StandardCharsets.UTF_8), SessionListener.NONE, session -> {
+                    throw new IllegalStateException("boom");
+                });
+        time.afterSleep = () -> {
+            if (idp.grants("refresh_token") > 0) {
+                daemon.stop();
+            }
+        };
+
+        assertThat(daemon.run()).isZero();
+
+        assertThat(log()).contains("cannot look at the network-access companion: boom").contains("refreshed;");
+    }
 }

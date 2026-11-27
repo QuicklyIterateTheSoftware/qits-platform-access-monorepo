@@ -2452,16 +2452,31 @@ calls go direct and the process says so once on stderr ("the network-access comp
 answer; run `qits network-access up`"): the public apps keep working. `qits network-access` itself
 always dials direct, since it sets up the companion it would otherwise depend on.
 
-**Git follows for the git host alone** (qits-2743, which moves qits-githost behind the private
-edge). Git knows nothing of `CompanionProxy`, so `up`, once healthy, sets `http.<git host
-origin>.proxy` to the companion with `git config --global --replace-all`, and `down` (with or
-without `--revoke`) unsets it; git matches that key against a remote's URL, so no other host goes
-through the companion. Both do it only where `git config --global --get-all
-credential.<origin>.helper` already names `qits git-credential`, which is what `qits git-login
---configure` sets: a workstation that never pushes to the git host keeps its Git config untouched.
-A Git that cannot be configured is one warning, never a failed `up` or `down`. `qits git-login
---configure` adds the same proxy line when access.json names a proxy, so either order works, and
-without `--configure` it prints that line with the other two.
+**Git follows for the git host alone, with no command of its own** (qits-2743, which moves
+qits-githost behind the private edge). Git knows nothing of `CompanionProxy`, so the CLI keeps one
+line in the person's `--global` Git config, `http.<git host origin>.proxy`, in step with
+access.json's `proxy` (`GitCompanionLine`): the companion's address while one is set up, no line
+once `down` (with or without `--revoke`) took it away. The companion itself cannot write it: it
+is a container running as `65532:65532` with only its state volume, and the person's home is not
+its to touch. So every qits process that runs as the person and sees the companion's lifecycle
+does it:
+
+- `network-access up`, once the companion is healthy, and `down`;
+- `qits session-daemon`, while it runs (`CompanionGitWatch`, at most every 15 s): at its start,
+  whenever access.json changes, and each time the companion answers `/healthz` again after it did
+  not. A reconnect also puts back a line somebody removed. A companion that is only down for a
+  moment keeps the line, because it follows access.json, not health;
+- `git-credential get`, which Git runs on every fetch and push to the git host: after answering, it
+  repairs the line, without a word, wherever access.json exists;
+- `git-login --configure`, which adds it while access.json names a proxy, and prints it without
+  `--configure`.
+
+The line is read first and written only when it differs, so all of this is quiet when nothing
+changed. git matches the key against a remote's URL, so no other host goes through the companion.
+It is only ever written where `git config --global --get-all credential.<origin>.helper` already
+names `qits git-credential`, which `qits git-login --configure` sets: a workstation that never
+pushes to the git host keeps its Git config untouched. No git, or a git that fails, is one warning
+(the daemon says it once), never a failed command.
 
 - `down` removes the container and drops `proxy` from access.json, keeping the peer, so the next
   `up` reuses the device the key is registered as. `down --revoke` revokes it (`POST

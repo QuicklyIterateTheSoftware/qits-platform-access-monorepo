@@ -1,6 +1,7 @@
 package eu.wohlben.qits.cli.access.daemon;
 
 import eu.wohlben.qits.cli.access.idp.TokenClient;
+import eu.wohlben.qits.cli.access.networkaccess.CompanionGitWatch;
 import eu.wohlben.qits.cli.access.platform.HelpText;
 import eu.wohlben.qits.cli.access.registry.RegistryLogins;
 import eu.wohlben.qits.cli.access.session.SessionFile;
@@ -36,7 +37,12 @@ import java.util.concurrent.Callable;
                 "- Without it, a command refreshes an access token that is about to expire before it calls the "
                         + "platform.",
                 "- After `qits registry-login --configure` it also writes each new token into the registry blocks "
-                        + "of ~/.npmrc and ~/.m2/settings.xml, and refreshes at least 5 minutes before expiry."},
+                        + "of ~/.npmrc and ~/.m2/settings.xml, and refreshes at least 5 minutes before expiry.",
+                "- While `qits network-access up` has the companion set up, it keeps Git's proxy for the git host "
+                        + "(http.<git host>.proxy in your --global Git config) pointing at the companion: at its "
+                        + "start, when access.json changes, and each time the companion is healthy again; after "
+                        + "`network-access down` it removes the line. Only where `qits git-login --configure` set "
+                        + "Git up for the git host."},
         exitCodeListHeading = HelpText.EXIT_CODES,
         exitCodeList = {"0:Stopped by SIGTERM or SIGINT.", "1:Another qits session-daemon is running.",
                 "2:--margin is not between 0 and 300."})
@@ -58,7 +64,7 @@ public class SessionDaemonCommand implements Callable<Integer> {
         SessionFile store = SessionFile.fromEnvironment(System.getenv());
         SessionDaemon daemon = new SessionDaemon(store,
                 Duration.ofSeconds(marginSeconds), Clock.systemUTC(), Sleeper.real(), TokenClient::new, log,
-                new RegistryLogins(store.directory()));
+                new RegistryLogins(store.directory()), new CompanionGitWatch(store.directory(), System.getenv()));
         StopSignals.install(daemon::stop);
         return daemon.run();
     }

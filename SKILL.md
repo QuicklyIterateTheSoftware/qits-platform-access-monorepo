@@ -82,6 +82,7 @@ systemctl --user enable --now qits-session-daemon
 - When the session ends (revoked or expired), it says so, keeps running, and carries on after the next `qits login`.
 - Without it, a command refreshes an access token that is about to expire before it calls the platform.
 - After `qits registry-login --configure` it also writes each new token into the registry blocks of ~/.npmrc and ~/.m2/settings.xml, and refreshes at least 5 minutes before expiry.
+- While `qits network-access up` has the companion set up, it keeps Git's proxy for the git host (http.<git host>.proxy in your --global Git config) pointing at the companion: at its start, when access.json changes, and each time the companion is healthy again; after `network-access down` it removes the line. Only where `qits git-login --configure` set Git up for the git host.
 
 ### Exit codes
 
@@ -6289,7 +6290,7 @@ A browser reaches the same tunnel through the companion's proxy auto-config file
 - Registering a device takes qits:admin.
 - QITS_NETWORK_ACCESS_PROXY=<url> names the companion's address instead of access.json's, and QITS_NETWORK_ACCESS_PROXY=off sends every call direct.
 - Only https and wss calls to hosts under the platform's domain go through the companion; loopback and every QITS_URL_* address go direct. When the companion does not answer, calls go direct with one warning.
-- Git follows too, for the git host only: when `qits git-login --configure` set Git up for it, `up` sets that host's http.<origin>.proxy to the companion and `down` unsets it.
+- Git follows too, for the git host only and with no command of its own: when `qits git-login --configure` set Git up for it, `up` sets that host's http.<origin>.proxy in your --global Git config to the companion and `down` unsets it, `qits session-daemon` keeps the line in step while it runs (reconnects included), and `qits git-credential` repairs it on the next fetch.
 
 ## qits network-access up
 

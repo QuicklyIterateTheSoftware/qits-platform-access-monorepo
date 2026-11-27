@@ -136,6 +136,39 @@ class GitCredentialCommandTest {
         assertThat(idp.requests).isEmpty();
     }
 
+    /** qits-2743: a fetch with the companion set up repairs the git host's proxy line, quietly. */
+    @Test
+    void getRepairsTheCompanionLineAndSaysNothingAboutIt() throws Exception {
+        seed(Duration.ofMinutes(5), idp.issueRefreshToken(), Duration.ofDays(30));
+        Path gitconfig = home.resolve("gitconfig");
+        Map<String, String> env = Map.of("XDG_CONFIG_HOME", home.toString(), "GIT_CONFIG_GLOBAL", gitconfig.toString());
+        GitSetup.configure(GitSetup.commands(ORIGIN, "qits"), env, new PrintStream(new ByteArrayOutputStream()));
+        Files.writeString(home.resolve("qits/access.json"),
+                "{\"peerId\":\"p-1\",\"proxy\":\"http://127.0.0.1:47813\",\"image\":\"i\",\"version\":\"1\"}");
+
+        Result r = credential(env, "get", REQUEST);
+
+        assertThat(r.out()).isEqualTo(answer(OLD_ACCESS));
+        assertThat(r.err()).isEmpty();
+        Process git = new ProcessBuilder("git", "config", "--file", gitconfig.toString(), "--get",
+                GitSetup.proxyKey(ORIGIN)).start();
+        assertThat(new String(git.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip())
+                .isEqualTo("http://127.0.0.1:47813");
+        git.waitFor();
+    }
+
+    @Test
+    void withoutACompanionGetTouchesNoGitConfig() throws Exception {
+        seed(Duration.ofMinutes(5), idp.issueRefreshToken(), Duration.ofDays(30));
+        Path gitconfig = home.resolve("gitconfig");
+
+        Result r = credential(Map.of("XDG_CONFIG_HOME", home.toString(), "GIT_CONFIG_GLOBAL", gitconfig.toString()),
+                "get", REQUEST);
+
+        assertThat(r.out()).isEqualTo(answer(OLD_ACCESS));
+        assertThat(gitconfig).doesNotExist();
+    }
+
     @Test
     void getRefreshesATokenWithAMinuteLeftAndWritesBeforePrinting() throws Exception {
         String old = seed(Duration.ofSeconds(59), idp.issueRefreshToken(), Duration.ofDays(30)).refreshToken();

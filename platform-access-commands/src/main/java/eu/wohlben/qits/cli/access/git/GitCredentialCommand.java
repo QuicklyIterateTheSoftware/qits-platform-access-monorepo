@@ -1,5 +1,6 @@
 package eu.wohlben.qits.cli.access.git;
 
+import eu.wohlben.qits.cli.access.networkaccess.AccessState;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
 import eu.wohlben.qits.cli.access.platform.HelpText;
@@ -15,6 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -94,6 +97,7 @@ public class GitCredentialCommand extends PlatformCommand {
                     if (token.isPresent()) {
                         context.out().print("username=oauth2\npassword=" + token.get() + "\n\n");
                         context.out().flush();
+                        repairCompanionLine(context, origin);
                     }
                 }
                 case "erase" -> access.erase(origin, request.get("password"));
@@ -105,6 +109,28 @@ public class GitCredentialCommand extends PlatformCommand {
             throw new CliFailure(e.getMessage(), CliFailure.FAILED);
         }
         return 0;
+    }
+
+    /**
+     * Puts the git host's companion proxy line back in step after answering (qits-2743), on a
+     * workstation that set up the network-access companion ({@code access.json} exists): Git runs
+     * this helper on every fetch and push to the git host, so a line that drifted is repaired by the
+     * next one. Quiet: stdout is Git's protocol and already answered, and a repair is not news.
+     * Never fails the answer.
+     */
+    private static void repairCompanionLine(CliContext context, String origin) {
+        Path directory = context.sessionFile().directory();
+        if (!Files.exists(directory.resolve(AccessState.FILE_NAME))) {
+            return;
+        }
+        String proxy = AccessState.readQuietly(directory).map(AccessState::proxy).orElse(null);
+        try {
+            GitCompanionLine.sync(origin, proxy, context.env());
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        } catch (RuntimeException ignored) {
+            // The token is answered; the next fetch tries the repair again.
+        }
     }
 
     /**

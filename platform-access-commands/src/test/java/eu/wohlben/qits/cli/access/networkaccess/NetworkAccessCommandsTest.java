@@ -617,6 +617,19 @@ class NetworkAccessCommandsTest {
     }
 
     @Test
+    void aSecondUpFindsTheLineRightAndSaysNothingAboutGit() throws Exception {
+        gitAsksQits();
+        assertThat(run("network-access", "up", "--name", "laptop").exit()).isZero();
+        String before = Files.readString(home.resolve("gitconfig"));
+
+        Result again = run("network-access", "up", "--name", "laptop");
+
+        assertThat(again.exit()).as(again.err()).isZero();
+        assertThat(again.out()).doesNotContain("git:");
+        assertThat(Files.readString(home.resolve("gitconfig"))).isEqualTo(before);
+    }
+
+    @Test
     void upLeavesAGitThatNeverAsksQitsAlone() throws Exception {
         Result result = run("network-access", "up", "--name", "laptop");
 

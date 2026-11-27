@@ -3,7 +3,7 @@ package eu.wohlben.qits.cli.access.networkaccess;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.wohlben.qits.cli.access.git.GitOrigin;
-import eu.wohlben.qits.cli.access.git.GitSetup;
+import eu.wohlben.qits.cli.access.git.GitCompanionLine;
 import eu.wohlben.qits.cli.access.observe.SafeText;
 import eu.wohlben.qits.cli.access.platform.CliContext;
 import eu.wohlben.qits.cli.access.platform.CliFailure;
@@ -63,8 +63,11 @@ import java.util.regex.Pattern;
                 "- Only https and wss calls to hosts under the platform's domain go through the companion; "
                         + "loopback and every QITS_URL_* address go direct. When the companion does not answer, "
                         + "calls go direct with one warning.",
-                "- Git follows too, for the git host only: when `qits git-login --configure` set Git up for it, "
-                        + "`up` sets that host's http.<origin>.proxy to the companion and `down` unsets it."})
+                "- Git follows too, for the git host only and with no command of its own: when `qits git-login "
+                        + "--configure` set Git up for it, `up` sets that host's http.<origin>.proxy in your --global "
+                        + "Git config to the companion and `down` unsets it, `qits session-daemon` keeps the line in "
+                        + "step while it runs (reconnects included), and `qits git-credential` repairs it on the next "
+                        + "fetch."})
 public class NetworkAccessCommand implements Runnable {
 
     /** The container, and the volume that keeps its key across recreations. */
@@ -175,27 +178,20 @@ public class NetworkAccessCommand implements Runnable {
 
     /**
      * Git onto the companion, or off it (qits-2743): {@code proxy} set for {@code up}, null for
-     * {@code down}. The git host is a private app, and Git, unlike the qits commands, knows nothing
-     * of {@link CompanionProxy}, so it gets the per-origin {@code http.<origin>.proxy} for the git
-     * host alone. Only where {@code qits git-login --configure} set Git up for that host: a
-     * workstation that never pushes there keeps its Git config as it was. Never fails the command:
-     * the companion is up or down either way, and a Git that cannot be configured is one warning.
+     * {@code down}, through {@link GitCompanionLine}, which keeps the git host's {@code
+     * http.<origin>.proxy} in the person's {@code --global} Git config, only where {@code qits
+     * git-login --configure} set Git up for that host. Never fails the command: the companion is up
+     * or down either way, and a Git that cannot be configured is one warning.
      */
     static void gitFollows(CliContext context, String proxy) {
-        String origin = null;
         try {
-            origin = GitOrigin.normalize(PlatformUrls.gitHost(null, context.env(), context.idpUrl()));
-            if (!GitSetup.helped(origin, context.env())) {
-                return;
-            }
-            GitSetup.configure(List.of(proxy == null ? GitSetup.unproxyCommand(origin)
-                    : GitSetup.proxyCommand(origin, proxy)), context.env(), context.err());
-            context.out().println(proxy == null ? "git: " + origin + " goes direct again"
-                    : "git: " + origin + " goes through the companion");
+            String origin = GitOrigin.normalize(PlatformUrls.gitHost(null, context.env(), context.idpUrl()));
+            GitCompanionLine.Result result = GitCompanionLine.sync(origin, proxy, context.env());
+            result.line(proxy).ifPresent(line -> (result.change() == GitCompanionLine.Change.NO_GIT
+                    ? context.err() : context.out()).println(line));
         } catch (CliFailure | IllegalArgumentException failed) {
-            context.err().println("warning: could not " + (proxy == null ? "take Git off" : "point Git at")
-                    + " the companion" + (origin == null ? "" : " for " + origin) + ": "
-                    + SafeText.line(String.valueOf(failed.getMessage())));
+            context.err().println("warning: could not tell the git host to keep Git's proxy in step with the "
+                    + "companion: " + SafeText.line(String.valueOf(failed.getMessage())));
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }

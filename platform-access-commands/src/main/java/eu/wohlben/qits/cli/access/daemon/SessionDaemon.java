@@ -39,6 +39,8 @@ public final class SessionDaemon {
     static final Duration POLL = Duration.ofSeconds(2);
     static final Duration FIRST_BACKOFF = Duration.ofSeconds(1);
     static final Duration MAX_BACKOFF = Duration.ofSeconds(60);
+    /** How often, at most, the {@link SessionTick} looks: one {@link #MAX_STEP}. */
+    static final Duration TICK_EVERY = MAX_STEP;
 
     private final SessionFile store;
     private final Duration margin;
@@ -47,6 +49,10 @@ public final class SessionDaemon {
     private final Function<String, TokenClient> idpFor;
     private final PrintStream log;
     private final SessionListener listener;
+    private final SessionTick tick;
+    /** The session the tick is handed; the newest the daemon read or refreshed. */
+    private Session latest;
+    private Instant ticked;
 
     private volatile boolean stopRequested;
     private Instant announced;
@@ -60,7 +66,14 @@ public final class SessionDaemon {
 
     public SessionDaemon(SessionFile store, Duration margin, Clock clock, Sleeper sleeper,
                          Function<String, TokenClient> idpFor, PrintStream log, SessionListener listener) {
+        this(store, margin, clock, sleeper, idpFor, log, listener, SessionTick.NONE);
+    }
+
+    public SessionDaemon(SessionFile store, Duration margin, Clock clock, Sleeper sleeper,
+                         Function<String, TokenClient> idpFor, PrintStream log, SessionListener listener,
+                         SessionTick tick) {
         this.listener = listener;
+        this.tick = tick;
         this.store = store;
         this.margin = margin;
         this.clock = clock;
@@ -114,6 +127,8 @@ public final class SessionDaemon {
                 continue;
             }
             handOver(session);
+            latest = session;
+            tick(true);
             Duration effective = margin();
             Instant due = session.accessExpiresAt().minus(effective);
             if (!session.accessExpiresAt().equals(announced)) {
@@ -134,6 +149,7 @@ public final class SessionDaemon {
                             + ", session ends " + Times.local(next.refreshExpiresAt())
                             + "; next refresh at " + Times.local(next.accessExpiresAt().minus(effective)));
                     handOver(next);
+                    latest = next;
                     backoff = FIRST_BACKOFF;
                 }
                 case Outcome.NotDue r -> {
@@ -203,8 +219,31 @@ public final class SessionDaemon {
                 return true;
             }
             sleeper.sleep(left.compareTo(MAX_STEP) > 0 ? MAX_STEP : left);
+            tick(false);
         }
         return false;
+    }
+
+    /**
+     * One look by the {@link SessionTick}: always when {@code now}, else once {@link #TICK_EVERY}
+     * has passed since the last. A failure is one log line; the next look tries again.
+     */
+    private void tick(boolean now) {
+        if (tick == SessionTick.NONE || latest == null) {
+            return;
+        }
+        Instant at = clock.instant();
+        if (!now && ticked != null && Duration.between(ticked, at).compareTo(TICK_EVERY) < 0) {
+            return;
+        }
+        ticked = at;
+        try {
+            tick.tick(latest).forEach(this::log);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            log("cannot look at the network-access companion: " + e.getMessage());
+        }
     }
 
     private void waitForChange(SessionFile.Fingerprint seen) throws InterruptedException {

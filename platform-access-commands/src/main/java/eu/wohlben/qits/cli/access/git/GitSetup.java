@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -68,12 +69,33 @@ public final class GitSetup {
      * PATH reads as not set up.
      */
     public static boolean helped(String gitOrigin, Map<String, String> env) throws InterruptedException {
+        return asksQits(gitOrigin, env).orElse(false);
+    }
+
+    /** {@link #helped}, with no git on the PATH as empty rather than false. */
+    static Optional<Boolean> asksQits(String gitOrigin, Map<String, String> env) throws InterruptedException {
         try {
-            Ran ran = run(List.of("git", "config", "--global", "--get-all", "credential." + gitOrigin + ".helper"), env);
-            return ran.exit() == 0 && ran.output().lines().anyMatch(line -> line.strip().endsWith(" git-credential"));
+            return Optional.of(globalValues("credential." + gitOrigin + ".helper", env).stream()
+                    .anyMatch(line -> line.strip().endsWith(" git-credential")));
         } catch (IOException noGit) {
-            return false;
+            return Optional.empty();
         }
+    }
+
+    /**
+     * Every value of {@code key} in the {@code --global} config, in order; none when it is unset
+     * (git's exit 1). Throws when git cannot be run.
+     */
+    static List<String> globalValues(String key, Map<String, String> env) throws IOException, InterruptedException {
+        Ran ran = run(List.of("git", "config", "--global", "--get-all", key), env);
+        if (ran.exit() == 1) {
+            return List.of();
+        }
+        if (ran.exit() != 0) {
+            throw new IOException("`git config --global --get-all " + key + "` failed (exit code " + ran.exit() + ")"
+                    + (ran.output().isEmpty() ? "" : ": " + ran.output()));
+        }
+        return ran.output().lines().toList();
     }
 
     /**
@@ -101,8 +123,18 @@ public final class GitSetup {
     private record Ran(int exit, String output) {
     }
 
+    /**
+     * The program every {@code git} argv runs as. Not final so a test can name one that is not
+     * there, which is how a missing git is tested.
+     */
+    public static String GIT = "git";
+
     private static Ran run(List<String> argv, Map<String, String> env) throws IOException, InterruptedException {
-        ProcessBuilder builder = new ProcessBuilder(argv).redirectErrorStream(true);
+        List<String> command = new java.util.ArrayList<>(argv);
+        if ("git".equals(command.getFirst())) {
+            command.set(0, GIT);
+        }
+        ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
         builder.environment().putAll(env);
         Process process = builder.start();
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).strip();
