@@ -6,7 +6,10 @@
     "payload": "{\"ticket\":\"contract-00000001-21\"}",
     "description": "Ticket contract-00000001-21 was reported",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000102",
@@ -15,7 +18,10 @@
     "payload": "{\"repoName\":\"contract-service\",\"status\":\"RUNNING\"}",
     "description": "A run of contract-service started",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000103",
@@ -24,7 +30,10 @@
     "payload": "{\"repoName\":\"contract-service\",\"status\":\"SUCCESS\"}",
     "description": "A run of contract-service passed",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000104",
@@ -33,7 +42,10 @@
     "payload": "{\"qualifiedId\":\"contract-service-rr-1\",\"state\":\"APPROVED\"}",
     "description": "contract-service-rr-1 was approved",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000105",
@@ -42,7 +54,10 @@
     "payload": "{\"application\":\"contract-service\"}",
     "description": "contract-service is deployed",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-deployments-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000106",
@@ -51,7 +66,10 @@
     "payload": "{\"ticket\":\"contract-00000001-22\"}",
     "description": "Ticket contract-00000001-22 was reported",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000107",
@@ -60,7 +78,10 @@
     "payload": "{\"repoName\":\"contract-frontend\",\"status\":\"RUNNING\"}",
     "description": "A run of contract-frontend started",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000108",
@@ -69,7 +90,10 @@
     "payload": "{\"repoName\":\"contract-frontend\",\"status\":\"FAILED\"}",
     "description": "A run of contract-frontend failed",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000109",
@@ -78,7 +102,10 @@
     "payload": "{\"qualifiedId\":\"contract-frontend-rr-3\",\"state\":\"REJECTED\"}",
     "description": "contract-frontend-rr-3 was rejected",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000110",
@@ -87,7 +114,10 @@
     "payload": "{\"ticket\":\"contract-00000001-23\"}",
     "description": "Ticket contract-00000001-23 was reported",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000111",
@@ -96,7 +126,10 @@
     "payload": "{\"repoName\":\"contract-daemon\",\"status\":\"RUNNING\"}",
     "description": "A run of contract-daemon started",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000112",
@@ -105,7 +138,10 @@
     "payload": "{\"repoName\":\"contract-daemon\",\"status\":\"SUCCESS\"}",
     "description": "A run of contract-daemon passed",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000113",
@@ -114,7 +150,10 @@
     "payload": "{\"application\":\"contract-daemon\"}",
     "description": "contract-daemon is deployed",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-deployments-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000114",
@@ -123,7 +162,10 @@
     "payload": "{\"eventId\":\"00000000-0000-4000-8000-000000000114\",\"releaseRequestId\":\"00000000-0000-4000-8000-000000000004\",\"projectId\":\"00000000-0000-4000-8000-000000000001\",\"repoName\":\"contract-service\",\"backingBranch\":\"release/contract-service-rr-2\",\"state\":\"FINALIZED\",\"previousState\":\"RELEASED\",\"changedAt\":\"2026-01-01T10:14:00Z\",\"version\":\"2026.101.101400\"}",
     "description": "contract-service-rr-2 is finalized as 2026.101.101400",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": "0af7651916cd43dd8448eb211c80319c",
+    "onBehalfOf": "user:owner"
   },
   {
     "id": "00000000-0000-4000-8000-000000000115",
@@ -132,7 +174,10 @@
     "payload": "{\"ticket\":\"contract-00000001-24\"}",
     "description": "Ticket contract-00000001-24 was reported",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-projects-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   },
   {
     "id": "00000000-0000-4000-8000-000000000116",
@@ -141,6 +186,9 @@
     "payload": "{\"repoName\":\"contract-service\",\"status\":\"RUNNING\"}",
     "description": "A run of contract-service started",
     "parentId": null,
-    "environment": null
+    "environment": null,
+    "publisher": "eu.wohlben.qits:qits-ci-service",
+    "originTraceId": null,
+    "onBehalfOf": null
   }
 ]

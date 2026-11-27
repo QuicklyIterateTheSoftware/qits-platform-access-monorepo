@@ -103,7 +103,9 @@ class EventStreamTest {
     private static String envelope(String id, String name, String payloadString) throws Exception {
         return JSON.writeValueAsString(JSON.createObjectNode().put("id", id).put("name", name)
                 .put("occurredAt", "2026-09-12T10:00:01Z").put("payload", payloadString)
-                .putNull("description").putNull("parentId").put("environment", "dev"));
+                .putNull("description").putNull("parentId").put("environment", "dev")
+                .put("publisher", "eu.wohlben.qits:qits-ci-service")
+                .put("originTraceId", "0af7651916cd43dd8448eb211c80319c").put("onBehalfOf", "user:owner"));
     }
 
     private static String[] concat(String[]... parts) {
@@ -137,6 +139,9 @@ class EventStreamTest {
         assertThat(lines.get(0).path("payload").path("repoName").asText()).isEqualTo("qits-ci");
         assertThat(lines.get(0).path("payload").path("number").asInt()).isEqualTo(7);
         assertThat(lines.get(0).path("environment").asText()).isEqualTo("dev");
+        // The stream filters no field of the frame: the chain an event was published in reaches the line.
+        assertThat(lines.get(0).path("originTraceId").asText()).isEqualTo("0af7651916cd43dd8448eb211c80319c");
+        assertThat(lines.get(0).path("onBehalfOf").asText()).isEqualTo("user:owner");
         assertThat(lines.get(1).path("payload").isTextual()).isTrue();
         assertThat(lines.get(1).path("payload").asText()).isEqualTo("not json at all");
         assertThat(out().lines()).allMatch(l -> !l.contains("\n"));

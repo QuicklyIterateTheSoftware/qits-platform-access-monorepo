@@ -64,9 +64,14 @@ public class EventsQueryCommand extends PlatformCommand {
     /** The events service's own cap on one page. */
     static final int PAGE_LIMIT = 1000;
 
-    /** The fields the live stream's frame carries; the log's own row times are not part of a line. */
-    private static final List<String> LIVE_FIELDS =
-            List.of("id", "name", "occurredAt", "payload", "description", "parentId", "environment", "publisher");
+    /**
+     * The log row's own times, which the live stream's frame ({@code EventCreated}) never carries:
+     * they say when the log stored the event, not what happened. Every other field of the row is the
+     * frame and passes through, so a field the frame gains later reaches the line without a change
+     * here (qits-2729: a list of the fields to keep had hidden {@code originTraceId} and
+     * {@code onBehalfOf}).
+     */
+    private static final List<String> ROW_ONLY_FIELDS = List.of("createdAt", "updatedAt");
 
     @CommandLine.Option(names = "--filter", paramLabel = "<names>", defaultValue = "*",
             description = "Which events: exact event names, comma-separated (for example BuildSuccessful,BuildFailed), "
@@ -158,12 +163,8 @@ public class EventsQueryCommand extends PlatformCommand {
 
     /** The row as the live stream would have sent it, with its payload read as JSON. */
     static ObjectNode liveFields(JsonNode row) {
-        ObjectNode event = JsonNodeFactory.instance.objectNode();
-        for (String field : LIVE_FIELDS) {
-            if (row.has(field)) {
-                event.set(field, row.get(field));
-            }
-        }
+        ObjectNode event = row instanceof ObjectNode object ? object.deepCopy() : JsonNodeFactory.instance.objectNode();
+        event.remove(ROW_ONLY_FIELDS);
         return EventStream.line(event);
     }
 

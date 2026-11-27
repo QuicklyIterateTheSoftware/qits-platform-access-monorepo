@@ -53,6 +53,8 @@ class EventsQueryCommandTest {
     private FakeIdp idp;
     private FakePlatform platform;
     private final List<Row> log = new ArrayList<>();
+    /** Fields set over a row's defaults, by event id: a new key is appended after onBehalfOf. */
+    private final Map<String, Map<String, String>> extra = new HashMap<>();
     private final Map<String, String> env = new HashMap<>();
     private final ByteArrayOutputStream out = new ByteArrayOutputStream();
     private final ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -142,9 +144,13 @@ class EventsQueryCommandTest {
         ObjectNode answer = JSON.createObjectNode();
         ArrayNode events = answer.putArray("events");
         for (Row row : kept) {
-            events.addObject().put("id", row.id()).put("name", row.name()).put("occurredAt", row.occurredAt().toString())
+            // In EventDto's order: the row's own times sit between environment and publisher.
+            ObjectNode written = events.addObject().put("id", row.id()).put("name", row.name())
+                    .put("occurredAt", row.occurredAt().toString())
                     .put("payload", "{\"repository\":\"qits-ci-service\"}").putNull("description").putNull("parentId")
-                    .put("environment", "dev").putNull("publisher").put("createdAt", NOW.toString()).put("updatedAt", NOW.toString());
+                    .put("environment", "dev").put("createdAt", NOW.toString()).put("updatedAt", NOW.toString())
+                    .putNull("publisher").putNull("originTraceId").putNull("onBehalfOf");
+            extra.getOrDefault(row.id(), Map.of()).forEach(written::put);
         }
         if (more) {
             Row last = kept.getLast();
@@ -170,13 +176,14 @@ class EventsQueryCommandTest {
         event("old", "BuildSuccessful", NOW.minusSeconds(3601));
         event("a", "BuildSuccessful", NOW.minusSeconds(3600));
         event("b", "BuildFailed", NOW.minusSeconds(10));
+        extra.put("b", Map.of("originTraceId", "0af7651916cd43dd8448eb211c80319c", "onBehalfOf", "user:owner"));
 
         assertThat(run("events", "query")).isZero();
 
         assertThat(out()).isEqualTo("""
                 window: 2026-10-01T17:00:00Z .. 2026-10-01T18:00:00Z
-                {"id":"a","name":"BuildSuccessful","occurredAt":"2026-10-01T17:00:00Z","payload":{"repository":"qits-ci-service"},"description":null,"parentId":null,"environment":"dev","publisher":null}
-                {"id":"b","name":"BuildFailed","occurredAt":"2026-10-01T17:59:50Z","payload":{"repository":"qits-ci-service"},"description":null,"parentId":null,"environment":"dev","publisher":null}
+                {"id":"a","name":"BuildSuccessful","occurredAt":"2026-10-01T17:00:00Z","payload":{"repository":"qits-ci-service"},"description":null,"parentId":null,"environment":"dev","publisher":null,"originTraceId":null,"onBehalfOf":null}
+                {"id":"b","name":"BuildFailed","occurredAt":"2026-10-01T17:59:50Z","payload":{"repository":"qits-ci-service"},"description":null,"parentId":null,"environment":"dev","publisher":null,"originTraceId":"0af7651916cd43dd8448eb211c80319c","onBehalfOf":"user:owner"}
                 """);
         Map<String, String> first = asked().getFirst();
         assertThat(first).doesNotContainKey("name")
@@ -303,11 +310,25 @@ class EventsQueryCommandTest {
         assertThat(json()).isEqualTo(JSON.readTree("""
                 {"events":[{"id":"e01","name":"BuildSuccessful","occurredAt":"2026-10-01T17:59:00Z",
                             "payload":{"repository":"qits-ci-service"},"description":null,"parentId":null,
-                            "environment":"dev","publisher":null}],
+                            "environment":"dev","publisher":null,"originTraceId":null,"onBehalfOf":null}],
                  "truncated":false,
                  "window":{"since":"2026-10-01T17:00:00Z","until":"2026-10-01T18:00:00Z"}}
                 """));
         assertThat(asked().getFirst()).containsEntry("name", "BuildSuccessful,BuildFailed");
+    }
+
+    /** The line drops only the row's own times; a field the log adds later is printed as it comes. */
+    @Test
+    void aFieldTheRowAppendsReachesTheLine() throws Exception {
+        event("a", "BuildFailed", NOW.minusSeconds(10));
+        extra.put("a", Map.of("later", "x"));
+
+        assertThat(run("events", "query", "-o", "json")).isZero();
+
+        JsonNode line = json().path("events").get(0);
+        assertThat(line.path("later").asText()).isEqualTo("x");
+        assertThat(line.has("createdAt")).isFalse();
+        assertThat(line.has("updatedAt")).isFalse();
     }
 
     @Test
