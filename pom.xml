@@ -95,7 +95,7 @@
         <qits.workspace-daemon-golden-masters.version>2026.1111.190934</qits.workspace-daemon-golden-masters.version>
         <qits.artifacts-golden-masters.version>2026.1124.154841</qits.artifacts-golden-masters.version>
         <qits.ci-golden-masters.version>2026.1119.60052</qits.ci-golden-masters.version>
-        <qits.idp-golden-masters.version>2026.1125.71255</qits.idp-golden-masters.version>
+        <qits.idp-golden-masters.version>2026.1127.193523</qits.idp-golden-masters.version>
         <qits.events-golden-masters.version>2026.1126.183653</qits.events-golden-masters.version>
         <qits.maintenance-golden-masters.version>2026.1126.192119</qits.maintenance-golden-masters.version>
         <!-- qits-orchestrator's recordings, for `qits orchestrator` (qits-2490). Bumped by qits-maintenance
