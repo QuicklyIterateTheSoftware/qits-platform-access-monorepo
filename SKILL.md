@@ -195,7 +195,7 @@ qits projects list -o json
 
 ## qits projects delivery
 
-A project's delivery desk: whether its front desk holds the delivery rights, how many items it keeps running at once, whether it may move a REFINED item to READY_FOR_DEV itself, and the approvals it may give. The desk runs only when a person prompts it.
+A project's delivery desk: whether its front desk holds the delivery rights, whether it may move a REFINED item to READY_FOR_DEV itself, and the approvals it may give. The desk runs only when a person prompts it.
 
 The project's wrapper declares it in .config/qits/project.yml under front_desk.delivery. A setting it does not declare prints as the default, marked (default).
 

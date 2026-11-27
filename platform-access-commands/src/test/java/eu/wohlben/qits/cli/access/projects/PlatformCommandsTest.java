@@ -2210,6 +2210,7 @@ class PlatformCommandsTest {
         assertThat(conflict.out() + forbidden.out()).isEmpty();
     }
 
+    /** qits-2728: an older service still sends {@code maxRunning}; nothing reads it, so no row prints it. */
     @Test
     void deliveryPrintsTheProjectsSettings() throws Exception {
         platform.answer("GET", "/projects/api/projects", """
@@ -2224,7 +2225,6 @@ class PlatformCommandsTest {
                 "Project qits: delivery desk",
                 "SETTING        VALUE",
                 "enabled        true",
-                "max_running    4",
                 "start_refined  true",
                 "approves       estate-pins, screenshots");
         assertThat(JSON.readTree(run("projects", "-o", "json", "delivery", "--project", QITS).out()))
@@ -2247,15 +2247,14 @@ class PlatformCommandsTest {
                 "Project qits: delivery desk",
                 "SETTING        VALUE",
                 "enabled        true",
-                "max_running    2 (default)",
                 "start_refined  false (default)",
                 "approves       none");
+        assertThat(partly.out() + older.out()).doesNotContain("max_running");
         assertThat(older.exit()).isZero();
         assertThat(older.out().lines().toList()).containsExactly(
                 "Project demo: delivery desk",
                 "SETTING        VALUE",
                 "enabled        false (default)",
-                "max_running    2 (default)",
                 "start_refined  false (default)",
                 "approves       none (default)");
         assertThat(run("projects", "delivery").err()).contains("Name the project: --project <id, slug or name>.");
