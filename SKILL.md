@@ -6128,6 +6128,76 @@ echo '{"version":3,"rules":[{"kind":"STATIC","value":true}]}' | qits toggles set
 - `1` The platform refused (HTTP 400, 403, 404 or 409, with the service's own sentence), or cannot be reached.
 - `2` Used wrongly (for example a body that is not a JSON object), not signed in, or the session ended.
 
+## qits certificate
+
+This workload's client certificate from qits-certificates (mTLS): issue one into a directory, or keep one there, renewed, for as long as this runs.
+
+The key is an EC P-256 key made on this machine; only a certificate request (CSR) leaves it, to POST /certificates/api/workload-certificates, with the caller's bearer (QITS_TOKEN in a workspace, the session on a workstation).
+
+### Notes
+
+- Who the certificate names comes from the bearer alone, never from the CSR: urn:qits:principal:application:<app> for a service client, urn:qits:principal:agent:<id> (and urn:qits:project:<id>) for a workspace agent, urn:qits:principal:project:<id> for a project agent or desk token. A person's token and an exchanged token get none (HTTP 403).
+- The files: key.pem (0600), cert.pem and chain.pem (the certificate, then the CA that signed it) in --dir, which is 0700. Each is written to a temporary file and renamed into place, the key first.
+- A certificate lives one day. It is never printed, and neither is the key.
+
+## qits certificate issue
+
+Issue one workload certificate for the caller's principal into --dir, and stop.
+
+```
+qits certificate issue [--certificates-url <url>] [--dir <dir>]
+```
+
+| Name | What it does |
+|---|---|
+| `--certificates-url <url>` | The certificates service's base URL, without /certificates. Default: QITS_CERTIFICATES_URL, else the session's idp address with `idp` swapped for `certificates`. |
+| `--dir <dir>` | Where key.pem, cert.pem and chain.pem go. Default: $QITS_WORKLOAD_CERT_DIR, else /run/qits/workload. |
+
+### Examples
+
+```
+qits certificate issue
+qits certificate issue --dir /tmp/workload
+```
+
+- It prints the principal, the serial and notAfter, never the key.
+
+### Exit codes
+
+- `0` Done.
+- `1` The platform refused (the message names the status), or cannot be reached.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
+## qits certificate keep
+
+Issue a workload certificate into --dir, then renew it at 2/3 of its life (about every 16 hours, give or take 10%) until SIGTERM or SIGINT. Each renewal makes a new key.
+
+A failed renewal keeps the files and tries again after 30 s, doubling up to 10 min. It logs one line per certificate and one per failure streak to stderr.
+
+```
+qits certificate keep [--certificates-url <url>] [--dir <dir>]
+```
+
+| Name | What it does |
+|---|---|
+| `--certificates-url <url>` | The certificates service's base URL, without /certificates. Default: QITS_CERTIFICATES_URL, else the session's idp address with `idp` swapped for `certificates`. |
+| `--dir <dir>` | Where key.pem, cert.pem and chain.pem go. Default: $QITS_WORKLOAD_CERT_DIR, else /run/qits/workload. |
+
+### Examples
+
+```
+qits certificate keep &
+qits certificate keep --dir /run/qits/workload
+```
+
+- A refusal the service would repeat every time (400, 401, 403: a person's or an exchanged token, say) stops it with exit 1; the files already written stay.
+
+### Exit codes
+
+- `0` Stopped by SIGTERM or SIGINT.
+- `1` The certificates service refuses this token, or a certificate cannot be written.
+- `2` Used wrongly, not signed in, or the session ended (run `qits login`).
+
 ## qits git-login
 
 Sign this workstation in for Git pushes to the platform's git host, through the browser. Run it once; afterwards Git gets its token from `qits git-credential`.

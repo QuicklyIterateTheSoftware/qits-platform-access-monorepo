@@ -226,6 +226,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>eu.wohlben.qits</groupId>
+            <artifactId>qits-certificates-golden-masters</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- Tests only: a CA that signs the hand-made CSRs of `qits certificate` (qits-2761). The
+                 binary never needs Bouncy Castle. Version: the Quarkus BOM's. -->
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <!-- JpaMappingConformanceTest builds Hibernate's own Metadata over the fixture entities and
                  holds `qits database diagram`'s reconstruction against it. TEST SCOPE ONLY: Hibernate
                  never reaches the commands jar, the binary or its SBOM. The version is quarkus-bom's,

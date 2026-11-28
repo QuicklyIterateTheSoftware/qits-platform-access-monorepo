@@ -41,7 +41,10 @@ class TapesCoverageTest {
                     + "looks at a pitch in the UI builder's Pitched tab, and PitchesCommandsTest drives the "
                     + "commands",
             "ui-builder", "reads for the ui-builder named agent (qits-2156); a person sees the same in the UI "
-                    + "builder page");
+                    + "builder page",
+            "certificate", "a workload's own client certificate (qits-2761), written to files and renewed by a "
+                    + "container's init hook rather than typed; the tapes' fake refuses every write, and "
+                    + "CertificateCommandsTest drives both commands against a signing fake");
 
     /** Integrations with a CLI tape only, and why there is no screen to show. */
     static final Map<String, String> CLI_ONLY = Map.of(

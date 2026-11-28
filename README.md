@@ -1560,6 +1560,29 @@ requests) and the proxy decides, per request, what may go out and names the call
     qits egress forward --listen 127.0.0.1:3128 &
     curl -sS -o /dev/null -w '%{http_code}' -x http://127.0.0.1:3128 https://example.com
 
+### qits certificate
+
+This workload's own client certificate from qits-certificates (mTLS, epic qits-2626, qits-2761),
+for the principal its bearer is: `QITS_TOKEN` in a token home (mostly `project:<id>` for a project
+agent or desk, `agent:<id>` for a workspace agent), else the session. The key is an EC P-256 key
+made here; only a CSR goes to `POST /certificates/api/workload-certificates`, and the door ignores
+whatever the CSR names.
+
+- `qits certificate issue` writes one certificate and stops; `qits certificate keep` issues, then
+  renews at 2/3 of the life (about 16 h of the CA's 24 h, give or take 10%) until SIGTERM or SIGINT,
+  with a new key every time. A failed renewal keeps the files and retries after 30 s, doubling to
+  10 min; a refusal the door would repeat (400, 401, 403: a person's or an exchanged token) stops it
+  with exit 1.
+- The files go to `--dir`, else `$QITS_WORKLOAD_CERT_DIR`, else `/run/qits/workload` (0700):
+  `key.pem` (0600, PKCS#8), `cert.pem`, and `chain.pem` (the certificate, then the CA). Each is
+  written to a temporary file and renamed into place, the key first, so a renewal never leaves a
+  moment without them.
+- Neither the key nor the CSR is ever printed or logged. Both are `Interaction.LOCAL`, so the MCP
+  service does not serve them, and they have no tapes (the tapes' fake refuses every write).
+
+    qits certificate issue --dir /tmp/workload
+    qits certificate keep &
+
 ### qits agent-mcp credentials
 
 The secrets the agent MCP catalog's servers are reached with, in qits-projects (epic qits-765).

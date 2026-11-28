@@ -119,6 +119,10 @@
              app's Toggles section's three doors. Pinned by hand once, as a first adoption gets no
              maintenance bump; bumped by qits-maintenance like the others from here on. -->
         <qits.toggles-golden-masters.version>2026.1127.175056</qits.toggles-golden-masters.version>
+        <!-- qits-certificates' recordings, for `qits certificate` (qits-2761, epic qits-2626): the
+             workload certificate door. Pinned by hand once, as a first adoption gets no maintenance
+             bump; bumped by qits-maintenance like the others from here on. -->
+        <qits.certificates-golden-masters.version>2026.1127.172534</qits.certificates-golden-masters.version>
         <!-- The estate's golden-master reader and pact row builder (qits-integrations), test scope:
              it reads every provider's recordings off the classpath and binds only what a command
              reads. -->
@@ -226,6 +230,11 @@
                 <groupId>eu.wohlben.qits</groupId>
                 <artifactId>qits-toggles-golden-masters</artifactId>
                 <version>${qits.toggles-golden-masters.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.wohlben.qits</groupId>
+                <artifactId>qits-certificates-golden-masters</artifactId>
+                <version>${qits.certificates-golden-masters.version}</version>
             </dependency>
             <dependency>
                 <groupId>eu.wohlben.qits</groupId>

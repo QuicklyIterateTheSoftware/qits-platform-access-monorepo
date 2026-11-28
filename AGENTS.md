@@ -407,6 +407,15 @@ The commands' sources, under `platform-access-commands/src/main/java/eu/wohlben/
                refusals (400, 403, 404, 409) included; a rule's userSubjects and afterInstant are not
                bound, because each is null on the rules of the other kinds and qits-pact-consumer
                cannot express that yet
+    certificate/ qits certificate issue and keep (qits-2761, epic qits-2626): this workload's client
+               certificate from qits-certificates' POST /certificates/api/workload-certificates
+               (CertificatesApi), for the principal of the caller's own bearer. WorkloadKey makes the
+               EC P-256 key per issue and DER-encodes the CSR by hand (no Bouncy Castle in the binary;
+               the tests' CA uses it); CertificateKeeper writes key.pem first, then cert.pem and
+               chain.pem through session/PrivateFiles (0700, 0600, rename), renews at 2/3 of the life
+               with 10% jitter, backs off 30 s to 10 min and stops with exit 1 on a 400/401/403. Both
+               commands are Interaction.LOCAL: the files are the caller's. CertificatesContract's rows
+               are qits-certificates-golden-masters' three workload states (first pin set by hand)
     serviceclients/ qits service-clients list (qits-2531), on the idp's GET /idp/api/service-clients
                (IdpServiceClientsApi), addressed as users/ addresses the idp. Its row
                (IdpServiceClientsContract, part of idp/IdpContract) sends `Authorization:

@@ -1,0 +1,296 @@
+{
+  "consumer": {
+    "name": "qits-platform-access-monorepo"
+  },
+  "interactions": [
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-certificates-service",
+            "operationId": "issueWorkloadCertificate"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits certificate issue",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits certificate issue: issueWorkloadCertificate",
+      "key": "8ffe8762",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "workload certificate issued",
+          "params": {
+            "activeAnchorId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIIBFjCBvAIBADAcMRowGAYDVQQDDBFpZ25vcmVkIGJ5IHRoZSBDQTBZMBMGByqG\nSM49AgEGCCqGSM49AwEHA0IABLC3UU1slpd0ZdoRxiIUKlyVIf5MjydBKkWD163w\nj7LqjBZ6vbGakDIXgzY6CA5muraldyFCHEgeyo/jdVAgkeCgPjA8BgkqhkiG9w0B\nCQ4xLzAtMCsGA1UdEQQkMCKCD2FwaS5leGFtcGxlLm9yZ4IPd3d3LmV4YW1wbGUu\nb3JnMAoGCCqGSM49BAMCA0kAMEYCIQCdLS+Yw1X5Ls1yvtxQgYVZT+Lh30JaQdu5\n8nzuE2yHHwIhAOniWC+t15/NB1Yv64detyoG8H0YT9/uAMns8jhOakkm\n-----END CERTIFICATE REQUEST-----\n"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/certificates/api/workload-certificates"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "certificate": "-----BEGIN CERTIFICATE-----\nMIICOTCCAcCgAwIBAgIRAJUR1DMML9kG4QdSr5kZ1F4wCgYIKoZIzj0EAwMwNjEN\nMAsGA1UECgwEcWl0czElMCMGA1UEAwwccWl0cyBwbGF0Zm9ybSBDQSBkZXYgMjAy\nNi0xMTAeFw0yNjExMjUxMTU1MDBaFw0yNjExMjYxMjAwMDBaMCAxHjAcBgNVBAMM\nFWFwcGxpY2F0aW9uOnFpdHMtZWRnZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA\nBLC3UU1slpd0ZdoRxiIUKlyVIf5MjydBKkWD163wj7LqjBZ6vbGakDIXgzY6CA5m\nuraldyFCHEgeyo/jdVAgkeCjgcQwgcEwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8E\nBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMEIGA1UdEQQ7MDmG\nKHVybjpxaXRzOnByaW5jaXBhbDphcHBsaWNhdGlvbjpxaXRzLWVkZ2WCDWRldi1x\naXRzLWVkZ2UwHwYDVR0jBBgwFoAU2pczjuSz/33msKC5DdHyXQHY9/swHQYDVR0O\nBBYEFJoD+wGxQMwXn/efpbcUQIcdbzGdMAoGCCqGSM49BAMDA2cAMGQCMCg1enO8\nwkFReuLioibTsOURLdXz8qsmc9+deR3DvDbGDj+7RGzE/axb8ZXk+yVeMAIwVfQw\nz8fqvqhZGUngHqIxm4VkYfiw4EUcHak08uibmx14Zh5ho8XDbbSKR3Bf82IO\n-----END CERTIFICATE-----\n",
+            "chain": "-----BEGIN CERTIFICATE-----\nMIICOTCCAcCgAwIBAgIRAJUR1DMML9kG4QdSr5kZ1F4wCgYIKoZIzj0EAwMwNjEN\nMAsGA1UECgwEcWl0czElMCMGA1UEAwwccWl0cyBwbGF0Zm9ybSBDQSBkZXYgMjAy\nNi0xMTAeFw0yNjExMjUxMTU1MDBaFw0yNjExMjYxMjAwMDBaMCAxHjAcBgNVBAMM\nFWFwcGxpY2F0aW9uOnFpdHMtZWRnZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA\nBLC3UU1slpd0ZdoRxiIUKlyVIf5MjydBKkWD163wj7LqjBZ6vbGakDIXgzY6CA5m\nuraldyFCHEgeyo/jdVAgkeCjgcQwgcEwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8E\nBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMEIGA1UdEQQ7MDmG\nKHVybjpxaXRzOnByaW5jaXBhbDphcHBsaWNhdGlvbjpxaXRzLWVkZ2WCDWRldi1x\naXRzLWVkZ2UwHwYDVR0jBBgwFoAU2pczjuSz/33msKC5DdHyXQHY9/swHQYDVR0O\nBBYEFJoD+wGxQMwXn/efpbcUQIcdbzGdMAoGCCqGSM49BAMDA2cAMGQCMCg1enO8\nwkFReuLioibTsOURLdXz8qsmc9+deR3DvDbGDj+7RGzE/axb8ZXk+yVeMAIwVfQw\nz8fqvqhZGUngHqIxm4VkYfiw4EUcHak08uibmx14Zh5ho8XDbbSKR3Bf82IO\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIB7TCCAXOgAwIBAgIRALdnheTvA9LfSqgDwD1AU/YwCgYIKoZIzj0EAwMwNjEN\nMAsGA1UECgwEcWl0czElMCMGA1UEAwwccWl0cyBwbGF0Zm9ybSBDQSBkZXYgMjAy\nNi0xMTAeFw0yNjEwMzEyMzU1MDBaFw0zMTExMDEwMDAwMDBaMDYxDTALBgNVBAoM\nBHFpdHMxJTAjBgNVBAMMHHFpdHMgcGxhdGZvcm0gQ0EgZGV2IDIwMjYtMTEwdjAQ\nBgcqhkjOPQIBBgUrgQQAIgNiAARNkCpFe3g+D06xhtSoug+zxyiU12IyJOk3sCTv\nYDJJ9+L/PCbivml5OYDnWtQ/6Dnv+Z9MzUkN6cD6rQlwnpSLwA2NGQwSIe7+Lg5M\nva3Kf2/mMLsZ/M5yMg3ABj93u3qjRTBDMBIGA1UdEwEB/wQIMAYBAf8CAQAwDgYD\nVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBTalzOO5LP/feawoLkN0fJdAdj3+zAKBggq\nhkjOPQQDAwNoADBlAjBxtpC+P/HuX73hn5xp2Zgdmh8ebAo4yq7cQqJContZDg+Q\ndhfsCvhmtwsDdUEFt+oCMQDiJS9oEf+Vd4Gc+JZi4Bnb3S12p+91MoIePRokx4d9\n0oDBR7+JdWR+45FMyg1S7Hw=\n-----END CERTIFICATE-----\n",
+            "notAfter": "2026-01-01T00:00:00Z",
+            "principal": "application:qits-edge",
+            "serial": "9511d4330c2fd906e10752af9919d45e"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.certificate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.chain": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.notAfter": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})$"
+                }
+              ]
+            },
+            "$.principal": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.serial": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-certificates-service",
+            "operationId": "issueWorkloadCertificate"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits certificate issue",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits certificate issue: issueWorkloadCertificate",
+      "key": "bb70ad01",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "workload certificate refused",
+          "params": {
+            "activeAnchorId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIIBFjCBvAIBADAcMRowGAYDVQQDDBFpZ25vcmVkIGJ5IHRoZSBDQTBZMBMGByqG\nSM49AgEGCCqGSM49AwEHA0IABLC3UU1slpd0ZdoRxiIUKlyVIf5MjydBKkWD163w\nj7LqjBZ6vbGakDIXgzY6CA5muraldyFCHEgeyo/jdVAgkeCgPjA8BgkqhkiG9w0B\nCQ4xLzAtMCsGA1UdEQQkMCKCD2FwaS5leGFtcGxlLm9yZ4IPd3d3LmV4YW1wbGUu\nb3JnMAoGCCqGSM49BAMCA0kAMEYCIQCdLS+Yw1X5Ls1yvtxQgYVZT+Lh30JaQdu5\n8nzuE2yHHwIhAOniWC+t15/NB1Yv64detyoG8H0YT9/uAMns8jhOakkm\n-----END CERTIFICATE REQUEST-----\n"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/certificates/api/workload-certificates"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": "a person's token"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.error": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 403
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "comments": {
+        "references": {
+          "qits-call": {
+            "app": "qits-certificates-service",
+            "operationId": "issueWorkloadCertificate"
+          },
+          "qits-trigger": {
+            "app": "qits-platform-access-monorepo",
+            "command": "qits certificate issue",
+            "kind": "command"
+          }
+        }
+      },
+      "description": "qits certificate issue: issueWorkloadCertificate",
+      "key": "634ecdf6",
+      "pending": false,
+      "providerStates": [
+        {
+          "name": "workload csr refused",
+          "params": {
+            "activeAnchorId": "00000000-0000-4000-8000-000000000001"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "content": {
+            "csr": "not a csr"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/certificates/api/workload-certificates"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "error": "the csr is not a PKCS#10 PEM"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.error": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json.*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "4.0"
+    },
+    "plugins": []
+  },
+  "provider": {
+    "name": "qits-certificates-service"
+  }
+}
