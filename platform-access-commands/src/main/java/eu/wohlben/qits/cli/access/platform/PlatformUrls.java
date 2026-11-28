@@ -49,6 +49,11 @@ public final class PlatformUrls {
         return resolve("orchestrator", "--orchestrator-url", "QITS_ORCHESTRATOR_URL", flag, env, idpUrl);
     }
 
+    /** qits-certificates: the workload certificate door under {@code /certificates/api} (qits-2761). */
+    public static String certificates(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
+        return resolve("certificates", "--certificates-url", "QITS_CERTIFICATES_URL", flag, env, idpUrl);
+    }
+
     /** qits-toggles: the declared feature toggles and their rules under {@code /toggles/api} (qits-2704). */
     public static String toggles(String flag, Map<String, String> env, String idpUrl) throws CliFailure {
         return resolve("toggles", "--toggles-url", "QITS_TOGGLES_URL", flag, env, idpUrl);

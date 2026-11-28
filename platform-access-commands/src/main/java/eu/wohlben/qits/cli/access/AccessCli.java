@@ -33,6 +33,7 @@ import eu.wohlben.qits.cli.access.projects.WorkCommand;
 import eu.wohlben.qits.cli.access.remembered.RememberedDevicesCommand;
 import eu.wohlben.qits.cli.access.serviceclients.ServiceClientsCommand;
 import eu.wohlben.qits.cli.access.targets.TargetsCommand;
+import eu.wohlben.qits.cli.access.certificate.CertificateCommand;
 import eu.wohlben.qits.cli.access.toggles.TogglesCommand;
 import eu.wohlben.qits.cli.access.update.QitsVersion;
 import eu.wohlben.qits.cli.access.uibuilder.UiBuilderCommand;
@@ -63,7 +64,7 @@ import picocli.CommandLine;
                 ReleaseRequestCommand.class, CiCommand.class, DatabaseCommand.class, ContractsCommand.class, DeploymentsCommand.class, EgressCommand.class, MaintenanceCommand.class, OrchestratorCommand.class, UsersCommand.class,
                 RememberedDevicesCommand.class, ServiceClientsCommand.class,
                 EventsCommand.class,
-                ObserveCommand.class, WaitCommand.class, WorkspacesCommand.class, TargetsCommand.class, TogglesCommand.class, GitLoginCommand.class, GitCredentialCommand.class, RegistryLoginCommand.class,
+                ObserveCommand.class, WaitCommand.class, WorkspacesCommand.class, TargetsCommand.class, TogglesCommand.class, CertificateCommand.class, GitLoginCommand.class, GitCredentialCommand.class, RegistryLoginCommand.class,
                 DockerCredentialCommand.class,
                 NetworkAccessCommand.class,
                 ArtifactsCommand.class, ChangelogGroup.class, AgentsCommand.class, AgentMcpCommand.class, UpdateCommand.class,
